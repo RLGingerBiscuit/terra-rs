@@ -1,10 +1,12 @@
 #![allow(unused)]
 
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
+
+use anyhow::Result;
 
 use crate::{
-    buff::Buff, difficulty::Difficulty, item::Item, Color, AMMO_COUNT, BANK_COUNT, BUFF_COUNT,
-    BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION,
+    buff::Buff, difficulty::Difficulty, item::Item, prefix::Prefix, Color, AMMO_COUNT, BANK_COUNT,
+    BUFF_COUNT, BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION,
     DPAD_BINDINGS_COUNT, EQUIPMENT_COUNT, INVENTORY_COUNT, LOADOUT_COUNT, TEMPORARY_SLOT_COUNT,
     TICKS_PER_MICROSECOND,
 };
@@ -219,5 +221,20 @@ impl Default for Player {
 
             loadouts: std::array::from_fn(|_| Loadout::default()),
         }
+    }
+}
+
+impl Player {
+    pub fn load(
+        &mut self,
+        filepath: impl Into<PathBuf>,
+        prefixes: &Vec<Prefix>,
+        items: &Vec<Item>,
+        buffs: &Vec<Buff>,
+    ) -> Result<()> {
+        todo!("Player.load()")
+    }
+    pub fn save(&self, filepath: impl Into<PathBuf>) -> Result<()> {
+        todo!("Player.save()")
     }
 }
