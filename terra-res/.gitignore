@@ -1,0 +1,7 @@
+# A tiny C# program to fix the incorrectly formatted json using Newtonsoft.Json
+json-fixer/
+
+# A little hack to get build type in main.rs
+build_type.txt
+
+generated/
