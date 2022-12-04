@@ -4,4 +4,11 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
+thiserror = "1.0.37"
+anyhow = "1.0.66"
+rust-crypto = "0.2.36"
+aes-stream = { path = "../aes-stream" }
 byteorder = "1.4.3"
+bit_reverse = "0.1.8"
+chrono = "0.4.23"
+palette = { version = "0.6.1", default-features = false, features = ["std"] }

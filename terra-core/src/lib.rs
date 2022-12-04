@@ -1,3 +1,5 @@
+use palette::{encoding::Srgb, rgb::Rgb};
+
 pub const MAGIC_MASK: u64 = 72057594037927935;
 pub const MAGIC_NUMBER: u64 = 27981915666277746;
 
@@ -34,5 +36,7 @@ pub const LOADOUT_COUNT: usize = 4;
 
 pub const FEMALE_SKIN_VARIANTS: [i32; 4] = [5, 6, 9, 11];
 pub const MALE_SKIN_VARIANTS: [i32; 6] = [0, 1, 2, 3, 8, 10];
+
+pub type Color = Rgb<Srgb, u8>;
 
 mod io_extensions;
