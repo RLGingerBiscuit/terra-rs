@@ -1,6 +1,9 @@
 #![allow(unused)]
 
-use std::io::{Read, Write};
+use std::{
+    fs::File,
+    io::{BufReader, Read, Write},
+};
 
 use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
@@ -25,7 +28,19 @@ impl Default for Prefix {
 
 impl Prefix {
     pub fn load_prefixes() -> Result<Vec<Self>> {
-        todo!("Prefix::load_prefixes")
+        let prefixes_file = File::open(
+            std::env::current_exe()?
+                .parent()
+                .unwrap()
+                .join("resources")
+                .join("prefixes.json"),
+        )?;
+
+        let prefixes_reader = BufReader::new(prefixes_file);
+
+        let prefixes: Vec<Self> = serde_json::from_reader(prefixes_reader)?;
+
+        Ok(prefixes)
     }
 
     fn copy(&mut self, prefix: &Self) {

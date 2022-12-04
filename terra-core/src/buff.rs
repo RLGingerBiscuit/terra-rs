@@ -1,6 +1,9 @@
 #![allow(unused)]
 
-use std::io::{Read, Write};
+use std::{
+    fs::File,
+    io::{BufReader, Read, Write},
+};
 
 use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
@@ -40,7 +43,19 @@ impl Default for Buff {
 
 impl Buff {
     pub fn load_buffs() -> Result<Vec<Self>> {
-        todo!("Buff::load_buffs")
+        let buffs_file = File::open(
+            std::env::current_exe()?
+                .parent()
+                .unwrap()
+                .join("resources")
+                .join("buffs.json"),
+        )?;
+
+        let buffs_reader = BufReader::new(buffs_file);
+
+        let buffs: Vec<Self> = serde_json::from_reader(buffs_reader)?;
+
+        Ok(buffs)
     }
 
     fn copy(&mut self, buff: &Self) {

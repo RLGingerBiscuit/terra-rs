@@ -1,6 +1,9 @@
 #![allow(unused)]
 
-use std::io::{Read, Write};
+use std::{
+    fs::File,
+    io::{BufReader, Read, Write},
+};
 
 use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
@@ -50,7 +53,19 @@ impl Default for Item {
 
 impl Item {
     pub fn load_items() -> Result<Vec<Self>> {
-        todo!("Item::load_items")
+        let items_file = File::open(
+            std::env::current_exe()?
+                .parent()
+                .unwrap()
+                .join("resources")
+                .join("items.json"),
+        )?;
+
+        let items_reader = BufReader::new(items_file);
+
+        let items: Vec<Self> = serde_json::from_reader(items_reader)?;
+
+        Ok(items)
     }
 
     fn copy(&mut self, item: &Self) {
