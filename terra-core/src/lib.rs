@@ -39,9 +39,9 @@ pub const MALE_SKIN_VARIANTS: [i32; 6] = [0, 1, 2, 3, 8, 10];
 
 pub type Color = Rgb<Srgb, u8>;
 
-mod io_extensions;
-mod player;
-mod bool_byte;
-mod buff;
-mod prefix;
-mod item;
+pub mod bool_byte;
+pub mod buff;
+pub mod io_extensions;
+pub mod item;
+pub mod player;
+pub mod prefix;
