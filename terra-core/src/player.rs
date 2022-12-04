@@ -21,6 +21,24 @@ pub struct JourneyPowerManager;
 #[derive(Default, Clone, Debug)]
 pub struct Loadout;
 
+#[derive(thiserror::Error, Debug)]
+pub enum PlayerError {
+    #[error("Unknown error with file '{0}.")]
+    Failure(String),
+    #[error("The file '{0}' cannot be read by the user.")]
+    AccessDenied(String),
+    #[error("The file '{0}' was not found.")]
+    FileNotFound(String),
+    #[error("The file '{0}' is for a newer version of Terraria ({1}) than terra-rs supports (<= {CURRENT_VERSION}).")]
+    PostDated(String, i32),
+    #[error("The file '{0}' is corrupted.")]
+    Corrupted(String),
+    #[error("Expected Re-Logic file format in '{0}'.")]
+    IncorrectFormat(String),
+    #[error("Found incorrect file type in '{0}'.")]
+    IncorrectFileType(String),
+}
+
 #[derive(Debug)]
 pub struct Player {
     pub version: i32,
