@@ -6,11 +6,11 @@ use byteorder::{ReadBytesExt, LE};
 use crypto::aessafe::AesSafe128Decryptor;
 
 use crate::{
-    buff::Buff, difficulty::Difficulty, io_extensions::TerraReadExt, item::Item, prefix::Prefix,
-    Color, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT,
-    COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES, EQUIPMENT_COUNT,
-    INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER, TEMPORARY_SLOT_COUNT,
-    TICKS_PER_MICROSECOND,
+    buff::Buff, difficulty::Difficulty, io_extensions::TerraReadExt, item::Item, loadout::Loadout,
+    prefix::Prefix, Color, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
+    CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES,
+    EQUIPMENT_COUNT, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
+    TEMPORARY_SLOT_COUNT, TICKS_PER_MICROSECOND,
 };
 
 // TODO: Seperate & implement these properly
@@ -19,9 +19,6 @@ pub struct Spawnpoint;
 
 #[derive(Default, Clone, Debug)]
 pub struct JourneyPowerManager;
-
-#[derive(Default, Clone, Debug)]
-pub struct Loadout;
 
 #[derive(thiserror::Error, Debug)]
 pub enum PlayerError {
@@ -322,8 +319,6 @@ impl Player {
         if self.version >= 72 {
             self.hair_dye = reader.read_u8()?;
         }
-
-        
 
         todo!("Player.load()")
     }

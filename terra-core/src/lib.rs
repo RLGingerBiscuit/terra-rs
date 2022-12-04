@@ -44,6 +44,7 @@ pub mod buff;
 pub mod difficulty;
 pub mod io_extensions;
 pub mod item;
+pub mod loadout;
 pub mod player;
 pub mod prefix;
 pub mod utils;
