@@ -4,6 +4,7 @@ use std::io::{Read, Write};
 
 use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     io_extensions::{TerraReadExt, TerraWriteExt},
@@ -16,15 +17,15 @@ pub enum ItemError {
     NoIdOrInternalName,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Item {
     pub id: i32,
     pub name: String,
     pub internal_name: String,
     pub max_stack: i32,
-    // #[serde(skip)]
+    #[serde(skip)]
     pub stack: i32,
-    // #[serde(skip)]
+    #[serde(skip)]
     pub prefix: Prefix,
     pub sacrifices: i32,
     pub tooltip: String,

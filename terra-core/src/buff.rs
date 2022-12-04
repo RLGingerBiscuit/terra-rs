@@ -4,27 +4,29 @@ use std::io::{Read, Write};
 
 use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
+use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[repr(u8)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize_repr, Deserialize_repr)]
 pub enum BuffType {
     Buff = 0,
     Debuff = 1,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Buff {
     pub id: i32,
     pub name: String,
     pub internal_name: String,
-    // #[serde(skip)]
+    #[serde(skip)]
     pub time: i32,
     pub buff_type: BuffType,
     pub tooltip: String,
 }
 
 impl Default for Buff {
-    fn default()->Self{
+    fn default() -> Self {
         Self {
             id: 0,
             name: "".to_string(),
@@ -71,4 +73,3 @@ impl Buff {
         Ok(())
     }
 }
-
