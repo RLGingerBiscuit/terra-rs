@@ -3,7 +3,7 @@
 use std::str::FromStr;
 
 use crate::{
-    Color, AMMO_COUNT, ARMOR_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
+    buff::Buff, Color, AMMO_COUNT, ARMOR_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
     CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, EQUIPMENT_COUNT,
     INVENTORY_COUNT, LOADOUT_COUNT, TEMPORARY_SLOT_COUNT, TICKS_PER_MICROSECOND,
 };
@@ -11,9 +11,6 @@ use crate::{
 // TODO: Seperate & implement these properly
 #[derive(Default, Clone, Debug)]
 struct Item;
-
-#[derive(Default, Clone, Debug)]
-struct Buff;
 
 #[derive(Default, Clone, Debug)]
 struct Spawnpoint;

@@ -42,3 +42,4 @@ pub type Color = Rgb<Srgb, u8>;
 mod io_extensions;
 mod player;
 mod bool_byte;
+mod buff;
