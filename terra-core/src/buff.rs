@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use std::{
     fs::File,
     io::{BufReader, Read, Write},

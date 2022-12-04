@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use std::{
     fs::File,
     io::{BufReader, Read, Write},
@@ -94,19 +92,19 @@ impl Item {
 
         let mut internal_name_string = String::new();
 
-        if (id) {
+        if id {
             self.id = reader.read_i32::<LE>()?
         }
-        if (internal_name) {
+        if internal_name {
             internal_name_string = reader.read_lpstring()?;
         }
-        if (stack) {
+        if stack {
             self.stack = reader.read_i32::<LE>()?
         }
-        if (prefix) {
+        if prefix {
             self.prefix.load(reader, prefixes)?
         }
-        if (favourited) {
+        if favourited {
             self.favourited = reader.read_bool()?
         }
 
@@ -121,10 +119,10 @@ impl Item {
             {
                 self.copy(item)
             } else {
-                if (!id) {
+                if !id {
                     self.id = 0
                 }
-                if (!internal_name) {
+                if !internal_name {
                     self.internal_name = "Unknown".to_string()
                 }
                 self.name = "Unknown".to_string();
@@ -151,19 +149,19 @@ impl Item {
             return Err(ItemError::NoIdOrInternalName.into());
         }
 
-        if (id) {
+        if id {
             writer.write_i32::<LE>(self.id)?
         }
-        if (internal_name) {
+        if internal_name {
             writer.write_lpstring(&self.internal_name)?
         }
-        if (stack) {
+        if stack {
             writer.write_i32::<LE>(self.stack)?
         }
-        if (prefix) {
+        if prefix {
             self.prefix.save(writer)?
         }
-        if (favourited) {
+        if favourited {
             writer.write_bool(self.favourited)?
         }
 

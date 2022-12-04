@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use std::{path::PathBuf, str::FromStr};
 
 use anyhow::Result;
