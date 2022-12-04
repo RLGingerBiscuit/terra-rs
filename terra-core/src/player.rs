@@ -3,7 +3,7 @@
 use std::str::FromStr;
 
 use crate::{
-    buff::Buff, item::Item, Color, AMMO_COUNT, ARMOR_COUNT, BANK_COUNT, BUFF_COUNT,
+    buff::Buff, difficulty::Difficulty, item::Item, Color, AMMO_COUNT, BANK_COUNT, BUFF_COUNT,
     BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION,
     DPAD_BINDINGS_COUNT, EQUIPMENT_COUNT, INVENTORY_COUNT, LOADOUT_COUNT, TEMPORARY_SLOT_COUNT,
     TICKS_PER_MICROSECOND,
@@ -19,21 +19,11 @@ pub struct JourneyPowerManager;
 #[derive(Default, Clone, Debug)]
 pub struct Loadout;
 
-#[repr(u8)]
-#[derive(Default, Debug)]
-pub enum Difficulty {
-    #[default]
-    Classic = 0,
-    Mediumcore = 1,
-    Hardcore = 2,
-    Journey = 3,
-}
-
 #[derive(Debug)]
 pub struct Player {
     pub version: i32,
     pub revision: u32,
-    pub is_favourite: bool,
+    pub favourited: u64,
 
     pub name: String,
     pub difficulty: Difficulty,
@@ -134,7 +124,7 @@ impl Default for Player {
         Self {
             version: CURRENT_VERSION,
             revision: 0,
-            is_favourite: false,
+            favourited: 0,
 
             name: "Player".to_string(),
             difficulty: Difficulty::Classic,
