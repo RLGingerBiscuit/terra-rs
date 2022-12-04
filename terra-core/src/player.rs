@@ -11,13 +11,13 @@ use crate::{
 
 // TODO: Seperate & implement these properly
 #[derive(Default, Clone, Debug)]
-struct Spawnpoint;
+pub struct Spawnpoint;
 
 #[derive(Default, Clone, Debug)]
-struct JourneyPowerManager;
+pub struct JourneyPowerManager;
 
 #[derive(Default, Clone, Debug)]
-struct Loadout;
+pub struct Loadout;
 
 #[repr(u8)]
 #[derive(Default, Debug)]
@@ -30,7 +30,7 @@ pub enum Difficulty {
 }
 
 #[derive(Debug)]
-struct Player {
+pub struct Player {
     pub version: i32,
     pub revision: u32,
     pub is_favourite: bool,
