@@ -1,0 +1,3 @@
+[submodule "aes-stream"]
+	path = aes-stream
+	url = git@github.com:RLGingerBiscuit/rust-aes-stream.git
