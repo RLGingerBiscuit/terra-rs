@@ -2,6 +2,7 @@ use std::io::{Read, Write};
 
 use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     bool_byte::BoolByte,
@@ -11,7 +12,7 @@ use crate::{
     utils, ACCESSORY_COUNT, ARMOR_COUNT, HIDDEN_VISUAL_COUNT,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Loadout {
     pub hide_visual: [bool; HIDDEN_VISUAL_COUNT],
 
