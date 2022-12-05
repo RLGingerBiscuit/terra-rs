@@ -3,6 +3,8 @@ use std::io::Result as IOResult;
 
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
+use crate::Color;
+
 pub trait TerraReadExt: io::Read {
     #[inline]
     /// Reads a [`ULEB128`] encoded u32 from the underlying reader.
@@ -88,6 +90,22 @@ pub trait TerraReadExt: io::Read {
         let num = self.read_u8()?;
 
         Ok(num != 0)
+    }
+
+    #[inline]
+    /// Reads an `Rgb<Srgb, u8>` from the underlying reader.
+    ///
+    /// # Errors
+    ///
+    /// This method returns the same errors as [`Read::read_exact`].
+    ///
+    /// [`Read::read_exact`]: https://doc.rust-lang.org/std/io/trait.Read.html#method.read_exact
+    fn read_rgb(&mut self) -> IOResult<Color> {
+        Ok(Color::from_components((
+            self.read_u8()?,
+            self.read_u8()?,
+            self.read_u8()?,
+        )))
     }
 }
 
@@ -177,6 +195,21 @@ pub trait TerraWriteExt: io::Write {
             true => 1,
             false => 0,
         })
+    }
+
+    #[inline]
+    /// Writes an `Rgb<Srgb, u8>` to the underlying writer.
+    ///
+    /// # Errors
+    ///
+    /// This method returns the same errors as [`Write::write_all`].
+    ///
+    /// [`Write::write_all`]: https://doc.rust-lang.org/std/io/trait.Write.html#method.write_all
+    fn write_rgb(&mut self, value: &Color) -> IOResult<()> {
+        self.write_u8(value.red)?;
+        self.write_u8(value.green)?;
+        self.write_u8(value.blue)?;
+        Ok(())
     }
 }
 
