@@ -273,7 +273,7 @@ fn get_prefix_info(
         .map(|tr| {
             let mut tds = tr.select(&td_selector);
 
-            let id = i32::from_str(tds.next().unwrap().inner_html().trim()).unwrap();
+            let id = u8::from_str(tds.next().unwrap().inner_html().trim()).unwrap();
 
             let internal_name = match id {
                 20 => "Deadly2".to_string(),
