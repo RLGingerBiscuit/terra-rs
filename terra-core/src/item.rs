@@ -136,6 +136,32 @@ impl Item {
         Ok(())
     }
 
+    pub fn load_new(
+        reader: &mut dyn Read,
+        items: &Vec<Self>,
+        prefixes: &Vec<Prefix>,
+        id: bool,
+        internal_name: bool,
+        stack: bool,
+        prefix: bool,
+        favourited: bool,
+    ) -> Result<Self> {
+        let mut item = Item::default();
+
+        item.load(
+            reader,
+            items,
+            prefixes,
+            id,
+            internal_name,
+            stack,
+            prefix,
+            favourited,
+        )?;
+
+        return Ok(item);
+    }
+
     pub fn save(
         &self,
         writer: &mut dyn Write,
