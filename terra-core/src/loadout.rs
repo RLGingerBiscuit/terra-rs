@@ -8,7 +8,7 @@ use crate::{
     io_extensions::{TerraReadExt, TerraWriteExt},
     item::Item,
     prefix::Prefix,
-    ACCESSORY_COUNT, ARMOR_COUNT, HIDDEN_VISUAL_COUNT,
+    utils, ACCESSORY_COUNT, ARMOR_COUNT, HIDDEN_VISUAL_COUNT,
 };
 
 #[derive(Clone, Debug)]
@@ -187,11 +187,11 @@ impl Loadout {
     }
 
     pub fn has_item(&self, id: i32) -> bool {
-        self.armor.iter().any(|a| a.id == id)
-            || self.accessories.iter().any(|a| a.id == id)
-            || self.vanity_armor.iter().any(|a| a.id == id)
-            || self.vanity_accessories.iter().any(|a| a.id == id)
-            || self.armor_dyes.iter().any(|a| a.id == id)
-            || self.accessory_dyes.iter().any(|a| a.id == id)
+        utils::has_item(id, &self.armor)
+            || utils::has_item(id, &self.accessories)
+            || utils::has_item(id, &self.vanity_armor)
+            || utils::has_item(id, &self.vanity_accessories)
+            || utils::has_item(id, &self.armor_dyes)
+            || utils::has_item(id, &self.accessory_dyes)
     }
 }

@@ -7,7 +7,7 @@ use crypto::aessafe::AesSafe128Decryptor;
 
 use crate::{
     bool_byte::BoolByte, buff::Buff, difficulty::Difficulty, io_extensions::TerraReadExt,
-    item::Item, loadout::Loadout, prefix::Prefix, spawnpoint::Spawnpoint, Color, AMMO_COUNT,
+    item::Item, loadout::Loadout, prefix::Prefix, spawnpoint::Spawnpoint, utils, Color, AMMO_COUNT,
     BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT, COINS_COUNT,
     CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES, EQUIPMENT_COUNT, FEMALE_SKIN_VARIANTS,
     INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER, MALE_SKIN_VARIANTS, SPAWNPOINT_LIMIT,
@@ -553,7 +553,24 @@ impl Player {
 
         todo!("Player.load()")
     }
+
     pub fn save(&self, filepath: impl Into<PathBuf>) -> Result<()> {
         todo!("Player.save()")
+    }
+
+    pub fn has_item(&self, id: i32) -> bool {
+        utils::has_item(id, &self.inventory)
+            || utils::has_item(id, &self.coins)
+            || utils::has_item(id, &self.ammo)
+            || self.loadouts[0].has_item(id)
+            || utils::has_item(id, &self.equipment)
+            || utils::has_item(id, &self.equipment_dyes)
+            || utils::has_item(id, &self.piggy_bank)
+            || utils::has_item(id, &self.safe)
+            || utils::has_item(id, &self.defenders_forge)
+            || utils::has_item(id, &self.void_vault)
+            || self.loadouts[1].has_item(id)
+            || self.loadouts[2].has_item(id)
+            || self.loadouts[3].has_item(id)
     }
 }
