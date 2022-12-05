@@ -33,7 +33,7 @@ pub enum PlayerError {
     IncorrectFileType(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Player {
     pub version: i32,
     pub revision: u32,
@@ -652,7 +652,30 @@ impl Player {
             }
         }
 
-        todo!("Player.load()")
+        if self.version >= 220 {
+            self.journey_powers.load(&mut reader)?;
+        }
+
+        if self.version >= 253 {
+            let bb = BoolByte::from(reader.read_u8()?);
+
+            self.super_cart = bb.get(0)?;
+            self.super_cart_enabled = bb.get(1)?;
+        } else {
+            // 3353 - Mechanical Cart
+            self.super_cart = self.has_item(33353);
+        }
+
+        if self.version >= 262 {
+            self.current_loadout_index = reader.read_i32::<LE>()?;
+
+            for i in 1..LOADOUT_COUNT {
+                self.loadouts[i].load(&mut reader, prefixes, items, self.version, true)?;
+                self.loadouts[i].load_visuals(&mut reader, self.version, false)?;
+            }
+        }
+
+        Ok(())
     }
 
     pub fn save(&self, filepath: impl Into<PathBuf>) -> Result<()> {
