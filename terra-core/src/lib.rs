@@ -34,6 +34,8 @@ pub const TEMPORARY_SLOT_COUNT: usize = 4;
 /// The current armor/accessories are also counted as a loadout
 pub const LOADOUT_COUNT: usize = 4;
 
+pub const MAX_RESPAWN_TIME: i32 = 60000;
+
 pub const FEMALE_SKIN_VARIANTS: [i32; 4] = [5, 6, 9, 11];
 pub const MALE_SKIN_VARIANTS: [i32; 6] = [0, 1, 2, 3, 8, 10];
 

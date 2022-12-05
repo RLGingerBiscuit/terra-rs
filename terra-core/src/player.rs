@@ -10,8 +10,8 @@ use crate::{
     item::Item, loadout::Loadout, prefix::Prefix, spawnpoint::Spawnpoint, utils, Color, AMMO_COUNT,
     BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT, COINS_COUNT,
     CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES, EQUIPMENT_COUNT, FEMALE_SKIN_VARIANTS,
-    INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER, MALE_SKIN_VARIANTS, SPAWNPOINT_LIMIT,
-    TEMPORARY_SLOT_COUNT, TICKS_PER_MICROSECOND,
+    INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER, MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME,
+    SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT, TICKS_PER_MICROSECOND,
 };
 
 // TODO: Seperate & implement these properly
@@ -549,6 +549,110 @@ impl Player {
             let spawnpoint = Spawnpoint { x, y, id, name };
 
             self.spawnpoints.push(spawnpoint);
+        }
+
+        if self.version >= 16 {
+            self.locked_hotbar = reader.read_bool()?;
+        }
+
+        if self.version >= 115 {
+            for i in self.hide_cellphone_info.iter_mut() {
+                *i = reader.read_bool()?;
+            }
+        }
+
+        if self.version >= 98 {
+            self.angler_quests = reader.read_i32::<LE>()?;
+        }
+
+        if self.version >= 162 {
+            for b in self.dpad_bindings.iter_mut() {
+                *b = reader.read_i32::<LE>()?;
+            }
+        }
+
+        if self.version >= 164 {
+            let status_count = if self.version >= 230 {
+                12
+            } else if self.version >= 197 {
+                11
+            } else if self.version >= 167 {
+                10
+            } else {
+                8
+            };
+
+            for i in 0..status_count {
+                self.builder_accessory_status[i] = reader.read_i32::<LE>()?;
+            }
+
+            if self.version <= 209 {
+                self.builder_accessory_status[0] = 1;
+            }
+
+            // 3611 - Grand Design
+            if self.version <= 248 && utils::has_item(3611, &self.inventory) {
+                self.builder_accessory_status[1] = 1;
+            }
+        }
+
+        if self.version >= 181 {
+            self.tavernkeep_quests = reader.read_i32::<LE>()?;
+        }
+
+        if self.version >= 200 {
+            self.dead = reader.read_bool()?;
+            if self.dead {
+                self.respawn_timer = reader.read_i32::<LE>()?.clamp(0, MAX_RESPAWN_TIME);
+            }
+        }
+
+        if self.version >= 202 {
+            self.last_save = reader.read_i64::<LE>()?;
+        } else {
+            self.last_save = chrono::Utc::now().timestamp_micros() * TICKS_PER_MICROSECOND as i64;
+        }
+
+        if self.version >= 206 {
+            self.golfer_score = reader.read_i32::<LE>()?;
+        }
+
+        if self.version >= 218 {
+            let research_count = reader.read_i32::<LE>()?;
+
+            for _ in 0..research_count {
+                let research_item = Item::load_new(
+                    &mut reader,
+                    items,
+                    prefixes,
+                    false,
+                    true,
+                    true,
+                    false,
+                    false,
+                )?;
+
+                self.research.push(research_item);
+            }
+        }
+
+        if self.version >= 214 {
+            let bb1 = BoolByte::from(reader.read_u8()?);
+
+            for i in 0..TEMPORARY_SLOT_COUNT {
+                if bb1.get(i as u8)? {
+                    self.temporary_slots[i].load(
+                        &mut reader,
+                        items,
+                        prefixes,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                    )?;
+                }
+            }
         }
 
         todo!("Player.load()")
