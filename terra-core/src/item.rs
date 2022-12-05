@@ -108,7 +108,7 @@ impl Item {
             self.favourited = reader.read_bool()?
         }
 
-        if !((id && self.id != 0) || (internal_name && internal_name_string.len() == 0)) {
+        if (id && self.id != 0) || (internal_name && internal_name_string.len() != 0) {
             if let Some(item) = items
                 .iter()
                 .filter(|i| {
@@ -125,12 +125,13 @@ impl Item {
                 if !internal_name {
                     self.internal_name = "Unknown".to_string()
                 }
+
                 self.name = "Unknown".to_string();
             }
-        }
 
-        if self.stack == 0 {
-            self.stack = 1
+            if self.stack == 0 {
+                self.stack = 1
+            }
         }
 
         Ok(())
