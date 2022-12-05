@@ -4,6 +4,9 @@ use aesstream::AesReader;
 use anyhow::Result;
 use byteorder::{ReadBytesExt, LE};
 use crypto::aessafe::AesSafe128Decryptor;
+use serde::{Deserialize, Serialize};
+
+use serde_big_array::BigArray;
 
 use crate::{
     bool_byte::BoolByte, buff::Buff, difficulty::Difficulty, io_extensions::TerraReadExt,
@@ -33,7 +36,7 @@ pub enum PlayerError {
     IncorrectFileType(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
     pub version: i32,
     pub revision: u32,
@@ -86,16 +89,22 @@ pub struct Player {
     pub equipment: [Item; EQUIPMENT_COUNT],
     pub equipment_dyes: [Item; EQUIPMENT_COUNT],
 
+    #[serde(with = "BigArray")]
     pub inventory: [Item; INVENTORY_COUNT],
     pub coins: [Item; COINS_COUNT],
     pub ammo: [Item; AMMO_COUNT],
 
+    #[serde(with = "BigArray")]
     pub piggy_bank: [Item; BANK_COUNT],
+    #[serde(with = "BigArray")]
     pub safe: [Item; BANK_COUNT],
+    #[serde(with = "BigArray")]
     pub defenders_forge: [Item; BANK_COUNT],
+    #[serde(with = "BigArray")]
     pub void_vault: [Item; BANK_COUNT],
     pub void_vault_enabled: bool,
 
+    #[serde(with = "BigArray")]
     pub buffs: [Buff; BUFF_COUNT],
 
     pub spawnpoints: Vec<Spawnpoint>,
