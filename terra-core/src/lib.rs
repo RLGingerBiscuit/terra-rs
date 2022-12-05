@@ -47,4 +47,5 @@ pub mod item;
 pub mod loadout;
 pub mod player;
 pub mod prefix;
+pub mod spawnpoint;
 pub mod utils;

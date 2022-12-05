@@ -6,17 +6,15 @@ use byteorder::{ReadBytesExt, LE};
 use crypto::aessafe::AesSafe128Decryptor;
 
 use crate::{
-    buff::Buff, difficulty::Difficulty, io_extensions::TerraReadExt, item::Item, loadout::Loadout,
-    prefix::Prefix, Color, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
-    CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES,
-    EQUIPMENT_COUNT, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
+    bool_byte::BoolByte, buff::Buff, difficulty::Difficulty, io_extensions::TerraReadExt,
+    item::Item, loadout::Loadout, prefix::Prefix, spawnpoint::Spawnpoint, Color, AMMO_COUNT,
+    BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT, COINS_COUNT,
+    CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES, EQUIPMENT_COUNT, FEMALE_SKIN_VARIANTS,
+    INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER, MALE_SKIN_VARIANTS, SPAWNPOINT_LIMIT,
     TEMPORARY_SLOT_COUNT, TICKS_PER_MICROSECOND,
 };
 
 // TODO: Seperate & implement these properly
-#[derive(Default, Clone, Debug)]
-pub struct Spawnpoint;
-
 #[derive(Default, Clone, Debug)]
 pub struct JourneyPowerManager;
 
@@ -318,6 +316,239 @@ impl Player {
 
         if self.version >= 72 {
             self.hair_dye = reader.read_u8()?;
+        }
+
+        self.loadouts[0].load_visuals(&mut reader, self.version, true)?;
+
+        if self.version >= 119 {
+            let bb1 = BoolByte::from(reader.read_u8()?);
+
+            for i in 0..(EQUIPMENT_COUNT as u8) {
+                self.hide_equipment[i as usize] = bb1.get(i)?;
+            }
+        }
+
+        if self.version <= 17 {
+            if FEMALE_SKIN_VARIANTS.contains(&self.hair_style) {
+                self.male = false;
+                self.skin_variant = 4;
+            }
+        } else if self.version <= 106 {
+            self.male = reader.read_bool()?;
+            if self.male {
+                self.skin_variant = 4
+            }
+        } else {
+            self.skin_variant = reader.read_u8()?;
+
+            self.male = MALE_SKIN_VARIANTS.contains(&(self.skin_variant as i32));
+
+            if self.version <= 160 && self.skin_variant == 7 {
+                self.skin_variant = 9;
+            }
+        }
+
+        self.life = reader.read_i32::<LE>()?;
+        self.max_life = reader.read_i32::<LE>()?;
+        self.mana = reader.read_i32::<LE>()?;
+        self.max_mana = reader.read_i32::<LE>()?;
+
+        if self.version >= 125 {
+            self.demon_heart = reader.read_bool()?;
+
+            if self.version >= 229 {
+                self.biome_torches = reader.read_bool()?;
+                self.biome_torches_enabled = reader.read_bool()?;
+
+                if self.version >= 256 {
+                    self.artisan_loaf = reader.read_bool()?;
+
+                    if self.version >= 260 {
+                        self.vital_crystal = reader.read_bool()?;
+                        self.aegis_fruit = reader.read_bool()?;
+                        self.arcane_crystal = reader.read_bool()?;
+                        self.galaxy_pearl = reader.read_bool()?;
+                        self.gummy_worm = reader.read_bool()?;
+                        self.ambrosia = reader.read_bool()?;
+                    }
+                }
+            }
+        }
+
+        if self.version >= 182 {
+            self.defeated_dd2 = reader.read_bool()?;
+        }
+
+        if self.version >= 182 {
+            self.tax_money = reader.read_i32::<LE>()?;
+        }
+
+        if self.version >= 256 {
+            self.pve_deaths = reader.read_i32::<LE>()?;
+            self.pvp_deaths = reader.read_i32::<LE>()?;
+        }
+
+        self.hair_color = reader.read_rgb()?;
+        self.skin_color = reader.read_rgb()?;
+        self.eye_color = reader.read_rgb()?;
+        self.shirt_color = reader.read_rgb()?;
+        self.undershirt_color = reader.read_rgb()?;
+        self.pants_color = reader.read_rgb()?;
+        self.shoe_color = reader.read_rgb()?;
+
+        self.loadouts[0].load(&mut reader, prefixes, items, self.version, false)?;
+
+        let inventory_count = if self.version >= 58 { 50 } else { 40 };
+
+        for i in 0..inventory_count {
+            self.inventory[i].load(
+                &mut reader,
+                items,
+                prefixes,
+                true,
+                false,
+                true,
+                true,
+                self.version >= 114,
+            )?;
+        }
+
+        for i in 0..COINS_COUNT {
+            self.coins[i].load(
+                &mut reader,
+                items,
+                prefixes,
+                true,
+                false,
+                true,
+                true,
+                self.version >= 114,
+            )?;
+        }
+
+        for i in 0..AMMO_COUNT {
+            self.ammo[i].load(
+                &mut reader,
+                items,
+                prefixes,
+                true,
+                false,
+                true,
+                true,
+                self.version >= 114,
+            )?;
+        }
+
+        if self.version >= 117 {
+            let start = if self.version >= 136 { 0 } else { 1 };
+
+            for i in start..EQUIPMENT_COUNT {
+                self.equipment[i].load(
+                    &mut reader,
+                    items,
+                    prefixes,
+                    true,
+                    false,
+                    false,
+                    true,
+                    false,
+                )?;
+                self.equipment_dyes[i].load(
+                    &mut reader,
+                    items,
+                    prefixes,
+                    true,
+                    false,
+                    false,
+                    true,
+                    false,
+                )?;
+            }
+        }
+
+        let bank_count = if self.version >= 58 { 40 } else { 20 };
+
+        for i in 0..bank_count {
+            self.piggy_bank[i].load(
+                &mut reader,
+                items,
+                prefixes,
+                true,
+                false,
+                true,
+                true,
+                false,
+            )?;
+        }
+
+        if self.version >= 20 {
+            for i in 0..bank_count {
+                self.safe[i].load(&mut reader, items, prefixes, true, false, true, true, false)?;
+            }
+        }
+
+        if self.version >= 182 {
+            for i in 0..bank_count {
+                self.defenders_forge[i].load(
+                    &mut reader,
+                    items,
+                    prefixes,
+                    true,
+                    false,
+                    true,
+                    true,
+                    false,
+                )?;
+            }
+        }
+
+        if self.version >= 198 {
+            for i in 0..bank_count {
+                self.void_vault[i].load(
+                    &mut reader,
+                    items,
+                    prefixes,
+                    true,
+                    false,
+                    true,
+                    true,
+                    self.version >= 255,
+                )?;
+            }
+
+            if self.version >= 199 {
+                let bb1 = BoolByte::from(reader.read_u8()?);
+                self.void_vault_enabled = bb1.get(0)?;
+            }
+        }
+
+        if self.version >= 11 {
+            let buff_count = if self.version >= 252 {
+                44
+            } else if self.version >= 74 {
+                22
+            } else {
+                10
+            };
+
+            for i in 0..buff_count {
+                self.buffs[i].load(&mut reader, buffs)?;
+            }
+        }
+
+        for _ in 0..SPAWNPOINT_LIMIT {
+            let x = reader.read_i32::<LE>()?;
+            if x == -1 {
+                break;
+            }
+
+            let y = reader.read_i32::<LE>()?;
+            let id = reader.read_i32::<LE>()?;
+            let name = reader.read_lpstring()?;
+
+            let spawnpoint = Spawnpoint { x, y, id, name };
+
+            self.spawnpoints.push(spawnpoint);
         }
 
         todo!("Player.load()")
