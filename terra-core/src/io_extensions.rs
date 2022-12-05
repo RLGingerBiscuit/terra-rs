@@ -72,6 +72,13 @@ pub trait TerraReadExt: io::Read {
         let mut buf = Vec::new();
         buf.resize(length, 0);
 
+        // TODO: For some reason, this is not reading the full number of bytes
+        // Length = 15
+        // String (that does exist) = 'GhostarSkullPin'
+        // String read = 'GhostarSkull\0\0\0'
+        // Returned = 12
+        // Maybe it's something do to with aes-stream?
+        // If so, I could remove it and instead just output it all into a .dat or something
         let _ = self.read(&mut buf)?;
         let string = String::from_utf8(buf.clone()).unwrap();
 

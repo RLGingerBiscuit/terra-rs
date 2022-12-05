@@ -626,7 +626,11 @@ impl Player {
         if self.version >= 218 {
             let research_count = reader.read_i32::<LE>()?;
 
-            for _ in 0..research_count {
+            for i in 0..research_count {
+                if i == 1730 {
+                    todo!("TODO: See TerraReadExt::read_lpstring()");
+                }
+
                 let research_item = Item::load_new(
                     &mut reader,
                     items,
