@@ -7,16 +7,13 @@ use crypto::aessafe::AesSafe128Decryptor;
 
 use crate::{
     bool_byte::BoolByte, buff::Buff, difficulty::Difficulty, io_extensions::TerraReadExt,
-    item::Item, loadout::Loadout, prefix::Prefix, spawnpoint::Spawnpoint, utils, Color, AMMO_COUNT,
-    BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT, COINS_COUNT,
-    CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES, EQUIPMENT_COUNT, FEMALE_SKIN_VARIANTS,
-    INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER, MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME,
+    item::Item, journey_powers::JourneyPowers, loadout::Loadout, prefix::Prefix,
+    spawnpoint::Spawnpoint, utils, Color, AMMO_COUNT, BANK_COUNT, BUFF_COUNT,
+    BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION,
+    DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES, EQUIPMENT_COUNT, FEMALE_SKIN_VARIANTS, INVENTORY_COUNT,
+    LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER, MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME,
     SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT, TICKS_PER_MICROSECOND,
 };
-
-// TODO: Seperate & implement these properly
-#[derive(Default, Clone, Debug)]
-pub struct JourneyPowerManager;
 
 #[derive(thiserror::Error, Debug)]
 pub enum PlayerError {
@@ -126,7 +123,7 @@ pub struct Player {
 
     pub temporary_slots: [Item; TEMPORARY_SLOT_COUNT],
 
-    pub journey_powers: JourneyPowerManager,
+    pub journey_powers: JourneyPowers,
 
     pub super_cart: bool,
     pub super_cart_enabled: bool,
@@ -227,7 +224,7 @@ impl Default for Player {
 
             temporary_slots: std::array::from_fn(|_| Item::default()),
 
-            journey_powers: JourneyPowerManager::default(),
+            journey_powers: JourneyPowers::default(),
 
             super_cart: false,
             super_cart_enabled: false,

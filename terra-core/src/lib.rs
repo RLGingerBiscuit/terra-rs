@@ -51,3 +51,4 @@ pub mod player;
 pub mod prefix;
 pub mod spawnpoint;
 pub mod utils;
+pub mod journey_powers;
