@@ -860,6 +860,7 @@ dependencies = [
  "approx",
  "num-traits",
  "palette_derive",
+ "serde",
 ]
 
 [[package]]
@@ -1415,6 +1416,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-big-array"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3323f09a748af288c3dc2474ea6803ee81f118321775bffa3ac8f7e65c5e90e7"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "serde_derive"
 version = "1.0.148"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1590,6 +1600,7 @@ dependencies = [
  "palette",
  "rust-crypto",
  "serde",
+ "serde-big-array",
  "serde_json",
  "serde_repr",
  "thiserror",
@@ -1616,6 +1627,8 @@ name = "terra-tui"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "serde",
+ "serde_json",
  "terra-core",
 ]
 

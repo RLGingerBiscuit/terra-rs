@@ -1,3 +1,5 @@
+use std::{fs::OpenOptions, io::BufWriter};
+
 use anyhow::Result;
 
 use terra_core::{buff::Buff, item::Item, player::Player, prefix::Prefix, utils::get_player_dir};
@@ -24,6 +26,19 @@ fn main() -> Result<()> {
     plr.load(&filepath, &prefixes, &items, &buffs)?;
 
     println!("Current Player Name: {}", plr.name);
+
+    // Serde Serialization
+    {
+        let mut json_file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .append(false)
+            .open(player_dir.join(format!("{}.json", chara_name)))?;
+
+        let mut json_writer = BufWriter::new(&mut json_file);
+
+        serde_json::to_writer_pretty(&mut json_writer, &plr)?;
+    }
 
     let outpath = player_dir.join(format!("{}_The_Second.plr", chara_name));
     plr.name = "Pogo The Second".to_string();
