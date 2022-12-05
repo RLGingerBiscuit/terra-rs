@@ -90,7 +90,7 @@ impl Item {
             return Err(ItemError::NoIdOrInternalName.into());
         }
 
-        let mut internal_name_string = String::new();
+        let mut internal_name_string = "".to_string();
 
         if id {
             self.id = reader.read_i32::<LE>()?

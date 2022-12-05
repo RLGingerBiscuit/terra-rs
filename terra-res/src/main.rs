@@ -369,7 +369,7 @@ fn main() -> Result<()> {
     serde_json::to_writer_pretty(json_prefix_writer, &prefix_info)?;
 
     // Pretty scuffed but works for now
-    let mut build_type = String::new();
+    let mut build_type = "".to_string();
     File::open("./terra-res/build_type.txt")?.read_to_string(&mut build_type)?;
 
     let target_dir = PathBuf::from("./target").join(&build_type);
