@@ -4,12 +4,12 @@ use std::{
 };
 
 use anyhow::Result;
-use byteorder::{ReadBytesExt, WriteBytesExt, LE};
+use byteorder::{ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Prefix {
-    pub id: i32,
+    pub id: u8,
     pub name: String,
     pub internal_name: String,
 }
@@ -47,7 +47,7 @@ impl Prefix {
     }
 
     pub fn load(&mut self, reader: &mut dyn Read, prefixes: &Vec<Self>) -> Result<()> {
-        self.id = reader.read_i32::<LE>()?;
+        self.id = reader.read_u8()?;
 
         if self.id != 0 {
             if let Some(prefix) = prefixes.iter().filter(|p| p.id == self.id).next() {
@@ -62,7 +62,7 @@ impl Prefix {
     }
 
     pub fn save(&self, writer: &mut dyn Write) -> Result<()> {
-        writer.write_i32::<LE>(self.id)?;
+        writer.write_u8(self.id)?;
 
         Ok(())
     }
