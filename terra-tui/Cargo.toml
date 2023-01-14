@@ -4,8 +4,10 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-terra-core = { path = "../terra-core" }
 anyhow = "1.0.66"
+thiserror = "1.0.37"
+
+terra-core = { path = "../terra-core" }
 
 serde = "1.0.148"
 serde_json = "1.0.89"

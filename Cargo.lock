@@ -1630,6 +1630,7 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-core",
+ "thiserror",
 ]
 
 [[package]]
