@@ -1,7 +1,9 @@
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[repr(u8)]
-#[derive(Default, Clone, Debug, Serialize_repr, Deserialize_repr)]
+#[derive(
+    Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize_repr, Deserialize_repr,
+)]
 pub enum Difficulty {
     #[default]
     Classic = 0,
@@ -32,5 +34,17 @@ impl From<Difficulty> for u8 {
             Difficulty::Journey => 3,
             Difficulty::Unknown => 255,
         }
+    }
+}
+
+impl PartialEq<u8> for Difficulty {
+    fn eq(&self, other: &u8) -> bool {
+        &u8::from(self.clone()) == other
+    }
+}
+
+impl PartialEq<Difficulty> for u8 {
+    fn eq(&self, other: &Difficulty) -> bool {
+        self == &u8::from(other.clone())
     }
 }
