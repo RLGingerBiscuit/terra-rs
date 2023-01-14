@@ -154,7 +154,7 @@ impl Loadout {
     }
 
     pub fn save_visuals(
-        &mut self,
+        &self,
         writer: &mut dyn Write,
         version: i32,
         bb_visuals: bool,
