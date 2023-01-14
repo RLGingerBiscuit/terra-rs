@@ -90,8 +90,8 @@ fn main() -> Result<()> {
         match run_test(version, &player_dir, &items, &buffs, &prefixes) {
             Ok(_) => println!("v{} loaded/saved successfully", version),
             Err(err) => match err {
-                TestError::Load(err) => println!("Error whilst loading: {}", err),
-                TestError::Save(err) => println!("Error whilst saving: {}", err),
+                TestError::Load(err) => println!("Error whilst loading\n---\n{:?}\n---", err),
+                TestError::Save(err) => println!("Error whilst saving\n---\n{:?}\n---", err),
                 TestError::Comparison => println!("Saved file was not the same as the loaded file"),
             },
         }
