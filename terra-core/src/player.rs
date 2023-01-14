@@ -1,4 +1,9 @@
-use std::{fs::File, io::ErrorKind, path::PathBuf, str::FromStr};
+use std::{
+    fs::File,
+    io::{ErrorKind, Write},
+    path::PathBuf,
+    str::FromStr,
+};
 
 use aesstream::{AesReader, AesWriter};
 use anyhow::Result;
@@ -689,27 +694,7 @@ impl Player {
         Ok(())
     }
 
-    pub fn save(&self, filepath: impl Into<PathBuf>) -> Result<()> {
-        let filepath = filepath.into();
-
-        let file = match File::create(&filepath) {
-            Ok(f) => f,
-            Err(e) => {
-                return Err(match e.kind() {
-                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
-                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
-                    _ => PlayerError::Failure(filepath),
-                }
-                .into())
-            }
-        };
-
-        let encryptor = AesSafe128Encryptor::new(ENCRYPTION_BYTES);
-        let mut writer = match AesWriter::new_with_iv(file, encryptor, ENCRYPTION_BYTES) {
-            Ok(r) => r,
-            Err(_) => return Err(PlayerError::Failure(filepath).into()),
-        };
-
+    fn _save(&self, writer: &mut dyn Write) -> Result<()> {
         writer.write_i32::<LE>(self.version)?;
 
         if self.version >= 135 {
@@ -736,7 +721,7 @@ impl Player {
             writer.write_u8(self.hair_dye)?;
         }
 
-        self.loadouts[0].save_visuals(&mut writer, self.version, true)?;
+        self.loadouts[0].save_visuals(writer, self.version, true)?;
 
         if self.version >= 119 {
             let mut bb = BoolByte::default();
@@ -802,59 +787,52 @@ impl Player {
         writer.write_rgb(&self.pants_color)?;
         writer.write_rgb(&self.shoe_color)?;
 
-        self.loadouts[0].save(&mut writer, self.version, false)?;
+        self.loadouts[0].save(writer, self.version, false)?;
 
         let inventory_count = if self.version >= 58 { 50 } else { 40 };
 
         for i in 0..inventory_count {
-            self.inventory[i].save(&mut writer, true, false, true, true, self.version >= 114)?;
+            self.inventory[i].save(writer, true, false, true, true, self.version >= 114)?;
         }
 
         for i in 0..COINS_COUNT {
-            self.coins[i].save(&mut writer, true, false, true, true, self.version >= 114)?;
+            self.coins[i].save(writer, true, false, true, true, self.version >= 114)?;
         }
 
         for i in 0..AMMO_COUNT {
-            self.ammo[i].save(&mut writer, true, false, true, true, self.version >= 114)?;
+            self.ammo[i].save(writer, true, false, true, true, self.version >= 114)?;
         }
 
         if self.version >= 117 {
             let start = if self.version >= 136 { 0 } else { 1 };
 
             for i in start..EQUIPMENT_COUNT {
-                self.equipment[i].save(&mut writer, true, false, false, true, false)?;
-                self.equipment_dyes[i].save(&mut writer, true, false, false, true, false)?;
+                self.equipment[i].save(writer, true, false, false, true, false)?;
+                self.equipment_dyes[i].save(writer, true, false, false, true, false)?;
             }
         }
 
         let bank_count = if self.version >= 58 { 40 } else { 20 };
 
         for i in 0..bank_count {
-            self.piggy_bank[i].save(&mut writer, true, false, true, true, false)?;
+            self.piggy_bank[i].save(writer, true, false, true, true, false)?;
         }
 
         if self.version >= 20 {
             for i in 0..bank_count {
-                self.safe[i].save(&mut writer, true, false, true, true, false)?;
+                self.safe[i].save(writer, true, false, true, true, false)?;
             }
         }
 
         if self.version >= 182 {
             for i in 0..bank_count {
-                self.defenders_forge[i].save(&mut writer, true, false, true, true, false)?;
+                self.defenders_forge[i].save(writer, true, false, true, true, false)?;
             }
         }
 
         if self.version >= 198 {
             for i in 0..bank_count {
-                self.void_vault[i].save(
-                    &mut writer,
-                    true,
-                    false,
-                    true,
-                    true,
-                    self.version >= 255,
-                )?;
+                self.void_vault[i].save(writer, true, false, true, true, self.version >= 255)?;
             }
 
             if self.version >= 199 {
@@ -874,7 +852,7 @@ impl Player {
             };
 
             for i in 0..buff_count {
-                self.buffs[i].save(&mut writer)?;
+                self.buffs[i].save(writer)?;
             }
         }
 
@@ -945,7 +923,7 @@ impl Player {
             writer.write_i32::<LE>(self.research.len() as i32)?;
 
             for item in &self.research {
-                item.save(&mut writer, false, true, true, false, false)?;
+                item.save(writer, false, true, true, false, false)?;
             }
         }
 
@@ -963,12 +941,12 @@ impl Player {
                     continue;
                 }
 
-                slot.save(&mut writer, true, false, true, true, false)?;
+                slot.save(writer, true, false, true, true, false)?;
             }
         }
 
         if self.version >= 220 {
-            self.journey_powers.save(&mut writer)?;
+            self.journey_powers.save(writer)?;
         }
 
         if self.version >= 253 {
@@ -984,12 +962,54 @@ impl Player {
             writer.write_i32::<LE>(self.current_loadout_index)?;
 
             for i in 1..LOADOUT_COUNT {
-                self.loadouts[i].save(&mut writer, self.version, true)?;
-                self.loadouts[i].save_visuals(&mut writer, self.version, false)?;
+                self.loadouts[i].save(writer, self.version, true)?;
+                self.loadouts[i].save_visuals(writer, self.version, false)?;
             }
         }
 
         Ok(())
+    }
+
+    pub fn save(&self, filepath: impl Into<PathBuf>) -> Result<()> {
+        let filepath = filepath.into();
+
+        let file = match File::create(&filepath) {
+            Ok(f) => f,
+            Err(e) => {
+                return Err(match e.kind() {
+                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
+                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
+                    _ => PlayerError::Failure(filepath),
+                }
+                .into())
+            }
+        };
+
+        let encryptor = AesSafe128Encryptor::new(ENCRYPTION_BYTES);
+        let mut writer = match AesWriter::new_with_iv(file, encryptor, ENCRYPTION_BYTES) {
+            Ok(r) => r,
+            Err(_) => return Err(PlayerError::Failure(filepath).into()),
+        };
+
+        self._save(&mut writer)
+    }
+
+    pub fn save_decrypted(&self, filepath: impl Into<PathBuf>) -> Result<()> {
+        let filepath = filepath.into();
+
+        let mut file = match File::create(&filepath) {
+            Ok(f) => f,
+            Err(e) => {
+                return Err(match e.kind() {
+                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
+                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
+                    _ => PlayerError::Failure(filepath),
+                }
+                .into())
+            }
+        };
+
+        self._save(&mut file)
     }
 
     pub fn has_item(&self, id: i32) -> bool {

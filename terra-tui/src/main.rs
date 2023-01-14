@@ -40,8 +40,13 @@ fn run_test(
     println!("\tName: {}", &plr.name);
 
     let out_filepath = directory.join(format!("{}.saved.plr", &chara_name));
+    let out_d_filepath = directory.join(format!("{}.saved.dplr", &chara_name));
 
     if let Err(err) = plr.save(&out_filepath) {
+        return Err(TestError::Save(err));
+    }
+
+    if let Err(err) = plr.save_decrypted(&out_d_filepath) {
         return Err(TestError::Save(err));
     }
 
