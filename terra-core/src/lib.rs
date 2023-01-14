@@ -44,6 +44,7 @@ pub type Color = Rgb<Srgb, u8>;
 pub mod bool_byte;
 pub mod buff;
 pub mod difficulty;
+pub mod file_type;
 pub mod io_extensions;
 pub mod item;
 pub mod journey_powers;
