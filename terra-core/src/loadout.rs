@@ -172,7 +172,7 @@ impl Loadout {
                 let mut bb2 = BoolByte::default();
 
                 for i in 0u8..2 {
-                    bb2.set(i, self.hide_visual[i as usize])?;
+                    bb2.set(i, self.hide_visual[(i + 8) as usize])?;
                 }
 
                 writer.write_u8(u8::from(bb2))?;
