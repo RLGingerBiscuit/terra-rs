@@ -21,19 +21,19 @@ use crate::{
 #[derive(thiserror::Error, Debug)]
 pub enum PlayerError {
     #[error("Unknown error with file '{0}.")]
-    Failure(String),
+    Failure(PathBuf),
     #[error("The file '{0}' cannot be read by the user.")]
-    AccessDenied(String),
+    AccessDenied(PathBuf),
     #[error("The file '{0}' was not found.")]
-    FileNotFound(String),
+    FileNotFound(PathBuf),
     #[error("The file '{0}' is for a newer version of Terraria ({1}) than terra-rs supports (<= {CURRENT_VERSION}).")]
-    PostDated(String, i32),
+    PostDated(PathBuf, i32),
     #[error("The file '{0}' is corrupted.")]
-    Corrupted(String),
+    Corrupted(PathBuf),
     #[error("Expected Re-Logic file format in '{0}'.")]
-    IncorrectFormat(String),
+    IncorrectFormat(PathBuf),
     #[error("Found incorrect file type in '{0}'.")]
-    IncorrectFileType(String),
+    IncorrectFileType(PathBuf),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -253,16 +253,15 @@ impl Player {
         items: &Vec<Item>,
         buffs: &Vec<Buff>,
     ) -> Result<()> {
-        let filepath_buf: PathBuf = filepath.into();
-        let filepath_string: String = filepath_buf.clone().into_os_string().into_string().unwrap();
+        let filepath: PathBuf = filepath.into();
 
-        let file = match File::open(&filepath_buf) {
+        let file = match File::open(&filepath) {
             Ok(f) => f,
             Err(e) => {
                 return Err(match e.kind() {
-                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath_string),
-                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath_string),
-                    _ => PlayerError::Failure(filepath_string),
+                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
+                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
+                    _ => PlayerError::Failure(filepath),
                 }
                 .into())
             }
@@ -271,13 +270,13 @@ impl Player {
         let decryptor = AesSafe128Decryptor::new(ENCRYPTION_BYTES);
         let mut reader = match AesReader::new_with_iv(file, decryptor, ENCRYPTION_BYTES) {
             Ok(r) => r,
-            Err(_) => return Err(PlayerError::Failure(filepath_string).into()),
+            Err(_) => return Err(PlayerError::Failure(filepath).into()),
         };
 
         self.version = reader.read_i32::<LE>()?;
 
         if self.version > CURRENT_VERSION {
-            return Err(PlayerError::PostDated(filepath_string, self.version).into());
+            return Err(PlayerError::PostDated(filepath, self.version).into());
         }
 
         if self.version >= 135 {
@@ -286,7 +285,7 @@ impl Player {
 
             // Both MAGIC_MASK and MAGIC_NUMBER were taken directly from Terraria's exe
             if magic_num & MAGIC_MASK != MAGIC_NUMBER {
-                return Err(PlayerError::IncorrectFormat(filepath_string).into());
+                return Err(PlayerError::IncorrectFormat(filepath).into());
             }
 
             // The file type of the file
@@ -295,7 +294,7 @@ impl Player {
             //  World = 2
             // Player = 3
             if (magic_num >> 56) & 255 != 3 {
-                return Err(PlayerError::IncorrectFileType(filepath_string).into());
+                return Err(PlayerError::IncorrectFileType(filepath).into());
             }
 
             // This u32 is a 'revision' field, that is only used for type 1 files (Map)
