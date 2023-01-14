@@ -1,21 +1,29 @@
 use std::{fs::File, io::ErrorKind, path::PathBuf, str::FromStr};
 
-use aesstream::AesReader;
+use aesstream::{AesReader, AesWriter};
 use anyhow::Result;
-use byteorder::{ReadBytesExt, LE};
-use crypto::aessafe::AesSafe128Decryptor;
+use byteorder::{ReadBytesExt, WriteBytesExt, LE};
+use crypto::aessafe::{AesSafe128Decryptor, AesSafe128Encryptor};
 use serde::{Deserialize, Serialize};
 
 use serde_big_array::BigArray;
 
 use crate::{
-    bool_byte::BoolByte, buff::Buff, difficulty::Difficulty, file_type::FileType,
-    io_extensions::TerraReadExt, item::Item, journey_powers::JourneyPowers, loadout::Loadout,
-    prefix::Prefix, spawnpoint::Spawnpoint, utils, Color, AMMO_COUNT, BANK_COUNT, BUFF_COUNT,
-    BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION,
-    DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES, EQUIPMENT_COUNT, FEMALE_SKIN_VARIANTS, INVENTORY_COUNT,
-    LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER, MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME,
-    SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT, TICKS_PER_MICROSECOND,
+    bool_byte::BoolByte,
+    buff::Buff,
+    difficulty::Difficulty,
+    file_type::FileType,
+    io_extensions::{TerraReadExt, TerraWriteExt},
+    item::Item,
+    journey_powers::JourneyPowers,
+    loadout::Loadout,
+    prefix::Prefix,
+    spawnpoint::Spawnpoint,
+    utils, Color, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
+    CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES,
+    EQUIPMENT_COUNT, FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK,
+    MAGIC_NUMBER, MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT,
+    TICKS_PER_MICROSECOND,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -321,10 +329,10 @@ impl Player {
         self.loadouts[0].load_visuals(&mut reader, self.version, true)?;
 
         if self.version >= 119 {
-            let bb1 = BoolByte::from(reader.read_u8()?);
+            let bb = BoolByte::from(reader.read_u8()?);
 
             for i in 0..(EQUIPMENT_COUNT as u8) {
-                self.hide_equipment[i as usize] = bb1.get(i)?;
+                self.hide_equipment[i as usize] = bb.get(i)?;
             }
         }
 
@@ -379,7 +387,7 @@ impl Player {
             self.defeated_dd2 = reader.read_bool()?;
         }
 
-        if self.version >= 182 {
+        if self.version >= 128 {
             self.tax_money = reader.read_i32::<LE>()?;
         }
 
@@ -517,8 +525,8 @@ impl Player {
             }
 
             if self.version >= 199 {
-                let bb1 = BoolByte::from(reader.read_u8()?);
-                self.void_vault_enabled = bb1.get(0)?;
+                let bb = BoolByte::from(reader.read_u8()?);
+                self.void_vault_enabled = bb.get(0)?;
             }
         }
 
@@ -556,7 +564,7 @@ impl Player {
         }
 
         if self.version >= 115 {
-            for i in self.hide_cellphone_info.iter_mut() {
+            for i in &mut self.hide_cellphone_info {
                 *i = reader.read_bool()?;
             }
         }
@@ -566,7 +574,7 @@ impl Player {
         }
 
         if self.version >= 162 {
-            for b in self.dpad_bindings.iter_mut() {
+            for b in &mut self.dpad_bindings {
                 *b = reader.read_i32::<LE>()?;
             }
         }
@@ -637,10 +645,10 @@ impl Player {
         }
 
         if self.version >= 214 {
-            let bb1 = BoolByte::from(reader.read_u8()?);
+            let bb = BoolByte::from(reader.read_u8()?);
 
             for i in 0..TEMPORARY_SLOT_COUNT {
-                if bb1.get(i as u8)? {
+                if bb.get(i as u8)? {
                     self.temporary_slots[i].load(
                         &mut reader,
                         items,
@@ -682,7 +690,306 @@ impl Player {
     }
 
     pub fn save(&self, filepath: impl Into<PathBuf>) -> Result<()> {
-        todo!("Player.save()")
+        let filepath = filepath.into();
+
+        let file = match File::create(&filepath) {
+            Ok(f) => f,
+            Err(e) => {
+                return Err(match e.kind() {
+                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
+                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
+                    _ => PlayerError::Failure(filepath),
+                }
+                .into())
+            }
+        };
+
+        let encryptor = AesSafe128Encryptor::new(ENCRYPTION_BYTES);
+        let mut writer = match AesWriter::new_with_iv(file, encryptor, ENCRYPTION_BYTES) {
+            Ok(r) => r,
+            Err(_) => return Err(PlayerError::Failure(filepath).into()),
+        };
+
+        writer.write_i32::<LE>(self.version)?;
+
+        if self.version >= 135 {
+            writer.write_u64::<LE>(MAGIC_NUMBER | (3 << 56))?;
+            writer.write_u32::<LE>(self.revision)?;
+            writer.write_u64::<LE>(self.favourited)?;
+        }
+
+        writer.write_lpstring(&self.name)?;
+
+        if self.version >= 10 {
+            writer.write_u8(self.difficulty.clone().into())?;
+        } else {
+            writer.write_bool(self.difficulty == Difficulty::Hardcore)?;
+        }
+
+        if self.version >= 138 {
+            writer.write_i64::<LE>(self.playtime)?;
+        }
+
+        writer.write_i32::<LE>(self.hair_style)?;
+
+        if self.version >= 72 {
+            writer.write_u8(self.hair_dye)?;
+        }
+
+        self.loadouts[0].save_visuals(&mut writer, self.version, true)?;
+
+        if self.version >= 119 {
+            let mut bb = BoolByte::default();
+
+            for i in 0..(EQUIPMENT_COUNT as u8) {
+                bb.set(i, self.hide_equipment[i as usize])?;
+            }
+
+            writer.write_u8(bb.into())?;
+        }
+
+        if self.version <= 106 {
+            writer.write_bool(self.male)?;
+        } else {
+            writer.write_u8(self.skin_variant)?;
+        }
+
+        writer.write_i32::<LE>(self.life)?;
+        writer.write_i32::<LE>(self.max_life)?;
+        writer.write_i32::<LE>(self.mana)?;
+        writer.write_i32::<LE>(self.max_mana)?;
+
+        if self.version >= 125 {
+            writer.write_bool(self.demon_heart)?;
+
+            if self.version >= 229 {
+                writer.write_bool(self.biome_torches)?;
+                writer.write_bool(self.biome_torches_enabled)?;
+
+                if self.version >= 256 {
+                    writer.write_bool(self.artisan_loaf)?;
+
+                    if self.version >= 260 {
+                        writer.write_bool(self.vital_crystal)?;
+                        writer.write_bool(self.aegis_fruit)?;
+                        writer.write_bool(self.arcane_crystal)?;
+                        writer.write_bool(self.galaxy_pearl)?;
+                        writer.write_bool(self.gummy_worm)?;
+                        writer.write_bool(self.ambrosia)?;
+                    }
+                }
+            }
+        }
+
+        if self.version >= 182 {
+            writer.write_bool(self.defeated_dd2)?;
+        }
+
+        if self.version >= 128 {
+            writer.write_i32::<LE>(self.tax_money)?;
+        }
+
+        if self.version >= 257 {
+            writer.write_i32::<LE>(self.pve_deaths)?;
+            writer.write_i32::<LE>(self.pvp_deaths)?;
+        }
+
+        writer.write_rgb(&self.hair_color)?;
+        writer.write_rgb(&self.skin_color)?;
+        writer.write_rgb(&self.eye_color)?;
+        writer.write_rgb(&self.shirt_color)?;
+        writer.write_rgb(&self.undershirt_color)?;
+        writer.write_rgb(&self.pants_color)?;
+        writer.write_rgb(&self.shoe_color)?;
+
+        self.loadouts[0].save(&mut writer, self.version, false)?;
+
+        let inventory_count = if self.version >= 58 { 50 } else { 40 };
+
+        for i in 0..inventory_count {
+            self.inventory[i].save(&mut writer, true, false, true, true, self.version >= 114)?;
+        }
+
+        for i in 0..COINS_COUNT {
+            self.coins[i].save(&mut writer, true, false, true, true, self.version >= 114)?;
+        }
+
+        for i in 0..AMMO_COUNT {
+            self.ammo[i].save(&mut writer, true, false, true, true, self.version >= 114)?;
+        }
+
+        if self.version >= 117 {
+            let start = if self.version >= 136 { 0 } else { 1 };
+
+            for i in start..EQUIPMENT_COUNT {
+                self.equipment[i].save(&mut writer, true, false, false, true, false)?;
+                self.equipment_dyes[i].save(&mut writer, true, false, false, true, false)?;
+            }
+        }
+
+        let bank_count = if self.version >= 58 { 40 } else { 20 };
+
+        for i in 0..bank_count {
+            self.piggy_bank[i].save(&mut writer, true, false, true, true, false)?;
+        }
+
+        if self.version >= 20 {
+            for i in 0..bank_count {
+                self.safe[i].save(&mut writer, true, false, true, true, false)?;
+            }
+        }
+
+        if self.version >= 182 {
+            for i in 0..bank_count {
+                self.defenders_forge[i].save(&mut writer, true, false, true, true, false)?;
+            }
+        }
+
+        if self.version >= 198 {
+            for i in 0..bank_count {
+                self.void_vault[i].save(
+                    &mut writer,
+                    true,
+                    false,
+                    true,
+                    true,
+                    self.version >= 255,
+                )?;
+            }
+
+            if self.version >= 199 {
+                let mut bb = BoolByte::default();
+                bb.set(0, self.void_vault_enabled)?;
+                writer.write_u8(bb.into())?;
+            }
+        }
+
+        if self.version >= 11 {
+            let buff_count = if self.version >= 252 {
+                44
+            } else if self.version >= 74 {
+                22
+            } else {
+                10
+            };
+
+            for i in 0..buff_count {
+                self.buffs[i].save(&mut writer)?;
+            }
+        }
+
+        for spawnpoint in &self.spawnpoints {
+            writer.write_i32::<LE>(spawnpoint.x)?;
+            writer.write_i32::<LE>(spawnpoint.y)?;
+            writer.write_i32::<LE>(spawnpoint.id)?;
+            writer.write_lpstring(&spawnpoint.name)?;
+        }
+        writer.write_i32::<LE>(-1)?;
+
+        if self.version >= 16 {
+            writer.write_bool(self.locked_hotbar)?;
+        }
+
+        if self.version >= 115 {
+            for i in &self.hide_cellphone_info {
+                writer.write_bool(*i)?;
+            }
+        }
+
+        if self.version >= 98 {
+            writer.write_i32::<LE>(self.angler_quests)?
+        }
+
+        if self.version >= 162 {
+            for b in &self.dpad_bindings {
+                writer.write_i32::<LE>(*b)?;
+            }
+        }
+
+        if self.version >= 164 {
+            let status_count = if self.version >= 230 {
+                12
+            } else if self.version >= 197 {
+                11
+            } else if self.version >= 167 {
+                10
+            } else {
+                8
+            };
+
+            for i in 0..status_count {
+                writer.write_i32::<LE>(self.builder_accessory_status[i])?;
+            }
+        }
+
+        if self.version >= 181 {
+            writer.write_i32::<LE>(self.tavernkeep_quests)?;
+        }
+
+        if self.version >= 220 {
+            writer.write_bool(self.dead)?;
+            if self.dead {
+                writer.write_i32::<LE>(self.respawn_timer)?;
+            }
+        }
+
+        if self.version >= 202 {
+            writer.write_i64::<LE>(self.last_save)?;
+        }
+
+        if self.version >= 206 {
+            writer.write_i32::<LE>(self.golfer_score)?;
+        }
+
+        if self.version >= 218 {
+            writer.write_i32::<LE>(self.research.len() as i32)?;
+
+            for item in &self.research {
+                item.save(&mut writer, false, true, true, false, false)?;
+            }
+        }
+
+        if self.version >= 214 {
+            let mut bb = BoolByte::default();
+
+            for i in 0..(TEMPORARY_SLOT_COUNT as u8) {
+                bb.set(i, self.temporary_slots[i as usize].id != 0)?;
+            }
+
+            writer.write_u8(bb.into())?;
+
+            for slot in &self.temporary_slots {
+                if slot.id == 0 {
+                    continue;
+                }
+
+                slot.save(&mut writer, true, false, true, true, false)?;
+            }
+        }
+
+        if self.version >= 220 {
+            self.journey_powers.save(&mut writer)?;
+        }
+
+        if self.version >= 253 {
+            let mut bb = BoolByte::default();
+
+            bb.set(0, self.super_cart)?;
+            bb.set(1, self.super_cart_enabled)?;
+
+            writer.write_u8(bb.into())?;
+        }
+
+        if self.version >= 262 {
+            writer.write_i32::<LE>(self.current_loadout_index)?;
+
+            for i in 1..LOADOUT_COUNT {
+                self.loadouts[i].save(&mut writer, self.version, true)?;
+                self.loadouts[i].save_visuals(&mut writer, self.version, false)?;
+            }
+        }
+
+        Ok(())
     }
 
     pub fn has_item(&self, id: i32) -> bool {
