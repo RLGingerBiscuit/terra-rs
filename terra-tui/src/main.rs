@@ -14,8 +14,8 @@ pub enum TestError {
     Comparison,
 }
 
-const VERSIONS: [usize; 16] = [
-    39, 69, 73, 77, 93, 98, 145, 168, 175, 184, 190, 225, 230, 237, 248, 269,
+const VERSIONS: [usize; 17] = [
+    39, 69, 73, 77, 93, 98, 145, 168, 175, 184, 190, 225, 230, 237, 248, 269, 279,
 ];
 
 fn run_test(
@@ -36,6 +36,7 @@ fn run_test(
         return Err(TestError::Load(err));
     }
 
+    println!("Actual Version {}", &plr.version);
     println!("\tName: {}", &plr.name);
 
     let out_filepath = directory.join(format!("{}.saved.plr", &chara_name));
