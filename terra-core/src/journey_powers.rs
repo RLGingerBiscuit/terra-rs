@@ -28,7 +28,7 @@ impl From<u16> for JourneyPowerId {
         match value {
             5 => Self::Godmode,
             11 => Self::FarPlacement,
-            14 => Self::FarPlacement,
+            14 => Self::Spawnrate,
             _ => Self::Unknown,
         }
     }
@@ -73,8 +73,10 @@ impl JourneyPowers {
         writer.write_bool(true)?;
         writer.write_u16::<LE>(u16::from(JourneyPowerId::Godmode))?;
         writer.write_bool(self.godmode)?;
+        writer.write_bool(true)?;
         writer.write_u16::<LE>(u16::from(JourneyPowerId::FarPlacement))?;
         writer.write_bool(self.far_placement)?;
+        writer.write_bool(true)?;
         writer.write_u16::<LE>(u16::from(JourneyPowerId::Spawnrate))?;
         writer.write_f32::<LE>(self.spawnrate)?;
         writer.write_bool(false)?;
