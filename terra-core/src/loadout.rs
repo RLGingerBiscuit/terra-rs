@@ -57,7 +57,7 @@ impl Loadout {
             if version >= 38 {
                 armor.load(reader, items, prefixes, true, false, stack, prefix, false)?;
             } else {
-                armor.load_legacy_name(reader, items, prefixes, version, stack)?;
+                armor.load_legacy_name(reader, items, version, stack)?;
             }
         }
 
@@ -66,7 +66,7 @@ impl Loadout {
                 self.accessories[i]
                     .load(reader, items, prefixes, true, false, stack, prefix, false)?;
             } else {
-                self.accessories[i].load_legacy_name(reader, items, prefixes, version, stack)?;
+                self.accessories[i].load_legacy_name(reader, items, version, stack)?;
             }
         }
 
@@ -75,7 +75,7 @@ impl Loadout {
                 if version >= 38 {
                     vanity.load(reader, items, prefixes, true, false, stack, prefix, false)?;
                 } else {
-                    vanity.load_legacy_name(reader, items, prefixes, version, stack)?;
+                    vanity.load_legacy_name(reader, items, version, stack)?;
                 }
             }
         }

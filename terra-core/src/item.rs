@@ -181,7 +181,6 @@ impl Item {
         &mut self,
         reader: &mut dyn Read,
         items: &Vec<Self>,
-        prefixes: &Vec<Prefix>,
         version: i32,
         stack: bool,
     ) -> Result<()> {
