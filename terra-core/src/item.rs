@@ -106,6 +106,44 @@ impl Item {
         }
     }
 
+    fn reverse_legacy_lookup(version: i32, name: &String) -> String {
+        if version <= 4 {
+            if name == "Jungle Hat" {
+                "Cobalt Helmet".to_string()
+            } else if name == "Jungle Shirt" {
+                "Cobalt Breastplate".to_string()
+            } else if name == "Jungle Pants" {
+                "Cobalt Greaves".to_string()
+            } else {
+                name.to_owned()
+            }
+        } else if version <= 20 {
+            if name == "Gills Potion" {
+                "Gills potion".to_string()
+            } else if name == "Thorn Chakram" {
+                "Thork Chakrum".to_string()
+            } else if name == "Ball O' Hurt" {
+                "Ball 'O Hurt".to_string()
+            } else {
+                name.to_owned()
+            }
+        } else if version <= 41 && name == "Chain" {
+            "Iron Chain".to_string()
+        } else if version <= 44 && name == "Shadow Orb" {
+            "Orb of Light".to_string()
+        } else if version <= 46 {
+            if name == "Black Thread" {
+                "Black Dye".to_string()
+            } else if name == "Green Thread" {
+                "Green Dye".to_string()
+            } else {
+                name.to_owned()
+            }
+        } else {
+            name.to_owned()
+        }
+    }
+
     fn copy(&mut self, item: &Self) {
         self.id = item.id.clone();
         self.internal_name = item.internal_name.clone();
@@ -261,6 +299,23 @@ impl Item {
         }
         if favourited {
             writer.write_bool(self.favourited)?
+        }
+
+        Ok(())
+    }
+
+    pub fn save_legacy_name(
+        &self,
+        writer: &mut dyn Write,
+        version: i32,
+        stack: bool,
+    ) -> Result<()> {
+        let name = Self::reverse_legacy_lookup(version, &self.name);
+
+        writer.write_lpstring(&name)?;
+
+        if stack {
+            writer.write_i32::<LE>(self.stack)?;
         }
 
         Ok(())
