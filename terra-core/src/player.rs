@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{ErrorKind, Write},
+    io::{ErrorKind, Read, Write},
     path::PathBuf,
     str::FromStr,
 };
@@ -259,33 +259,14 @@ impl Default for Player {
 }
 
 impl Player {
-    pub fn load(
+    fn _load(
         &mut self,
-        filepath: impl Into<PathBuf>,
+        filepath: PathBuf,
+        reader: &mut dyn Read,
         prefixes: &Vec<Prefix>,
         items: &Vec<Item>,
         buffs: &Vec<Buff>,
     ) -> Result<()> {
-        let filepath: PathBuf = filepath.into();
-
-        let file = match File::open(&filepath) {
-            Ok(f) => f,
-            Err(e) => {
-                return Err(match e.kind() {
-                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
-                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
-                    _ => PlayerError::Failure(filepath),
-                }
-                .into())
-            }
-        };
-
-        let decryptor = AesSafe128Decryptor::new(ENCRYPTION_BYTES);
-        let mut reader = match AesReader::new_with_iv(file, decryptor, ENCRYPTION_BYTES) {
-            Ok(r) => r,
-            Err(_) => return Err(PlayerError::Failure(filepath).into()),
-        };
-
         self.version = reader.read_i32::<LE>()?;
 
         if self.version > CURRENT_VERSION {
@@ -334,7 +315,7 @@ impl Player {
         }
 
         if self.version >= 83 {
-            self.loadouts[0].load_visuals(&mut reader, self.version, true)?;
+            self.loadouts[0].load_visuals(reader, self.version, true)?;
         }
 
         if self.version >= 119 {
@@ -416,20 +397,13 @@ impl Player {
         let has_prefix = self.version >= 36;
         let has_favourited = self.version >= 114;
 
-        self.loadouts[0].load(
-            &mut reader,
-            prefixes,
-            items,
-            self.version,
-            false,
-            has_prefix,
-        )?;
+        self.loadouts[0].load(reader, prefixes, items, self.version, false, has_prefix)?;
 
         let inventory_count = if self.version >= 58 { 50 } else { 40 };
 
         for i in 0..inventory_count {
             self.inventory[i].load(
-                &mut reader,
+                reader,
                 items,
                 prefixes,
                 true,
@@ -442,7 +416,7 @@ impl Player {
 
         for i in 0..COINS_COUNT {
             self.coins[i].load(
-                &mut reader,
+                reader,
                 items,
                 prefixes,
                 true,
@@ -456,7 +430,7 @@ impl Player {
         if self.version >= 15 {
             for i in 0..AMMO_COUNT {
                 self.ammo[i].load(
-                    &mut reader,
+                    reader,
                     items,
                     prefixes,
                     true,
@@ -472,26 +446,9 @@ impl Player {
             let start = if self.version >= 136 { 0 } else { 1 };
 
             for i in start..EQUIPMENT_COUNT {
-                self.equipment[i].load(
-                    &mut reader,
-                    items,
-                    prefixes,
-                    true,
-                    false,
-                    false,
-                    true,
-                    false,
-                )?;
-                self.equipment_dyes[i].load(
-                    &mut reader,
-                    items,
-                    prefixes,
-                    true,
-                    false,
-                    false,
-                    true,
-                    false,
-                )?;
+                self.equipment[i].load(reader, items, prefixes, true, false, false, true, false)?;
+                self.equipment_dyes[i]
+                    .load(reader, items, prefixes, true, false, false, true, false)?;
             }
         }
 
@@ -499,58 +456,38 @@ impl Player {
 
         for i in 0..bank_count {
             self.piggy_bank[i].load(
-                &mut reader,
-                items,
-                prefixes,
-                true,
-                false,
-                true,
-                has_prefix,
-                false,
+                reader, items, prefixes, true, false, true, has_prefix, false,
             )?;
         }
 
         if self.version >= 20 {
             for i in 0..bank_count {
                 self.safe[i].load(
-                    &mut reader,
-                    items,
-                    prefixes,
-                    true,
-                    false,
-                    true,
-                    has_prefix,
-                    false,
+                    reader, items, prefixes, true, false, true, has_prefix, false,
                 )?;
             }
         }
 
         if self.version >= 182 {
             for i in 0..bank_count {
-                self.defenders_forge[i].load(
-                    &mut reader,
-                    items,
-                    prefixes,
-                    true,
-                    false,
-                    true,
-                    true,
-                    false,
-                )?;
+                self.defenders_forge[i]
+                    .load(reader, items, prefixes, true, false, true, true, false)?;
             }
         }
 
         if self.version >= 198 {
+            let has_favourited = self.version >= 255;
+            
             for i in 0..bank_count {
                 self.void_vault[i].load(
-                    &mut reader,
+                    reader,
                     items,
                     prefixes,
                     true,
                     false,
                     true,
                     true,
-                    self.version >= 255,
+                    has_favourited,
                 )?;
             }
 
@@ -581,7 +518,7 @@ impl Player {
             };
 
             for i in 0..buff_count {
-                self.buffs[i].load(&mut reader, buffs)?;
+                self.buffs[i].load(reader, buffs)?;
             }
         }
 
@@ -670,16 +607,8 @@ impl Player {
             let research_count = reader.read_i32::<LE>()?;
 
             for _ in 0..research_count {
-                let research_item = Item::load_new(
-                    &mut reader,
-                    items,
-                    prefixes,
-                    false,
-                    true,
-                    true,
-                    false,
-                    false,
-                )?;
+                let research_item =
+                    Item::load_new(reader, items, prefixes, false, true, true, false, false)?;
 
                 self.research.push(research_item);
             }
@@ -690,22 +619,14 @@ impl Player {
 
             for i in 0..TEMPORARY_SLOT_COUNT {
                 if bb.get(i as u8)? {
-                    self.temporary_slots[i].load(
-                        &mut reader,
-                        items,
-                        prefixes,
-                        true,
-                        false,
-                        true,
-                        true,
-                        false,
-                    )?;
+                    self.temporary_slots[i]
+                        .load(reader, items, prefixes, true, false, true, true, false)?;
                 }
             }
         }
 
         if self.version >= 220 {
-            self.journey_powers.load(&mut reader)?;
+            self.journey_powers.load(reader)?;
         }
 
         if self.version >= 253 {
@@ -722,12 +643,66 @@ impl Player {
             self.current_loadout_index = reader.read_i32::<LE>()?;
 
             for i in 1..LOADOUT_COUNT {
-                self.loadouts[i].load(&mut reader, prefixes, items, self.version, true, true)?;
-                self.loadouts[i].load_visuals(&mut reader, self.version, false)?;
+                self.loadouts[i].load(reader, prefixes, items, self.version, true, true)?;
+                self.loadouts[i].load_visuals(reader, self.version, false)?;
             }
         }
 
         Ok(())
+    }
+
+    pub fn load(
+        &mut self,
+        filepath: impl Into<PathBuf>,
+        prefixes: &Vec<Prefix>,
+        items: &Vec<Item>,
+        buffs: &Vec<Buff>,
+    ) -> Result<()> {
+        let filepath: PathBuf = filepath.into();
+
+        let file = match File::open(&filepath) {
+            Ok(f) => f,
+            Err(e) => {
+                return Err(match e.kind() {
+                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
+                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
+                    _ => PlayerError::Failure(filepath),
+                }
+                .into())
+            }
+        };
+
+        let decryptor = AesSafe128Decryptor::new(ENCRYPTION_BYTES);
+        let mut reader = match AesReader::new_with_iv(file, decryptor, ENCRYPTION_BYTES) {
+            Ok(r) => r,
+            Err(_) => return Err(PlayerError::Failure(filepath).into()),
+        };
+
+        self._load(filepath, &mut reader, prefixes, items, buffs)
+    }
+
+    pub fn load_decrypted(
+        &mut self,
+        filepath: impl Into<PathBuf>,
+        prefixes: &Vec<Prefix>,
+        items: &Vec<Item>,
+        buffs: &Vec<Buff>,
+    ) -> Result<()> {
+        let filepath = filepath.into();
+
+        let mut file = match File::open(&filepath) {
+            Ok(f) => f,
+            Err(e) => {
+                return Err(match e.kind() {
+                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
+                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
+                    _ => PlayerError::Failure(filepath),
+                }
+                .into())
+            }
+        };
+
+        self._load(filepath, &mut file, prefixes, items, buffs)
     }
 
     fn _save(&self, writer: &mut dyn Write) -> Result<()> {
