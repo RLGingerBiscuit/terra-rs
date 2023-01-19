@@ -202,7 +202,7 @@ impl Loadout {
                 bb.set(i, self.hide_visual[i as usize])?;
             }
 
-            writer.write_u8(u8::from(bb))?;
+            writer.write_u8(u8::from(&bb))?;
 
             if version >= 124 {
                 bb = BoolByte::default();
@@ -211,7 +211,7 @@ impl Loadout {
                     bb.set(i, self.hide_visual[(i + 8) as usize])?;
                 }
 
-                writer.write_u8(u8::from(bb))?;
+                writer.write_u8(u8::from(&bb))?;
             }
         } else {
             // We don't need to do version checking here since this only happens in 1.4.4+
