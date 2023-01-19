@@ -8,8 +8,8 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    io_extensions::{TerraReadExt, TerraWriteExt},
-    prefix::Prefix,
+    io::{TerraReadExt, TerraWriteExt},
+    Prefix,
 };
 
 #[derive(thiserror::Error, Debug)]

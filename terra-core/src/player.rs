@@ -14,20 +14,12 @@ use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
 use crate::{
-    bool_byte::BoolByte,
-    buff::Buff,
-    difficulty::Difficulty,
-    file_type::FileType,
-    io_extensions::{TerraReadExt, TerraWriteExt},
-    item::Item,
-    journey_powers::JourneyPowers,
-    loadout::Loadout,
-    prefix::Prefix,
-    spawnpoint::Spawnpoint,
-    utils, Color, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
-    CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES,
-    EQUIPMENT_COUNT, FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK,
-    MAGIC_NUMBER, MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT,
+    io::{TerraReadExt, TerraWriteExt},
+    utils, BoolByte, Buff, Color, Difficulty, FileType, Item, JourneyPowers, Loadout, Prefix,
+    Spawnpoint, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT,
+    COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES, EQUIPMENT_COUNT,
+    FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
+    MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT,
     TICKS_PER_MICROSECOND,
 };
 
@@ -477,7 +469,7 @@ impl Player {
 
         if self.version >= 198 {
             let has_favourited = self.version >= 255;
-            
+
             for i in 0..bank_count {
                 self.void_vault[i].load(
                     reader,

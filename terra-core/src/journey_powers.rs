@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use crate::{
-    difficulty::Difficulty,
-    io_extensions::{TerraReadExt, TerraWriteExt},
+    io::{TerraReadExt, TerraWriteExt},
+    Difficulty,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -72,11 +72,7 @@ impl JourneyPowers {
         Ok(())
     }
 
-    pub fn save(
-        &self,
-        writer: &mut dyn Write,
-        difficulty: &Difficulty,
-    ) -> Result<()> {
+    pub fn save(&self, writer: &mut dyn Write, difficulty: &Difficulty) -> Result<()> {
         if difficulty == &Difficulty::Journey {
             writer.write_bool(true)?;
             writer.write_u16::<LE>(u16::from(JourneyPowerId::Godmode))?;

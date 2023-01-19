@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use dirs_next::{data_local_dir, document_dir};
 
-use crate::item::Item;
+use crate::Item;
 
 pub fn get_terraria_dir() -> PathBuf {
     match std::env::consts::OS {

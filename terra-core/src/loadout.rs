@@ -5,11 +5,8 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    bool_byte::BoolByte,
-    io_extensions::{TerraReadExt, TerraWriteExt},
-    item::Item,
-    prefix::Prefix,
-    utils, ACCESSORY_COUNT, ARMOR_COUNT, HIDDEN_VISUAL_COUNT,
+    io::{TerraReadExt, TerraWriteExt},
+    utils, BoolByte, Item, Prefix, ACCESSORY_COUNT, ARMOR_COUNT, HIDDEN_VISUAL_COUNT,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
