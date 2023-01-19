@@ -722,7 +722,7 @@ impl Player {
             self.current_loadout_index = reader.read_i32::<LE>()?;
 
             for i in 1..LOADOUT_COUNT {
-                self.loadouts[i].load(&mut reader, prefixes, items, self.version, true, false)?;
+                self.loadouts[i].load(&mut reader, prefixes, items, self.version, true, true)?;
                 self.loadouts[i].load_visuals(&mut reader, self.version, false)?;
             }
         }
@@ -770,7 +770,7 @@ impl Player {
                 bb.set(i, self.hide_equipment[i as usize])?;
             }
 
-            writer.write_u8(bb.into())?;
+            writer.write_u8(u8::from(&bb))?;
         }
 
         if self.version <= 17 {
@@ -884,7 +884,7 @@ impl Player {
             if self.version >= 199 {
                 let mut bb = BoolByte::default();
                 bb.set(0, self.void_vault_enabled)?;
-                writer.write_u8(bb.into())?;
+                writer.write_u8(u8::from(&bb))?;
             }
         }
 
@@ -968,7 +968,7 @@ impl Player {
         if self.version >= 218 {
             writer.write_i32::<LE>(self.research.len() as i32)?;
 
-            for item in &self.research {
+            for item in self.research.iter() {
                 item.save(writer, false, true, true, false, false)?;
             }
         }
@@ -980,10 +980,12 @@ impl Player {
                 bb.set(i, self.temporary_slots[i as usize].id != 0)?;
             }
 
-            writer.write_u8(bb.into())?;
+            writer.write_u8(u8::from(&bb))?;
 
-            for slot in &self.temporary_slots {
-                if slot.id == 0 {
+            for i in 0..(TEMPORARY_SLOT_COUNT as u8) {
+                let slot = &self.temporary_slots[i as usize];
+
+                if !bb.get(i)? || slot.id == 0 {
                     continue;
                 }
 
@@ -992,7 +994,7 @@ impl Player {
         }
 
         if self.version >= 220 {
-            self.journey_powers.save(writer)?;
+            self.journey_powers.save(writer, &self.difficulty)?;
         }
 
         if self.version >= 253 {
@@ -1001,7 +1003,7 @@ impl Player {
             bb.set(0, self.super_cart)?;
             bb.set(1, self.super_cart_enabled)?;
 
-            writer.write_u8(bb.into())?;
+            writer.write_u8(u8::from(&bb))?;
         }
 
         if self.version >= 262 {
