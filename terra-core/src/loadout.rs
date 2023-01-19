@@ -49,38 +49,54 @@ impl Loadout {
         items: &Vec<Item>,
         version: i32,
         stack: bool,
+        prefix: bool,
     ) -> Result<()> {
         let accessory_count = if version >= 124 { 7 } else { 5 };
 
         for armor in self.armor.iter_mut() {
-            armor.load(reader, items, prefixes, true, false, stack, true, false)?;
+            if version >= 38 {
+                armor.load(reader, items, prefixes, true, false, stack, prefix, false)?;
+            } else {
+                armor.load_legacy_name(reader, items, prefixes, version, stack)?;
+            }
         }
 
         for i in 0..accessory_count {
-            self.accessories[i].load(reader, items, prefixes, true, false, stack, true, false)?;
+            if version >= 38 {
+                self.accessories[i]
+                    .load(reader, items, prefixes, true, false, stack, prefix, false)?;
+            } else {
+                self.accessories[i].load_legacy_name(reader, items, prefixes, version, stack)?;
+            }
         }
 
-        for vanity in self.vanity_armor.iter_mut() {
-            vanity.load(reader, items, prefixes, true, false, stack, true, false)?;
+        if version >= 6 {
+            for vanity in self.vanity_armor.iter_mut() {
+                if version >= 38 {
+                    vanity.load(reader, items, prefixes, true, false, stack, prefix, false)?;
+                } else {
+                    vanity.load_legacy_name(reader, items, prefixes, version, stack)?;
+                }
+            }
         }
 
         if version >= 38 {
             for i in 0..accessory_count {
                 self.vanity_accessories[i]
-                    .load(reader, items, prefixes, true, false, stack, true, false)?;
+                    .load(reader, items, prefixes, true, false, stack, prefix, false)?;
             }
         }
 
         if version >= 47 {
             for dye in self.armor_dyes.iter_mut() {
-                dye.load(reader, items, prefixes, true, false, stack, true, false)?;
+                dye.load(reader, items, prefixes, true, false, stack, prefix, false)?;
             }
         }
 
         if version >= 81 {
             for i in 0..accessory_count {
                 self.accessory_dyes[i]
-                    .load(reader, items, prefixes, true, false, stack, true, false)?;
+                    .load(reader, items, prefixes, true, false, stack, prefix, false)?;
             }
         }
 
@@ -94,17 +110,17 @@ impl Loadout {
         bb_visuals: bool,
     ) -> Result<()> {
         if bb_visuals {
-            let bb1 = BoolByte::from(reader.read_u8()?);
+            let mut bb = BoolByte::from(reader.read_u8()?);
 
             for i in 0u8..8 {
-                self.hide_visual[i as usize] = bb1.get(i)?;
+                self.hide_visual[i as usize] = bb.get(i)?;
             }
 
             if version >= 124 {
-                let bb2 = BoolByte::from(reader.read_u8()?);
+                bb = BoolByte::from(reader.read_u8()?);
 
                 for i in 0u8..2 {
-                    self.hide_visual[(i + 8) as usize] = bb2.get(i)?;
+                    self.hide_visual[(i + 8) as usize] = bb.get(i)?;
                 }
             }
         } else {
