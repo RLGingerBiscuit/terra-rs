@@ -563,11 +563,11 @@ impl Player {
         if self.version <= 57 {
             for i in 0..4 {
                 self.coins[i] = self.inventory[i + 40].clone();
-                self.inventory[i] = Item::default();
+                self.inventory[i + 40] = Item::default();
             }
             for i in 0..4 {
                 self.ammo[i] = self.inventory[i + 44].clone();
-                self.inventory[i] = Item::default();
+                self.inventory[i + 44] = Item::default();
             }
         }
 
@@ -605,7 +605,7 @@ impl Player {
         }
 
         if self.version >= 115 {
-            for i in &mut self.hide_cellphone_info {
+            for i in self.hide_cellphone_info.iter_mut() {
                 *i = reader.read_bool()?;
             }
         }
@@ -615,7 +615,7 @@ impl Player {
         }
 
         if self.version >= 162 {
-            for b in &mut self.dpad_bindings {
+            for b in self.dpad_bindings.iter_mut() {
                 *b = reader.read_i32::<LE>()?;
             }
         }
@@ -722,7 +722,7 @@ impl Player {
             self.current_loadout_index = reader.read_i32::<LE>()?;
 
             for i in 1..LOADOUT_COUNT {
-                self.loadouts[i].load(&mut reader, prefixes, items, self.version, true, true)?;
+                self.loadouts[i].load(&mut reader, prefixes, items, self.version, true, false)?;
                 self.loadouts[i].load_visuals(&mut reader, self.version, false)?;
             }
         }
