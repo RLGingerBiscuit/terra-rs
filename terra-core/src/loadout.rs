@@ -133,36 +133,56 @@ impl Loadout {
         Ok(())
     }
 
-    pub fn save(&self, writer: &mut dyn Write, version: i32, stack: bool) -> Result<()> {
+    pub fn save(
+        &self,
+        writer: &mut dyn Write,
+        version: i32,
+        stack: bool,
+        prefix: bool,
+    ) -> Result<()> {
         let accessory_count = if version >= 124 { 7 } else { 5 };
 
         for armor in self.armor.iter() {
-            armor.save(writer, true, false, stack, true, false)?;
-        }
-
-        for i in 0..accessory_count {
-            self.accessories[i].save(writer, true, false, stack, true, false)?;
-        }
-
-        for vanity in self.vanity_armor.iter() {
-            vanity.save(writer, true, false, stack, true, false)?;
-        }
-
-        if version >= 38 {
-            for i in 0..accessory_count {
-                self.vanity_accessories[i].save(writer, true, false, stack, true, false)?;
+            if version >= 38 {
+                armor.save(writer, true, false, stack, prefix, false)?;
+            } else {
+                armor.save_legacy_name(writer, version, stack)?;
             }
         }
 
-        if version >= 47 {
-            for dye in self.armor_dyes.iter() {
-                dye.save(writer, true, false, stack, true, false)?;
+        for i in 0..accessory_count {
+            if version >= 38 {
+                self.accessories[i].save(writer, true, false, stack, prefix, false)?;
+            } else {
+                self.accessories[i].save_legacy_name(writer, version, stack)?;
+            }
+        }
+
+        if version >= 6 {
+            for vanity in self.vanity_armor.iter() {
+                if version >= 38 {
+                    vanity.save(writer, true, false, stack, prefix, false)?;
+                } else {
+                    vanity.save_legacy_name(writer, version, stack)?;
+                }
             }
         }
 
         if version >= 81 {
             for i in 0..accessory_count {
-                self.accessory_dyes[i].save(writer, true, false, stack, true, false)?;
+                self.vanity_accessories[i].save(writer, true, false, stack, prefix, false)?;
+            }
+        }
+
+        if version >= 47 {
+            for dye in self.armor_dyes.iter() {
+                dye.save(writer, true, false, stack, prefix, false)?;
+            }
+        }
+
+        if version >= 81 {
+            for i in 0..accessory_count {
+                self.accessory_dyes[i].save(writer, true, false, stack, prefix, false)?;
             }
         }
 
@@ -176,27 +196,27 @@ impl Loadout {
         bb_visuals: bool,
     ) -> Result<()> {
         if bb_visuals {
-            let mut bb1 = BoolByte::default();
+            let mut bb = BoolByte::default();
 
             for i in 0u8..8 {
-                bb1.set(i, self.hide_visual[i as usize])?;
+                bb.set(i, self.hide_visual[i as usize])?;
             }
 
-            writer.write_u8(u8::from(bb1))?;
+            writer.write_u8(u8::from(bb))?;
 
             if version >= 124 {
-                let mut bb2 = BoolByte::default();
+                bb = BoolByte::default();
 
                 for i in 0u8..2 {
-                    bb2.set(i, self.hide_visual[(i + 8) as usize])?;
+                    bb.set(i, self.hide_visual[(i + 8) as usize])?;
                 }
 
-                writer.write_u8(u8::from(bb2))?;
+                writer.write_u8(u8::from(bb))?;
             }
         } else {
             // We don't need to do version checking here since this only happens in 1.4.4+
             for v in self.hide_visual.iter() {
-                writer.write_bool(v.to_owned())?;
+                writer.write_bool(*v)?;
             }
         }
 
