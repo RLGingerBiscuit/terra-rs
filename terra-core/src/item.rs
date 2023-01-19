@@ -66,6 +66,46 @@ impl Item {
         Ok(items)
     }
 
+    fn legacy_lookup(version: i32, legacy_name: impl Into<String>) -> String {
+        let legacy_name = legacy_name.into();
+
+        if version <= 4 {
+            if legacy_name == "Cobalt Helmet" {
+                "Jungle Hat".to_string()
+            } else if legacy_name == "Cobalt Breastplate" {
+                "Jungle Shirt".to_string()
+            } else if legacy_name == "Cobalt Greaves" {
+                "Jungle Pants".to_string()
+            } else {
+                legacy_name
+            }
+        } else if version <= 20 {
+            if legacy_name == "Gills potion" {
+                "Gills Potion".to_string()
+            } else if legacy_name == "Thorn Chakrum" {
+                "Thorm Chakram".to_string()
+            } else if legacy_name == "Ball 'O Hurt" {
+                "Ball O' Hurt".to_string()
+            } else {
+                legacy_name
+            }
+        } else if version <= 41 && legacy_name == "Iron Chain" {
+            "Chain".to_string()
+        } else if version <= 44 && legacy_name == "Orb of Light" {
+            "Shadow Orb".to_string()
+        } else if version <= 46 {
+            if legacy_name == "Black Dye" {
+                "Black Thread".to_string()
+            } else if legacy_name == "Green Dye" {
+                "Green Thread".to_string()
+            } else {
+                legacy_name
+            }
+        } else {
+            legacy_name
+        }
+    }
+
     fn copy(&mut self, item: &Self) {
         self.id = item.id.clone();
         self.internal_name = item.internal_name.clone();
@@ -132,6 +172,38 @@ impl Item {
             if self.stack == 0 {
                 self.stack = 1
             }
+        }
+
+        Ok(())
+    }
+
+    pub fn load_legacy_name(
+        &mut self,
+        reader: &mut dyn Read,
+        items: &Vec<Self>,
+        prefixes: &Vec<Prefix>,
+        version: i32,
+        stack: bool,
+    ) -> Result<()> {
+        let name = Self::legacy_lookup(version, reader.read_lpstring()?);
+
+        if stack {
+            self.stack = reader.read_i32::<LE>()?
+        }
+
+        if name == "" {
+            self.id = 0;
+            self.name = name;
+            self.internal_name = "Air".to_string();
+        } else if let Some(item) = items.iter().filter(|i| i.name == name).next() {
+            self.copy(item);
+            if self.stack == 0 {
+                self.stack = 1;
+            }
+        } else {
+            self.id = 0;
+            self.name = "Unknown".to_string();
+            self.stack = 0;
         }
 
         Ok(())
