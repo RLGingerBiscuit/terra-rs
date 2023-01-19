@@ -80,7 +80,7 @@ impl Loadout {
             }
         }
 
-        if version >= 38 {
+        if version >= 81 {
             for i in 0..accessory_count {
                 self.vanity_accessories[i]
                     .load(reader, items, prefixes, true, false, stack, prefix, false)?;
