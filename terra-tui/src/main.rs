@@ -28,6 +28,13 @@ fn run_test(
     let chara_name = format!("v{}", version);
     let filepath = directory.join(format!("{}.plr", &chara_name));
 
+    {
+        let decrypted_filepath = directory.join(format!("{}.dplr", &chara_name));
+        if let Err(err) = Player::decrypt_file(&filepath, &decrypted_filepath) {
+            return Err(TestError::Save(err));
+        }
+    }
+
     let mut plr = Player::default();
 
     println!("Version {}", version);

@@ -1012,6 +1012,24 @@ impl Player {
         self._save(&mut file)
     }
 
+    pub fn decrypt_file(
+        original_filepath: impl Into<PathBuf>,
+        decrypted_filepath: impl Into<PathBuf>,
+    ) -> Result<()> {
+        let original_filepath: PathBuf = original_filepath.into();
+        let decrypted_filepath: PathBuf = decrypted_filepath.into();
+
+        let original_file = File::open(&original_filepath)?;
+        let mut decrypted_file = File::create(&decrypted_filepath)?;
+
+        let decryptor = AesSafe128Decryptor::new(ENCRYPTION_BYTES);
+        let mut reader = AesReader::new_with_iv(original_file, decryptor, ENCRYPTION_BYTES)?;
+
+        std::io::copy(&mut reader, &mut decrypted_file)?;
+
+        Ok(())
+    }
+
     pub fn has_item(&self, id: i32) -> bool {
         utils::has_item(id, &self.inventory)
             || utils::has_item(id, &self.coins)
