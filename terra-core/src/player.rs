@@ -316,9 +316,11 @@ impl Player {
         self.name = reader.read_lpstring()?;
 
         if self.version >= 10 {
-            self.difficulty = Difficulty::from(reader.read_u8()?);
-        } else if reader.read_bool()? {
-            self.difficulty = Difficulty::Hardcore;
+            if self.version >= 17 {
+                self.difficulty = Difficulty::from(reader.read_u8()?);
+            } else if reader.read_bool()? {
+                self.difficulty = Difficulty::Hardcore;
+            }
         }
 
         if self.version >= 138 {
@@ -327,11 +329,13 @@ impl Player {
 
         self.hair_style = reader.read_i32::<LE>()?;
 
-        if self.version >= 72 {
+        if self.version >= 82 {
             self.hair_dye = reader.read_u8()?;
         }
 
-        self.loadouts[0].load_visuals(&mut reader, self.version, true)?;
+        if self.version >= 83 {
+            self.loadouts[0].load_visuals(&mut reader, self.version, true)?;
+        }
 
         if self.version >= 119 {
             let bb = BoolByte::from(reader.read_u8()?);
@@ -355,10 +359,10 @@ impl Player {
             self.skin_variant = reader.read_u8()?;
 
             self.male = MALE_SKIN_VARIANTS.contains(&(self.skin_variant as i32));
+        }
 
-            if self.version <= 160 && self.skin_variant == 7 {
-                self.skin_variant = 9;
-            }
+        if self.version <= 160 && self.skin_variant == 7 {
+            self.skin_variant = 9;
         }
 
         self.life = reader.read_i32::<LE>()?;
@@ -409,7 +413,17 @@ impl Player {
         self.pants_color = reader.read_rgb()?;
         self.shoe_color = reader.read_rgb()?;
 
-        self.loadouts[0].load(&mut reader, prefixes, items, self.version, false)?;
+        let has_prefix = self.version >= 36;
+        let has_favourited = self.version >= 114;
+
+        self.loadouts[0].load(
+            &mut reader,
+            prefixes,
+            items,
+            self.version,
+            false,
+            has_prefix,
+        )?;
 
         let inventory_count = if self.version >= 58 { 50 } else { 40 };
 
@@ -421,8 +435,8 @@ impl Player {
                 true,
                 false,
                 true,
-                true,
-                self.version >= 114,
+                has_prefix,
+                has_favourited,
             )?;
         }
 
@@ -434,22 +448,24 @@ impl Player {
                 true,
                 false,
                 true,
-                true,
-                self.version >= 114,
+                has_prefix,
+                has_favourited,
             )?;
         }
 
-        for i in 0..AMMO_COUNT {
-            self.ammo[i].load(
-                &mut reader,
-                items,
-                prefixes,
-                true,
-                false,
-                true,
-                true,
-                self.version >= 114,
-            )?;
+        if self.version >= 15 {
+            for i in 0..AMMO_COUNT {
+                self.ammo[i].load(
+                    &mut reader,
+                    items,
+                    prefixes,
+                    true,
+                    false,
+                    true,
+                    has_prefix,
+                    has_favourited,
+                )?;
+            }
         }
 
         if self.version >= 117 {
@@ -489,14 +505,23 @@ impl Player {
                 true,
                 false,
                 true,
-                true,
+                has_prefix,
                 false,
             )?;
         }
 
         if self.version >= 20 {
             for i in 0..bank_count {
-                self.safe[i].load(&mut reader, items, prefixes, true, false, true, true, false)?;
+                self.safe[i].load(
+                    &mut reader,
+                    items,
+                    prefixes,
+                    true,
+                    false,
+                    true,
+                    has_prefix,
+                    false,
+                )?;
             }
         }
 
@@ -532,6 +557,17 @@ impl Player {
             if self.version >= 199 {
                 let bb = BoolByte::from(reader.read_u8()?);
                 self.void_vault_enabled = bb.get(0)?;
+            }
+        }
+
+        if self.version <= 57 {
+            for i in 0..4 {
+                self.coins[i] = self.inventory[i + 40].clone();
+                self.inventory[i] = Item::default();
+            }
+            for i in 0..4 {
+                self.ammo[i] = self.inventory[i + 44].clone();
+                self.inventory[i] = Item::default();
             }
         }
 
@@ -686,7 +722,7 @@ impl Player {
             self.current_loadout_index = reader.read_i32::<LE>()?;
 
             for i in 1..LOADOUT_COUNT {
-                self.loadouts[i].load(&mut reader, prefixes, items, self.version, true)?;
+                self.loadouts[i].load(&mut reader, prefixes, items, self.version, true, true)?;
                 self.loadouts[i].load_visuals(&mut reader, self.version, false)?;
             }
         }
