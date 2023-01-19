@@ -742,9 +742,11 @@ impl Player {
         writer.write_lpstring(&self.name)?;
 
         if self.version >= 10 {
-            writer.write_u8(self.difficulty.clone().into())?;
-        } else {
-            writer.write_bool(self.difficulty == Difficulty::Hardcore)?;
+            if self.version >= 17 {
+                writer.write_u8(self.difficulty.clone().into())?;
+            } else {
+                writer.write_bool(self.difficulty == Difficulty::Hardcore)?;
+            }
         }
 
         if self.version >= 138 {
@@ -753,11 +755,13 @@ impl Player {
 
         writer.write_i32::<LE>(self.hair_style)?;
 
-        if self.version >= 72 {
+        if self.version >= 82 {
             writer.write_u8(self.hair_dye)?;
         }
 
-        self.loadouts[0].save_visuals(writer, self.version, true)?;
+        if self.version >= 83 {
+            self.loadouts[0].save_visuals(writer, self.version, true)?;
+        }
 
         if self.version >= 119 {
             let mut bb = BoolByte::default();
@@ -769,7 +773,8 @@ impl Player {
             writer.write_u8(bb.into())?;
         }
 
-        if self.version <= 106 {
+        if self.version <= 17 {
+        } else if self.version <= 106 {
             writer.write_bool(self.male)?;
         } else {
             writer.write_u8(self.skin_variant)?;
@@ -823,20 +828,25 @@ impl Player {
         writer.write_rgb(&self.pants_color)?;
         writer.write_rgb(&self.shoe_color)?;
 
-        self.loadouts[0].save(writer, self.version, false)?;
+        let has_prefix = self.version >= 36;
+        let has_favourited = self.version >= 114;
+
+        self.loadouts[0].save(writer, self.version, false, has_prefix)?;
 
         let inventory_count = if self.version >= 58 { 50 } else { 40 };
 
         for i in 0..inventory_count {
-            self.inventory[i].save(writer, true, false, true, true, self.version >= 114)?;
+            self.inventory[i].save(writer, true, false, true, has_prefix, has_favourited)?;
         }
 
         for i in 0..COINS_COUNT {
-            self.coins[i].save(writer, true, false, true, true, self.version >= 114)?;
+            self.coins[i].save(writer, true, false, true, has_prefix, has_favourited)?;
         }
 
-        for i in 0..AMMO_COUNT {
-            self.ammo[i].save(writer, true, false, true, true, self.version >= 114)?;
+        if self.version >= 15 {
+            for i in 0..AMMO_COUNT {
+                self.ammo[i].save(writer, true, false, true, has_prefix, has_favourited)?;
+            }
         }
 
         if self.version >= 117 {
@@ -851,12 +861,12 @@ impl Player {
         let bank_count = if self.version >= 58 { 40 } else { 20 };
 
         for i in 0..bank_count {
-            self.piggy_bank[i].save(writer, true, false, true, true, false)?;
+            self.piggy_bank[i].save(writer, true, false, true, has_prefix, false)?;
         }
 
         if self.version >= 20 {
             for i in 0..bank_count {
-                self.safe[i].save(writer, true, false, true, true, false)?;
+                self.safe[i].save(writer, true, false, true, has_prefix, false)?;
             }
         }
 
@@ -892,7 +902,7 @@ impl Player {
             }
         }
 
-        for spawnpoint in &self.spawnpoints {
+        for spawnpoint in self.spawnpoints.iter() {
             writer.write_i32::<LE>(spawnpoint.x)?;
             writer.write_i32::<LE>(spawnpoint.y)?;
             writer.write_i32::<LE>(spawnpoint.id)?;
@@ -905,7 +915,7 @@ impl Player {
         }
 
         if self.version >= 115 {
-            for i in &self.hide_cellphone_info {
+            for i in self.hide_cellphone_info.iter() {
                 writer.write_bool(*i)?;
             }
         }
@@ -915,7 +925,7 @@ impl Player {
         }
 
         if self.version >= 162 {
-            for b in &self.dpad_bindings {
+            for b in self.dpad_bindings.iter() {
                 writer.write_i32::<LE>(*b)?;
             }
         }
@@ -998,7 +1008,7 @@ impl Player {
             writer.write_i32::<LE>(self.current_loadout_index)?;
 
             for i in 1..LOADOUT_COUNT {
-                self.loadouts[i].save(writer, self.version, true)?;
+                self.loadouts[i].save(writer, self.version, true, true)?;
                 self.loadouts[i].save_visuals(writer, self.version, false)?;
             }
         }
