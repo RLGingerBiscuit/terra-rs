@@ -1623,6 +1623,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "terra-tests"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "terra-core",
+ "thiserror",
+]
+
+[[package]]
 name = "terra-tui"
 version = "0.0.1"
 dependencies = [

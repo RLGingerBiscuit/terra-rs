@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["terra-core", "terra-res", "terra-tui"]
+members = ["terra-core", "terra-res", "terra-tests", "terra-tui"]
 default-members = ["terra-core", "terra-tui"]
 
 [profile.release]

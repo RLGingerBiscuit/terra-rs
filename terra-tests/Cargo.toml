@@ -1,0 +1,10 @@
+[package]
+name = "terra-tests"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.66"
+thiserror = "1.0.37"
+
+terra-core = { path = "../terra-core" }
