@@ -5,7 +5,10 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::io_extensions::{TerraReadExt, TerraWriteExt};
+use crate::{
+    difficulty::Difficulty,
+    io_extensions::{TerraReadExt, TerraWriteExt},
+};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct JourneyPowers {
@@ -49,8 +52,8 @@ impl Default for JourneyPowers {
     fn default() -> Self {
         Self {
             godmode: false,
-            far_placement: false,
-            spawnrate: 1.0,
+            far_placement: true,
+            spawnrate: 0.5,
         }
     }
 }
@@ -69,16 +72,36 @@ impl JourneyPowers {
         Ok(())
     }
 
-    pub fn save(&self, writer: &mut dyn Write) -> Result<()> {
-        writer.write_bool(true)?;
-        writer.write_u16::<LE>(u16::from(JourneyPowerId::Godmode))?;
-        writer.write_bool(self.godmode)?;
-        writer.write_bool(true)?;
-        writer.write_u16::<LE>(u16::from(JourneyPowerId::FarPlacement))?;
-        writer.write_bool(self.far_placement)?;
-        writer.write_bool(true)?;
-        writer.write_u16::<LE>(u16::from(JourneyPowerId::Spawnrate))?;
-        writer.write_f32::<LE>(self.spawnrate)?;
+    pub fn save(
+        &self,
+        writer: &mut dyn Write,
+        difficulty: &Difficulty,
+    ) -> Result<()> {
+        if difficulty == &Difficulty::Journey {
+            writer.write_bool(true)?;
+            writer.write_u16::<LE>(u16::from(JourneyPowerId::Godmode))?;
+            writer.write_bool(self.godmode)?;
+            writer.write_bool(true)?;
+            writer.write_u16::<LE>(u16::from(JourneyPowerId::FarPlacement))?;
+            writer.write_bool(self.far_placement)?;
+            writer.write_bool(true)?;
+            writer.write_u16::<LE>(u16::from(JourneyPowerId::Spawnrate))?;
+            writer.write_f32::<LE>(self.spawnrate)?;
+        } else {
+            // Terrasavr just writes a 0x00 in this case, but this is how Terraria itself does it
+            let default = Self::default();
+
+            writer.write_bool(true)?;
+            writer.write_u16::<LE>(u16::from(JourneyPowerId::Godmode))?;
+            writer.write_bool(default.godmode)?;
+            writer.write_bool(true)?;
+            writer.write_u16::<LE>(u16::from(JourneyPowerId::FarPlacement))?;
+            writer.write_bool(default.far_placement)?;
+            writer.write_bool(true)?;
+            writer.write_u16::<LE>(u16::from(JourneyPowerId::Spawnrate))?;
+            writer.write_f32::<LE>(default.spawnrate)?;
+        }
+
         writer.write_bool(false)?;
 
         Ok(())
