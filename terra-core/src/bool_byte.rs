@@ -6,7 +6,7 @@ pub enum BoolByteError {
     InvalidIndex(u8),
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct BoolByte {
     value: u8,
 }
@@ -17,8 +17,22 @@ impl From<u8> for BoolByte {
     }
 }
 
+impl From<&u8> for BoolByte {
+    fn from(value: &u8) -> Self {
+        Self {
+            value: value.clone(),
+        }
+    }
+}
+
 impl From<BoolByte> for u8 {
     fn from(bb: BoolByte) -> Self {
+        bb.value
+    }
+}
+
+impl From<&BoolByte> for u8 {
+    fn from(bb: &BoolByte) -> Self {
         bb.value
     }
 }
