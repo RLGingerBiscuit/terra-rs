@@ -76,7 +76,7 @@ pub struct Player {
     pub gummy_worm: bool,
     pub ambrosia: bool,
 
-    pub defeated_dd2: bool,
+    pub defeated_ooa: bool,
 
     pub tax_money: i32,
 
@@ -183,7 +183,7 @@ impl Default for Player {
             gummy_worm: false,
             ambrosia: false,
 
-            defeated_dd2: false,
+            defeated_ooa: false,
 
             tax_money: 0,
 
@@ -366,7 +366,7 @@ impl Player {
         }
 
         if self.version >= 182 {
-            self.defeated_dd2 = reader.read_bool()?;
+            self.defeated_ooa = reader.read_bool()?;
         }
 
         if self.version >= 128 {
@@ -775,7 +775,7 @@ impl Player {
         }
 
         if self.version >= 182 {
-            writer.write_bool(self.defeated_dd2)?;
+            writer.write_bool(self.defeated_ooa)?;
         }
 
         if self.version >= 128 {
