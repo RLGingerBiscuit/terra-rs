@@ -1,4 +1,5 @@
 use std::{
+    fmt::Display,
     fs::File,
     io::{BufReader, Read, Write},
 };
@@ -13,6 +14,15 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 pub enum BuffType {
     Buff = 0,
     Debuff = 1,
+}
+
+impl Display for BuffType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BuffType::Buff => write!(f, "Buff"),
+            BuffType::Debuff => write!(f, "Debuff"),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
