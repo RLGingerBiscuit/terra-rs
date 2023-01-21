@@ -1636,8 +1636,6 @@ name = "terra-tui"
 version = "0.0.1"
 dependencies = [
  "anyhow",
- "serde",
- "serde_json",
  "terra-core",
  "thiserror",
 ]
