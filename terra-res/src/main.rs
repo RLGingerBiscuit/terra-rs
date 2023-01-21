@@ -1,14 +1,16 @@
 use std::{
-    fs::{File, OpenOptions},
+    collections::HashMap,
+    fs::{self, File, OpenOptions},
     io::{BufWriter, Read},
     path::PathBuf,
     str::FromStr,
 };
 
 use anyhow::Result;
+use image::{DynamicImage, GenericImage, ImageFormat};
 use regex::{Captures, Regex};
 
-use fs_extra::dir::{copy as copy_dir, create as create_dir, CopyOptions};
+use fs_extra::dir::{copy as copy_dir, create as create_dir, CopyOptions as DirCopyOptions};
 
 use rlua::{Lua, Table};
 use terra_core::{buff::Buff, buff::BuffType, item::Item, prefix::Prefix};
@@ -115,10 +117,10 @@ fn get_item_info(
             .eval()?;
 
         for pair in info.pairs::<rlua::String, rlua::Value>() {
-            let (_, val) = pair?;
+            let (key, val) = pair?;
 
             if let rlua::Value::Table(lua_item) = val {
-                let id = lua_item.get("netID").unwrap_or(0);
+                let id = i32::from_str(key.to_str()?)?;
                 let internal_name = lua_item.get("internalName").unwrap_or("".to_string());
                 let name = lua_item.get("name").unwrap_or("".to_string());
                 let max_stack = lua_item.get("maxStack").unwrap_or(1);
@@ -307,32 +309,101 @@ fn get_prefix_info(
     Ok(prefix_info)
 }
 
+fn generate_spritesheet(items_fol: &PathBuf) -> Result<DynamicImage> {
+    let iter = fs::read_dir(items_fol)?;
+
+    let mut items: HashMap<u32, DynamicImage> = HashMap::new();
+
+    const ITEM_WIDTH: u32 = 50;
+    const ITEM_HEIGHT: u32 = 50;
+    const H_ITEM_COUNT: u32 = 64;
+
+    for (i, item) in iter.enumerate() {
+        let item = item?;
+        let file_name = item.file_name().to_string_lossy().to_string();
+
+        if !file_name.ends_with(".png") {
+            continue;
+        }
+
+        let item_id = u32::from_str(
+            file_name
+                .rsplit_once(".")
+                .unwrap()
+                .0
+                .rsplit_once("_")
+                .unwrap()
+                .1,
+        )?;
+
+        if i % 1000 == 0 {
+            println!("loaded {} items", i);
+        }
+
+        let mut image = image::open(item.path())?;
+        if image.width() > ITEM_WIDTH || image.height() > ITEM_HEIGHT {
+            image = image.resize(
+                ITEM_WIDTH,
+                ITEM_HEIGHT,
+                image::imageops::FilterType::CatmullRom,
+            );
+        }
+
+        items.insert(item_id, image);
+    }
+
+    let highest_id = items.keys().max_by(|a, b| a.cmp(b)).unwrap();
+
+    let width = ITEM_WIDTH * H_ITEM_COUNT;
+    let height = (highest_id / H_ITEM_COUNT + 1) * ITEM_HEIGHT;
+
+    let mut new_image = DynamicImage::new_rgba8(width, height);
+
+    let mut count = 0;
+    for (i, img) in items.iter() {
+        let x = (i % H_ITEM_COUNT) * ITEM_WIDTH + (ITEM_WIDTH - img.width()) / 2;
+        let y = i / H_ITEM_COUNT * ITEM_HEIGHT + (ITEM_HEIGHT - img.height()) / 2;
+        new_image.copy_from(img, x, y)?;
+
+        count += 1;
+        if count % 1000 == 0 {
+            println!("{} items", count);
+        }
+    }
+
+    Ok(new_image)
+}
+
 fn main() -> Result<()> {
     let res_fol = PathBuf::from_str("./terra-res/resources")?;
+    let items_fol = res_fol.join("items");
     let gen_fol = PathBuf::from_str("./terra-res/generated")?;
 
     create_dir(&gen_fol, true)?;
 
-    let mut json_item_file = OpenOptions::new()
+    let mut item_file = OpenOptions::new()
         .create(true)
         .write(true)
         .append(false)
         .open(gen_fol.join("items.json"))?;
-    let json_item_writer = BufWriter::new(&mut json_item_file);
+    let item_writer = BufWriter::new(&mut item_file);
 
-    let mut json_buff_file = OpenOptions::new()
+    let mut buff_file = OpenOptions::new()
         .create(true)
         .write(true)
         .append(false)
         .open(gen_fol.join("buffs.json"))?;
-    let json_buff_writer = BufWriter::new(&mut json_buff_file);
+    let buff_writer = BufWriter::new(&mut buff_file);
 
-    let mut json_prefix_file = OpenOptions::new()
+    let mut prefix_file = OpenOptions::new()
         .create(true)
         .write(true)
         .append(false)
         .open(gen_fol.join("prefixes.json"))?;
-    let json_prefix_writer = BufWriter::new(&mut json_prefix_file);
+    let prefix_writer = BufWriter::new(&mut prefix_file);
+
+    let mut spritesheet_file = File::create(gen_fol.join("items.png"))?;
+    let mut spritesheet_writer = BufWriter::new(&mut spritesheet_file);
 
     let item_localization_file = File::open(res_fol.join("Items.json"))?;
     let npc_localization_file = File::open(res_fol.join("NPCs.json"))?;
@@ -350,7 +421,6 @@ fn main() -> Result<()> {
         &item_localization,
         &npc_localization,
     )?;
-
     let buff_info = get_buff_info(
         &template,
         &game_localization,
@@ -363,10 +433,12 @@ fn main() -> Result<()> {
         &item_localization,
         &npc_localization,
     )?;
+    let spritesheet = generate_spritesheet(&items_fol)?;
 
-    serde_json::to_writer_pretty(json_item_writer, &item_info)?;
-    serde_json::to_writer_pretty(json_buff_writer, &buff_info)?;
-    serde_json::to_writer_pretty(json_prefix_writer, &prefix_info)?;
+    serde_json::to_writer_pretty(item_writer, &item_info)?;
+    serde_json::to_writer_pretty(buff_writer, &buff_info)?;
+    serde_json::to_writer_pretty(prefix_writer, &prefix_info)?;
+    spritesheet.write_to(&mut spritesheet_writer, ImageFormat::Png)?;
 
     // Pretty scuffed but works for now
     let mut build_type = "".to_string();
@@ -375,10 +447,9 @@ fn main() -> Result<()> {
     let target_dir = PathBuf::from("./target").join(&build_type);
     let final_dir = target_dir.join("resources");
 
-    let mut options = CopyOptions::new();
+    let mut options = DirCopyOptions::new();
     options.overwrite = true;
     options.copy_inside = true;
-
     copy_dir(&gen_fol, &final_dir, &options)?;
 
     Ok(())
