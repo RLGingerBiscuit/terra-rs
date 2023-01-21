@@ -115,11 +115,7 @@ pub trait TerraReadExt: io::Read {
     ///
     /// [`Read::read_exact`]: https://doc.rust-lang.org/std/io/trait.Read.html#method.read_exact
     fn read_rgb(&mut self) -> IOResult<Color> {
-        Ok(Color::from_components((
-            self.read_u8()?,
-            self.read_u8()?,
-            self.read_u8()?,
-        )))
+        Ok([self.read_u8()?, self.read_u8()?, self.read_u8()?])
     }
 }
 
@@ -220,9 +216,9 @@ pub trait TerraWriteExt: io::Write {
     ///
     /// [`Write::write_all`]: https://doc.rust-lang.org/std/io/trait.Write.html#method.write_all
     fn write_rgb(&mut self, value: &Color) -> IOResult<()> {
-        self.write_u8(value.red)?;
-        self.write_u8(value.green)?;
-        self.write_u8(value.blue)?;
+        self.write_u8(value[0])?;
+        self.write_u8(value[1])?;
+        self.write_u8(value[2])?;
         Ok(())
     }
 }

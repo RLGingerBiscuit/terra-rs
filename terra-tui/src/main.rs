@@ -1,5 +1,5 @@
 use terra_core::{
-    utils::{get_player_dir, version_lookup},
+    utils::{get_player_dir, to_hex, version_lookup},
     Buff, Item, Player, Prefix, TICKS_PER_MICROSECOND,
 };
 
@@ -68,13 +68,13 @@ fn main() {
     println!("Defeated Old One's Army: {}", player.defeated_ooa);
     println!("PVE Deaths: {}", player.pve_deaths);
     println!("PVP Deaths: {}", player.pvp_deaths);
-    println!("Hair Color: #{:x}", player.hair_color);
-    println!("Skin Color: #{:x}", player.skin_color);
-    println!("Eye Color: #{:x}", player.eye_color);
-    println!("Shirt Color: #{:x}", player.shirt_color);
-    println!("Undershirt Color: #{:x}", player.undershirt_color);
-    println!("Pants Color: #{:x}", player.pants_color);
-    println!("Shoe Color: #{:x}", player.shoe_color);
+    println!("Hair Color: {}", to_hex(player.hair_color));
+    println!("Skin Color: {}", to_hex(player.skin_color));
+    println!("Eye Color: {}", to_hex(player.eye_color));
+    println!("Shirt Color: {}", to_hex(player.shirt_color));
+    println!("Undershirt Color: {}", to_hex(player.undershirt_color));
+    println!("Pants Color: {}", to_hex(player.pants_color));
+    println!("Shoe Color: {}", to_hex(player.shoe_color));
     println!("Angler Quests: {}", player.angler_quests);
     if player.dead {
         println!(

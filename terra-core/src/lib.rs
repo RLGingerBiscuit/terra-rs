@@ -1,5 +1,3 @@
-use palette::{encoding::Srgb, rgb::Rgb};
-
 pub const MAGIC_MASK: u64 = 0xFFFFFFFFFFFFFF;
 pub const MAGIC_NUMBER: u64 = 0x6369676F6C6572;
 
@@ -39,7 +37,7 @@ pub const MAX_RESPAWN_TIME: i32 = 60000;
 pub const FEMALE_SKIN_VARIANTS: [i32; 4] = [5, 6, 9, 11];
 pub const MALE_SKIN_VARIANTS: [i32; 6] = [0, 1, 2, 3, 8, 10];
 
-pub type Color = Rgb<Srgb, u8>;
+pub type Color = [u8; 3];
 
 pub mod bool_byte;
 pub mod buff;

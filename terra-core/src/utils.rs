@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use dirs_next::{data_local_dir, document_dir};
 
-use crate::Item;
+use crate::{Color, Item};
 
 pub fn get_terraria_dir() -> PathBuf {
     match std::env::consts::OS {
@@ -171,6 +171,10 @@ pub fn version_lookup(version: i32) -> &'static str {
     } else {
         "Unknown"
     }
+}
+
+pub fn to_hex(color: Color) -> String {
+    format!("#{:x}{:x}{:x}", color[0], color[1], color[2])
 }
 
 // pub(crate) because it only takes [Item]

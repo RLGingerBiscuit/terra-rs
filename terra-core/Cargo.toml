@@ -16,7 +16,3 @@ serde_repr = "0.1.9"
 serde-big-array = "0.4.1"
 chrono = "0.4.23"
 dirs-next = "2.0.0"
-palette = { version = "0.6.1", default-features = false, features = [
-    "std",
-    "serializing"
-] }

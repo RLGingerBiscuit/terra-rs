@@ -2,7 +2,6 @@ use std::{
     fs::File,
     io::{ErrorKind, Read, Write},
     path::PathBuf,
-    str::FromStr,
 };
 
 use aesstream::{AesReader, AesWriter};
@@ -190,13 +189,13 @@ impl Default for Player {
             pve_deaths: 0,
             pvp_deaths: 0,
 
-            hair_color: Color::from_str("#d75a37").unwrap(),
-            skin_color: Color::from_str("#ff7d5a").unwrap(),
-            eye_color: Color::from_str("#695a4b").unwrap(),
-            shirt_color: Color::from_str("#afa58c").unwrap(),
-            undershirt_color: Color::from_str("#a0b4d7").unwrap(),
-            pants_color: Color::from_str("#ffe6af").unwrap(),
-            shoe_color: Color::from_str("#a0693c").unwrap(),
+            hair_color: [0xd7, 0x5a, 0x37],
+            skin_color: [0xff, 0x7d, 0x5a],
+            eye_color: [0x69, 0x5a, 0x4b],
+            shirt_color: [0xaf, 0xa5, 0x8c],
+            undershirt_color: [0xa0, 0xb4, 0xd7],
+            pants_color: [0xff, 0xe6, 0xaf],
+            shoe_color: [0xa0, 0x69, 0x3c],
 
             equipment: std::array::from_fn(|_| Item::default()),
             equipment_dyes: std::array::from_fn(|_| Item::default()),
