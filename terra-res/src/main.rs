@@ -361,7 +361,7 @@ fn generate_spritesheet(items_fol: &PathBuf) -> Result<DynamicImage> {
 
     let mut count = 0;
     for (i, img) in items.iter() {
-        let x = (i % H_ITEM_COUNT) * ITEM_WIDTH + (ITEM_WIDTH - img.width()) / 2;
+        let x = i % H_ITEM_COUNT * ITEM_WIDTH + (ITEM_WIDTH - img.width()) / 2;
         let y = i / H_ITEM_COUNT * ITEM_HEIGHT + (ITEM_HEIGHT - img.height()) / 2;
         new_image.copy_from(img, x, y)?;
 
