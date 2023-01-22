@@ -447,6 +447,10 @@ fn main() -> Result<()> {
     let target_dir = PathBuf::from("./target").join(&build_type);
     let final_dir = target_dir.join("resources");
 
+    if final_dir.exists() {
+        fs::remove_dir_all(&final_dir)?;
+    }
+
     let mut options = DirCopyOptions::new();
     options.overwrite = true;
     options.copy_inside = true;
