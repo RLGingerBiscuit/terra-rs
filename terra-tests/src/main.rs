@@ -19,17 +19,18 @@ const VERSIONS: [usize; 17] = [
 ];
 
 fn run_test(
-    version: usize,
+    chara_name: &String,
     directory: &PathBuf,
     items: &Vec<Item>,
     buffs: &Vec<Buff>,
     prefixes: &Vec<Prefix>,
 ) -> Result<(), TestError> {
-    let chara_name = format!("v{}", version);
-    let filepath = directory.join(format!("{}.plr", &chara_name));
+    let filepath = directory.join(format!("{}.plr", chara_name));
+
+    println!("Filepath: {}", filepath.display());
 
     {
-        let decrypted_filepath = directory.join(format!("{}.dplr", &chara_name));
+        let decrypted_filepath = directory.join(format!("{}.dplr", chara_name));
         if let Err(err) = Player::decrypt_file(&filepath, &decrypted_filepath) {
             return Err(TestError::Save(err));
         }
@@ -37,13 +38,11 @@ fn run_test(
 
     let mut plr = Player::default();
 
-    println!("Version {}", version);
-
     if let Err(err) = plr.load(&filepath, prefixes, items, buffs) {
         return Err(TestError::Load(err));
     }
 
-    println!("Actual Version {}", &plr.version);
+    println!("\tVersion: {}", &plr.version);
     println!("\tName: {}", &plr.name);
 
     let out_filepath = directory.join(format!("{}.saved.plr", &chara_name));
@@ -89,7 +88,7 @@ fn run_test(
 
 fn main() {
     let mut player_dir = PathBuf::new();
-    player_dir.push("./tests");
+    player_dir.push("tests");
 
     let items = Item::load_items().expect("Could not load items.");
     let buffs = Buff::load_buffs().expect("Could not load buffs.");
@@ -99,9 +98,13 @@ fn main() {
     println!("Buffs count: {}", buffs.len());
     println!("Prefixes count: {}", prefixes.len());
 
-    for version in VERSIONS {
-        match run_test(version, &player_dir, &items, &buffs, &prefixes) {
-            Ok(_) => println!("v{} loaded/saved successfully", version),
+    let mut tests: Vec<String> = Vec::new();
+    tests.extend(VERSIONS.iter().map(|v| format!("v{v}")));
+    tests.push("テラリア".to_string());
+
+    for chara_name in tests {
+        match run_test(&chara_name, &player_dir, &items, &buffs, &prefixes) {
+            Ok(_) => println!("'{}.plr' loaded/saved successfully", &chara_name),
             Err(err) => match err {
                 TestError::Load(err) => println!("Error whilst loading\n---\n{:?}\n---", err),
                 TestError::Save(err) => println!("Error whilst saving\n---\n{:?}\n---", err),
