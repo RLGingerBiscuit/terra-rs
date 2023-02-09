@@ -53,12 +53,16 @@ impl PartialEq<Difficulty> for u8 {
 
 impl Display for Difficulty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Difficulty::Classic => write!(f, "Classic"),
-            Difficulty::Mediumcore => write!(f, "Mediumcore"),
-            Difficulty::Hardcore => write!(f, "Hardcore"),
-            Difficulty::Journey => write!(f, "Journey"),
-            Difficulty::Unknown => write!(f, "Unknown"),
-        }
+        write!(
+            f,
+            "{}",
+            match self {
+                Difficulty::Classic => "Classic",
+                Difficulty::Mediumcore => "Mediumcore",
+                Difficulty::Hardcore => "Hardcore",
+                Difficulty::Journey => "Journey",
+                Difficulty::Unknown => "Unknown",
+            }
+        )
     }
 }

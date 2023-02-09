@@ -18,10 +18,14 @@ pub enum BuffType {
 
 impl Display for BuffType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            BuffType::Buff => write!(f, "Buff"),
-            BuffType::Debuff => write!(f, "Debuff"),
-        }
+        write!(
+            f,
+            "{}",
+            match self {
+                BuffType::Buff => "Buff",
+                BuffType::Debuff => "Debuff",
+            }
+        )
     }
 }
 
