@@ -1,5 +1,5 @@
 use std::io;
-use std::io::Result as IOResult;
+use std::io::{Error as IOError, ErrorKind as IOErrorKind, Result as IOResult};
 
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
@@ -69,36 +69,22 @@ pub trait TerraReadExt: io::Read {
     fn read_lpstring(&mut self) -> IOResult<String> {
         let length = self.read_uleb128_usize()?;
 
-        let mut buf = Vec::with_capacity(length);
+        let mut buf = Vec::new();
+        buf.resize(length, 0);
 
-        let mut i = 0;
+        let mut read = self.read(&mut buf)?;
 
         loop {
-            let ch = self.read_u8()?;
-
-            if (ch & 0x80) != 0x80 {
-                buf.push(ch);
-                i += 1;
-            } else if (ch & 0xf0) == 0xf0 {
-                buf.push(ch);
-                buf.push(self.read_u8()?);
-                buf.push(self.read_u8()?);
-                buf.push(self.read_u8()?);
-                i += 4;
-            } else if (ch & 0xe0) == 0xe0 {
-                buf.push(ch);
-                buf.push(self.read_u8()?);
-                buf.push(self.read_u8()?);
-                i += 3;
-            } else if (ch & 0xc0) == 0xc0 {
-                buf.push(ch);
-                buf.push(self.read_u8()?);
-                i += 2;
-            }
-
-            if i == length {
+            if read == length {
                 break;
             }
+
+            if read > length {
+                return Err(IOError::from(IOErrorKind::Other));
+            }
+
+            buf[read] = self.read_u8()?;
+            read += 1;
         }
 
         let string = String::from_utf8(buf).unwrap();
