@@ -13,12 +13,7 @@ pub fn get_terraria_dir() -> PathBuf {
 }
 
 pub fn get_player_dir() -> PathBuf {
-    match std::env::consts::OS {
-        "windows" => document_dir().unwrap().join("My Games"),
-        _ => data_local_dir().unwrap(),
-    }
-    .join("Terraria")
-    .join("Players")
+    get_terraria_dir().join("Players")
 }
 
 pub fn version_lookup(version: i32) -> &'static str {
