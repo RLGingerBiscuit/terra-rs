@@ -53,7 +53,7 @@ fn expand_templates(
                 "".to_owned()
             }
         })
-        .to_owned();
+        .to_string();
 
     if expanded.contains(r"{$}") {
         expand_templates(expanded, template, game, items, npcs)
@@ -320,7 +320,8 @@ fn generate_spritesheet(items_fol: &PathBuf) -> Result<DynamicImage> {
 
     for (i, item) in iter.enumerate() {
         let item = item?;
-        let file_name = item.file_name().to_string_lossy().to_owned();
+        let file_name = item.file_name();
+        let file_name = file_name.to_string_lossy().to_owned();
 
         if !file_name.ends_with(".png") {
             continue;
