@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::{ErrorKind, Read, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use aesstream::{AesReader, AesWriter};
@@ -252,7 +252,7 @@ impl Default for Player {
 impl Player {
     fn _load(
         &mut self,
-        filepath: PathBuf,
+        filepath: &Path,
         reader: &mut dyn Read,
         prefixes: &Vec<Prefix>,
         items: &Vec<Item>,
@@ -261,7 +261,7 @@ impl Player {
         self.version = reader.read_i32::<LE>()?;
 
         if self.version > CURRENT_VERSION {
-            return Err(PlayerError::PostDated(filepath, self.version).into());
+            return Err(PlayerError::PostDated(filepath.to_path_buf(), self.version).into());
         }
 
         if self.version >= 135 {
@@ -270,11 +270,11 @@ impl Player {
 
             // Both MAGIC_MASK and MAGIC_NUMBER were taken directly from Terraria's exe
             if magic_num & MAGIC_MASK != MAGIC_NUMBER {
-                return Err(PlayerError::IncorrectFormat(filepath).into());
+                return Err(PlayerError::IncorrectFormat(filepath.to_path_buf()).into());
             }
 
             if ((magic_num >> 56) as u8) != FileType::Player {
-                return Err(PlayerError::IncorrectFileType(filepath).into());
+                return Err(PlayerError::IncorrectFileType(filepath.to_path_buf()).into());
             }
 
             // This u32 is a 'revision' field, that is only used for type 1 files (Map)
@@ -644,20 +644,20 @@ impl Player {
 
     pub fn load(
         &mut self,
-        filepath: impl Into<PathBuf>,
+        filepath: &Path,
         prefixes: &Vec<Prefix>,
         items: &Vec<Item>,
         buffs: &Vec<Buff>,
     ) -> Result<()> {
-        let filepath = filepath.into();
-
-        let file = match File::open(&filepath) {
+        let file = match File::open(filepath) {
             Ok(f) => f,
             Err(e) => {
                 return Err(match e.kind() {
-                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
-                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
-                    _ => PlayerError::Failure(filepath),
+                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
+                    ErrorKind::PermissionDenied => {
+                        PlayerError::AccessDenied(filepath.to_path_buf())
+                    }
+                    _ => PlayerError::Failure(filepath.to_path_buf()),
                 }
                 .into())
             }
@@ -666,7 +666,7 @@ impl Player {
         let decryptor = AesSafe128Decryptor::new(ENCRYPTION_BYTES);
         let mut reader = match AesReader::new_with_iv(file, decryptor, ENCRYPTION_BYTES) {
             Ok(r) => r,
-            Err(_) => return Err(PlayerError::Failure(filepath).into()),
+            Err(_) => return Err(PlayerError::Failure(filepath.to_path_buf()).into()),
         };
 
         self._load(filepath, &mut reader, prefixes, items, buffs)
@@ -674,20 +674,20 @@ impl Player {
 
     pub fn load_decrypted(
         &mut self,
-        filepath: impl Into<PathBuf>,
+        filepath: &Path,
         prefixes: &Vec<Prefix>,
         items: &Vec<Item>,
         buffs: &Vec<Buff>,
     ) -> Result<()> {
-        let filepath = filepath.into();
-
-        let mut file = match File::open(&filepath) {
+        let mut file = match File::open(filepath) {
             Ok(f) => f,
             Err(e) => {
                 return Err(match e.kind() {
-                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
-                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
-                    _ => PlayerError::Failure(filepath),
+                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
+                    ErrorKind::PermissionDenied => {
+                        PlayerError::AccessDenied(filepath.to_path_buf())
+                    }
+                    _ => PlayerError::Failure(filepath.to_path_buf()),
                 }
                 .into())
             }
@@ -984,16 +984,16 @@ impl Player {
         Ok(())
     }
 
-    pub fn save(&self, filepath: impl Into<PathBuf>) -> Result<()> {
-        let filepath = filepath.into();
-
-        let file = match File::create(&filepath) {
+    pub fn save(&self, filepath: &Path) -> Result<()> {
+        let file = match File::create(filepath) {
             Ok(f) => f,
             Err(e) => {
                 return Err(match e.kind() {
-                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
-                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
-                    _ => PlayerError::Failure(filepath),
+                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
+                    ErrorKind::PermissionDenied => {
+                        PlayerError::AccessDenied(filepath.to_path_buf())
+                    }
+                    _ => PlayerError::Failure(filepath.to_path_buf()),
                 }
                 .into())
             }
@@ -1002,22 +1002,22 @@ impl Player {
         let encryptor = AesSafe128Encryptor::new(ENCRYPTION_BYTES);
         let mut writer = match AesWriter::new_with_iv(file, encryptor, ENCRYPTION_BYTES) {
             Ok(r) => r,
-            Err(_) => return Err(PlayerError::Failure(filepath).into()),
+            Err(_) => return Err(PlayerError::Failure(filepath.to_path_buf()).into()),
         };
 
         self._save(&mut writer)
     }
 
-    pub fn save_decrypted(&self, filepath: impl Into<PathBuf>) -> Result<()> {
-        let filepath = filepath.into();
-
-        let mut file = match File::create(&filepath) {
+    pub fn save_decrypted(&self, filepath: &Path) -> Result<()> {
+        let mut file = match File::create(filepath) {
             Ok(f) => f,
             Err(e) => {
                 return Err(match e.kind() {
-                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath),
-                    ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath),
-                    _ => PlayerError::Failure(filepath),
+                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
+                    ErrorKind::PermissionDenied => {
+                        PlayerError::AccessDenied(filepath.to_path_buf())
+                    }
+                    _ => PlayerError::Failure(filepath.to_path_buf()),
                 }
                 .into())
             }
@@ -1026,15 +1026,9 @@ impl Player {
         self._save(&mut file)
     }
 
-    pub fn decrypt_file(
-        original_filepath: impl Into<PathBuf>,
-        decrypted_filepath: impl Into<PathBuf>,
-    ) -> Result<()> {
-        let original_filepath = original_filepath.into();
-        let decrypted_filepath = decrypted_filepath.into();
-
-        let original_file = File::open(&original_filepath)?;
-        let mut decrypted_file = File::create(&decrypted_filepath)?;
+    pub fn decrypt_file(original_filepath: &Path, decrypted_filepath: &Path) -> Result<()> {
+        let original_file = File::open(original_filepath)?;
+        let mut decrypted_file = File::create(decrypted_filepath)?;
 
         let decryptor = AesSafe128Decryptor::new(ENCRYPTION_BYTES);
         let mut reader = AesReader::new_with_iv(original_file, decryptor, ENCRYPTION_BYTES)?;
