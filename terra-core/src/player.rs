@@ -153,7 +153,7 @@ impl Default for Player {
             revision: 0,
             favourited: 0,
 
-            name: "Player".to_string(),
+            name: "Player".to_owned(),
             difficulty: Difficulty::Classic,
 
             playtime: 0,
@@ -649,7 +649,7 @@ impl Player {
         items: &Vec<Item>,
         buffs: &Vec<Buff>,
     ) -> Result<()> {
-        let filepath: PathBuf = filepath.into();
+        let filepath = filepath.into();
 
         let file = match File::open(&filepath) {
             Ok(f) => f,
@@ -1030,8 +1030,8 @@ impl Player {
         original_filepath: impl Into<PathBuf>,
         decrypted_filepath: impl Into<PathBuf>,
     ) -> Result<()> {
-        let original_filepath: PathBuf = original_filepath.into();
-        let decrypted_filepath: PathBuf = decrypted_filepath.into();
+        let original_filepath = original_filepath.into();
+        let decrypted_filepath = decrypted_filepath.into();
 
         let original_file = File::open(&original_filepath)?;
         let mut decrypted_file = File::create(&decrypted_filepath)?;

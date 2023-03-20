@@ -14,7 +14,7 @@ impl Default for Spawnpoint {
             id: 0,
             x: 0,
             y: 0,
-            name: "".to_string(),
+            name: "".to_owned(),
         }
     }
 }

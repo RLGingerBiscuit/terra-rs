@@ -18,8 +18,8 @@ impl Default for Prefix {
     fn default() -> Self {
         Self {
             id: 0,
-            name: "".to_string(),
-            internal_name: "".to_string(),
+            name: "".to_owned(),
+            internal_name: "".to_owned(),
         }
     }
 }
@@ -53,8 +53,8 @@ impl Prefix {
             if let Some(prefix) = prefixes.iter().filter(|p| p.id == self.id).next() {
                 self.copy(prefix);
             } else {
-                self.name = "Unknown".to_string();
-                self.internal_name = "Unknown".to_string();
+                self.name = "Unknown".to_owned();
+                self.internal_name = "Unknown".to_owned();
             }
         }
 

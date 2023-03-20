@@ -37,13 +37,13 @@ impl Default for Item {
     fn default() -> Self {
         Self {
             id: 0,
-            name: "".to_string(),
-            internal_name: "".to_string(),
+            name: "".to_owned(),
+            internal_name: "".to_owned(),
             max_stack: 0,
             stack: 0,
             prefix: Prefix::default(),
             sacrifices: 0,
-            tooltip: "".to_string(),
+            tooltip: "".to_owned(),
             favourited: false,
         }
     }
@@ -66,38 +66,38 @@ impl Item {
         Ok(items)
     }
 
-    fn legacy_lookup(version: i32, legacy_name: impl Into<String>) -> String {
+    fn legacy_lookup(version: i32, legacy_name: &str) -> String {
         let legacy_name = legacy_name.into();
 
         if version <= 4 {
             if legacy_name == "Cobalt Helmet" {
-                "Jungle Hat".to_string()
+                "Jungle Hat".to_owned()
             } else if legacy_name == "Cobalt Breastplate" {
-                "Jungle Shirt".to_string()
+                "Jungle Shirt".to_owned()
             } else if legacy_name == "Cobalt Greaves" {
-                "Jungle Pants".to_string()
+                "Jungle Pants".to_owned()
             } else {
                 legacy_name
             }
         } else if version <= 20 {
             if legacy_name == "Gills potion" {
-                "Gills Potion".to_string()
+                "Gills Potion".to_owned()
             } else if legacy_name == "Thorn Chakrum" {
-                "Thorm Chakram".to_string()
+                "Thorm Chakram".to_owned()
             } else if legacy_name == "Ball 'O Hurt" {
-                "Ball O' Hurt".to_string()
+                "Ball O' Hurt".to_owned()
             } else {
                 legacy_name
             }
         } else if version <= 41 && legacy_name == "Iron Chain" {
-            "Chain".to_string()
+            "Chain".to_owned()
         } else if version <= 44 && legacy_name == "Orb of Light" {
-            "Shadow Orb".to_string()
+            "Shadow Orb".to_owned()
         } else if version <= 46 {
             if legacy_name == "Black Dye" {
-                "Black Thread".to_string()
+                "Black Thread".to_owned()
             } else if legacy_name == "Green Dye" {
-                "Green Thread".to_string()
+                "Green Thread".to_owned()
             } else {
                 legacy_name
             }
@@ -106,36 +106,36 @@ impl Item {
         }
     }
 
-    fn reverse_legacy_lookup(version: i32, name: &String) -> String {
+    fn reverse_legacy_lookup(version: i32, name: &str) -> String {
         if version <= 4 {
             if name == "Jungle Hat" {
-                "Cobalt Helmet".to_string()
+                "Cobalt Helmet".to_owned()
             } else if name == "Jungle Shirt" {
-                "Cobalt Breastplate".to_string()
+                "Cobalt Breastplate".to_owned()
             } else if name == "Jungle Pants" {
-                "Cobalt Greaves".to_string()
+                "Cobalt Greaves".to_owned()
             } else {
                 name.to_owned()
             }
         } else if version <= 20 {
             if name == "Gills Potion" {
-                "Gills potion".to_string()
+                "Gills potion".to_owned()
             } else if name == "Thorn Chakram" {
-                "Thork Chakrum".to_string()
+                "Thork Chakrum".to_owned()
             } else if name == "Ball O' Hurt" {
-                "Ball 'O Hurt".to_string()
+                "Ball 'O Hurt".to_owned()
             } else {
                 name.to_owned()
             }
         } else if version <= 41 && name == "Chain" {
-            "Iron Chain".to_string()
+            "Iron Chain".to_owned()
         } else if version <= 44 && name == "Shadow Orb" {
-            "Orb of Light".to_string()
+            "Orb of Light".to_owned()
         } else if version <= 46 {
             if name == "Black Thread" {
-                "Black Dye".to_string()
+                "Black Dye".to_owned()
             } else if name == "Green Thread" {
-                "Green Dye".to_string()
+                "Green Dye".to_owned()
             } else {
                 name.to_owned()
             }
@@ -168,7 +168,7 @@ impl Item {
             return Err(ItemError::NoIdOrInternalName.into());
         }
 
-        let mut internal_name_string = "".to_string();
+        let mut internal_name_string = "".to_owned();
 
         if id {
             self.id = reader.read_i32::<LE>()?
@@ -201,10 +201,10 @@ impl Item {
                     self.id = 0
                 }
                 if !internal_name {
-                    self.internal_name = "Unknown".to_string()
+                    self.internal_name = "Unknown".to_owned()
                 }
 
-                self.name = "Unknown".to_string();
+                self.name = "Unknown".to_owned();
             }
 
             if self.stack == 0 {
@@ -222,7 +222,8 @@ impl Item {
         version: i32,
         stack: bool,
     ) -> Result<()> {
-        let name = Self::legacy_lookup(version, reader.read_lpstring()?);
+        let legacy_name = reader.read_lpstring()?;
+        let name = Self::legacy_lookup(version, &legacy_name);
 
         if stack {
             self.stack = reader.read_i32::<LE>()?
@@ -231,7 +232,7 @@ impl Item {
         if name == "" {
             self.id = 0;
             self.name = name;
-            self.internal_name = "Air".to_string();
+            self.internal_name = "Air".to_owned();
         } else if let Some(item) = items.iter().filter(|i| i.name == name).next() {
             self.copy(item);
             if self.stack == 0 {
@@ -239,7 +240,7 @@ impl Item {
             }
         } else {
             self.id = 0;
-            self.name = "Unknown".to_string();
+            self.name = "Unknown".to_owned();
             self.stack = 0;
         }
 

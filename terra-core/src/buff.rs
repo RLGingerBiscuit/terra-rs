@@ -44,11 +44,11 @@ impl Default for Buff {
     fn default() -> Self {
         Self {
             id: 0,
-            name: "".to_string(),
-            internal_name: "".to_string(),
+            name: "".to_owned(),
+            internal_name: "".to_owned(),
             time: 0,
             buff_type: BuffType::Buff,
-            tooltip: "".to_string(),
+            tooltip: "".to_owned(),
         }
     }
 }
@@ -85,8 +85,8 @@ impl Buff {
             if let Some(buff) = buffs.iter().filter(|b| b.id == self.id).next() {
                 self.copy(buff);
             } else {
-                self.name = "Unknown".to_string();
-                self.internal_name = "Unknown".to_string();
+                self.name = "Unknown".to_owned();
+                self.internal_name = "Unknown".to_owned();
             }
         }
 

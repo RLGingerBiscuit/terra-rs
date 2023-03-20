@@ -27,16 +27,16 @@ fn expand_templates(
     npcs: &serde_json::Value,
 ) -> String {
     if s == "NOTHING" {
-        return "".to_string();
+        return "".to_owned();
     }
 
     let expanded = template
         .replace_all(&s, |cap: &Captures| {
             if cap[1].starts_with("NPC") {
                 if cap[2].to_owned() == "None" {
-                    "".to_string()
+                    "".to_owned()
                 } else {
-                    npcs[&cap[1]][&cap[2]].as_str().unwrap().to_string()
+                    npcs[&cap[1]][&cap[2]].as_str().unwrap().to_owned()
                 }
             } else if cap[1].starts_with("Buff") {
                 game[&cap[1]][&cap[2]]
@@ -45,15 +45,15 @@ fn expand_templates(
                         println!("Warning: {} not found!", &cap[0]);
                         &cap[0][2..{ cap.len() - 1 }]
                     })
-                    .to_string()
+                    .to_owned()
             } else if cap[1].contains("Item") || cap[1].starts_with("PaintingArtist") {
-                items[&cap[1]][&cap[2]].as_str().unwrap().to_string()
+                items[&cap[1]][&cap[2]].as_str().unwrap().to_owned()
             } else {
                 println!("Warning: {} not found!", &cap[0]);
-                "".to_string()
+                "".to_owned()
             }
         })
-        .to_string();
+        .to_owned();
 
     if expanded.contains(r"{$}") {
         expand_templates(expanded, template, game, items, npcs)
@@ -121,18 +121,18 @@ fn get_item_info(
 
             if let rlua::Value::Table(lua_item) = val {
                 let id = i32::from_str(key.to_str()?)?;
-                let internal_name = lua_item.get("internalName").unwrap_or("".to_string());
-                let name = lua_item.get("name").unwrap_or("".to_string());
+                let internal_name = lua_item.get("internalName").unwrap_or("".to_owned());
+                let name = lua_item.get("name").unwrap_or("".to_owned());
                 let max_stack = lua_item.get("maxStack").unwrap_or(1);
                 let sacrifices = lua_item.get("sacrifices").unwrap_or(1);
 
                 let tooltip = match items["ItemTooltip"][&internal_name].as_str() {
                     Some(tt) => tt
                         .lines()
-                        .map(|s| expand_templates(s.to_string(), &template, &game, &items, &npcs))
+                        .map(|s| expand_templates(s.to_owned(), &template, &game, &items, &npcs))
                         .collect::<Vec<_>>()
                         .join("\n"),
-                    None => "".to_string(),
+                    None => "".to_owned(),
                 };
 
                 let item = Item {
@@ -196,10 +196,10 @@ fn get_buff_info(
                 .value()
                 .attr("alt")
                 .unwrap()
-                .to_string();
+                .to_owned();
 
             let name = match tds.next().unwrap().select(&name_selector).next() {
-                Some(a) => a.inner_html().trim().to_string(),
+                Some(a) => a.inner_html().trim().to_owned(),
                 None => image_text,
             };
 
@@ -211,7 +211,7 @@ fn get_buff_info(
                 .unwrap()
                 .inner_html()
                 .trim()
-                .to_string();
+                .to_owned();
 
             let buff_type = match tds.next().unwrap().inner_html().trim() {
                 "Buff" => BuffType::Buff,
@@ -222,10 +222,10 @@ fn get_buff_info(
             let tooltip = match &game["BuffDescription"][&internal_name].as_str() {
                 Some(tt) => tt
                     .lines()
-                    .map(|s| expand_templates(s.to_string(), template, game, items, npcs))
+                    .map(|s| expand_templates(s.to_owned(), template, game, items, npcs))
                     .collect::<Vec<_>>()
                     .join("\n"),
-                None => "".to_string(),
+                None => "".to_owned(),
             };
 
             Buff {
@@ -278,12 +278,12 @@ fn get_prefix_info(
             let id = u8::from_str(tds.next().unwrap().inner_html().trim()).unwrap();
 
             let internal_name = match id {
-                20 => "Deadly2".to_string(),
-                75 => "Hasty2".to_string(),
-                76 => "Quick2".to_string(),
-                84 => "Legendary2".to_string(),
-                90 => "Piercing".to_string(),
-                _ => tds.next().unwrap().inner_html().trim().to_string(),
+                20 => "Deadly2".to_owned(),
+                75 => "Hasty2".to_owned(),
+                76 => "Quick2".to_owned(),
+                84 => "Legendary2".to_owned(),
+                90 => "Piercing".to_owned(),
+                _ => tds.next().unwrap().inner_html().trim().to_owned(),
             };
 
             // Quick hack because Piercing is mobile only
@@ -293,7 +293,7 @@ fn get_prefix_info(
                 items["Prefix"][&internal_name]
                     .as_str()
                     .unwrap()
-                    .to_string()
+                    .to_owned()
             };
 
             Prefix {
@@ -320,7 +320,7 @@ fn generate_spritesheet(items_fol: &PathBuf) -> Result<DynamicImage> {
 
     for (i, item) in iter.enumerate() {
         let item = item?;
-        let file_name = item.file_name().to_string_lossy().to_string();
+        let file_name = item.file_name().to_string_lossy().to_owned();
 
         if !file_name.ends_with(".png") {
             continue;
@@ -441,7 +441,7 @@ fn main() -> Result<()> {
     spritesheet.write_to(&mut spritesheet_writer, ImageFormat::Png)?;
 
     // Pretty scuffed but works for now
-    let mut build_type = "".to_string();
+    let mut build_type = "".to_owned();
     File::open("./terra-res/build_type.txt")?.read_to_string(&mut build_type)?;
 
     let target_dir = PathBuf::from("./target").join(&build_type);

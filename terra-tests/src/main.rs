@@ -100,7 +100,7 @@ fn main() {
 
     let mut tests: Vec<String> = Vec::new();
     tests.extend(VERSIONS.iter().map(|v| format!("v{v}")));
-    tests.push("テラリア".to_string());
+    tests.push("テラリア".to_owned());
 
     for chara_name in tests {
         match run_test(&chara_name, &player_dir, &items, &buffs, &prefixes) {
