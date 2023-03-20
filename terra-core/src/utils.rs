@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{num::ParseIntError, path::PathBuf};
 
 use dirs_next::{data_local_dir, document_dir};
 
@@ -166,6 +166,14 @@ pub fn version_lookup(version: i32) -> &'static str {
     } else {
         "Unknown"
     }
+}
+
+pub fn from_hex(hex: &str) -> Result<Color, ParseIntError> {
+    let start = if hex.starts_with("#") { 1 } else { 0 };
+    let r = u8::from_str_radix(&hex[(start + 0)..2], 16)?;
+    let g = u8::from_str_radix(&hex[(start + 2)..4], 16)?;
+    let b = u8::from_str_radix(&hex[(start + 4)..6], 16)?;
+    Ok([r, g, b])
 }
 
 pub fn to_hex(color: Color) -> String {
