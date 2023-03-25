@@ -107,7 +107,7 @@ pub trait TerraReadExt: io::Read {
     }
 
     #[inline]
-    /// Reads an `Rgb<Srgb, u8>` from the underlying reader.
+    /// Reads an RGB color from the underlying reader.
     ///
     /// # Errors
     ///
@@ -208,7 +208,7 @@ pub trait TerraWriteExt: io::Write {
     }
 
     #[inline]
-    /// Writes an `Rgb<Srgb, u8>` to the underlying writer.
+    /// Writes an RGB color to the underlying writer.
     ///
     /// # Errors
     ///
