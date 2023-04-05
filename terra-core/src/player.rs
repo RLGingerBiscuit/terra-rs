@@ -14,7 +14,7 @@ use serde_big_array::BigArray;
 
 use crate::{
     io::{TerraReadExt, TerraWriteExt},
-    utils, BoolByte, Buff, Color, Difficulty, FileType, Item, JourneyPowers, Loadout, Prefix,
+    utils, BoolByte, Buff, Color, Difficulty, FileType, Item, ItemMeta, JourneyPowers, Loadout,
     Spawnpoint, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT,
     COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES, EQUIPMENT_COUNT,
     FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
@@ -189,13 +189,20 @@ impl Default for Player {
             pve_deaths: 0,
             pvp_deaths: 0,
 
-            hair_color: utils::from_hex("#d75a37").expect("Default hair color should parse correctly"),
-            skin_color: utils::from_hex("#ff7d5a").expect("Default skin color should parse correctly"),
-            eye_color: utils::from_hex("#695a4b").expect("Default eye color should parse correctly"),
-            shirt_color: utils::from_hex("#afa58c").expect("Default shirt color should parse correctly"),
-            undershirt_color: utils::from_hex("#a0b4d7").expect("Default undershirt color should parse correctly"),
-            pants_color: utils::from_hex("#ffe6af").expect("Default pants color should parse correctly"),
-            shoe_color: utils::from_hex("#a0693c").expect("Default shoe color should parse correctly"),
+            hair_color: utils::from_hex("#d75a37")
+                .expect("Default hair color should parse correctly"),
+            skin_color: utils::from_hex("#ff7d5a")
+                .expect("Default skin color should parse correctly"),
+            eye_color: utils::from_hex("#695a4b")
+                .expect("Default eye color should parse correctly"),
+            shirt_color: utils::from_hex("#afa58c")
+                .expect("Default shirt color should parse correctly"),
+            undershirt_color: utils::from_hex("#a0b4d7")
+                .expect("Default undershirt color should parse correctly"),
+            pants_color: utils::from_hex("#ffe6af")
+                .expect("Default pants color should parse correctly"),
+            shoe_color: utils::from_hex("#a0693c")
+                .expect("Default shoe color should parse correctly"),
 
             equipment: std::array::from_fn(|_| Item::default()),
             equipment_dyes: std::array::from_fn(|_| Item::default()),
@@ -252,11 +259,9 @@ impl Default for Player {
 impl Player {
     fn _load(
         &mut self,
+        item_meta: &Vec<ItemMeta>,
         filepath: &Path,
         reader: &mut dyn Read,
-        prefixes: &Vec<Prefix>,
-        items: &Vec<Item>,
-        buffs: &Vec<Buff>,
     ) -> Result<()> {
         self.version = reader.read_i32::<LE>()?;
 
@@ -388,15 +393,14 @@ impl Player {
         let has_prefix = self.version >= 36;
         let has_favourited = self.version >= 114;
 
-        self.loadouts[0].load(reader, prefixes, items, self.version, false, has_prefix)?;
+        self.loadouts[0].load(reader, item_meta, self.version, false, has_prefix)?;
 
         let inventory_count = if self.version >= 58 { 50 } else { 40 };
 
         for i in 0..inventory_count {
             self.inventory[i].load(
                 reader,
-                items,
-                prefixes,
+                item_meta,
                 true,
                 false,
                 true,
@@ -408,8 +412,7 @@ impl Player {
         for i in 0..COINS_COUNT {
             self.coins[i].load(
                 reader,
-                items,
-                prefixes,
+                item_meta,
                 true,
                 false,
                 true,
@@ -422,8 +425,7 @@ impl Player {
             for i in 0..AMMO_COUNT {
                 self.ammo[i].load(
                     reader,
-                    items,
-                    prefixes,
+                    item_meta,
                     true,
                     false,
                     true,
@@ -437,32 +439,26 @@ impl Player {
             let start = if self.version >= 136 { 0 } else { 1 };
 
             for i in start..EQUIPMENT_COUNT {
-                self.equipment[i].load(reader, items, prefixes, true, false, false, true, false)?;
-                self.equipment_dyes[i]
-                    .load(reader, items, prefixes, true, false, false, true, false)?;
+                self.equipment[i].load(reader, item_meta, true, false, false, true, false)?;
+                self.equipment_dyes[i].load(reader, item_meta, true, false, false, true, false)?;
             }
         }
 
         let bank_count = if self.version >= 58 { 40 } else { 20 };
 
         for i in 0..bank_count {
-            self.piggy_bank[i].load(
-                reader, items, prefixes, true, false, true, has_prefix, false,
-            )?;
+            self.piggy_bank[i].load(reader, item_meta, true, false, true, has_prefix, false)?;
         }
 
         if self.version >= 20 {
             for i in 0..bank_count {
-                self.safe[i].load(
-                    reader, items, prefixes, true, false, true, has_prefix, false,
-                )?;
+                self.safe[i].load(reader, item_meta, true, false, true, has_prefix, false)?;
             }
         }
 
         if self.version >= 182 {
             for i in 0..bank_count {
-                self.defenders_forge[i]
-                    .load(reader, items, prefixes, true, false, true, true, false)?;
+                self.defenders_forge[i].load(reader, item_meta, true, false, true, true, false)?;
             }
         }
 
@@ -472,8 +468,7 @@ impl Player {
             for i in 0..bank_count {
                 self.void_vault[i].load(
                     reader,
-                    items,
-                    prefixes,
+                    item_meta,
                     true,
                     false,
                     true,
@@ -509,7 +504,7 @@ impl Player {
             };
 
             for i in 0..buff_count {
-                self.buffs[i].load(reader, buffs)?;
+                self.buffs[i].load(reader)?;
             }
         }
 
@@ -599,7 +594,7 @@ impl Player {
 
             for _ in 0..research_count {
                 let research_item =
-                    Item::load_new(reader, items, prefixes, false, true, true, false, false)?;
+                    Item::load_new(reader, item_meta, false, true, true, false, false)?;
 
                 self.research.push(research_item);
             }
@@ -611,7 +606,7 @@ impl Player {
             for i in 0..TEMPORARY_SLOT_COUNT {
                 if bb.get(i as u8)? {
                     self.temporary_slots[i]
-                        .load(reader, items, prefixes, true, false, true, true, false)?;
+                        .load(reader, item_meta, true, false, true, true, false)?;
                 }
             }
         }
@@ -627,14 +622,14 @@ impl Player {
             self.super_cart_enabled = bb.get(1)?;
         } else {
             // 3353 - Mechanical Cart
-            self.super_cart = self.has_item(33353);
+            self.super_cart = self.has_item(3353);
         }
 
         if self.version >= 262 {
             self.current_loadout_index = reader.read_i32::<LE>()?;
 
             for i in 1..LOADOUT_COUNT {
-                self.loadouts[i].load(reader, prefixes, items, self.version, true, true)?;
+                self.loadouts[i].load(reader, item_meta, self.version, true, true)?;
                 self.loadouts[i].load_visuals(reader, self.version, false)?;
             }
         }
@@ -642,13 +637,7 @@ impl Player {
         Ok(())
     }
 
-    pub fn load(
-        &mut self,
-        filepath: &Path,
-        prefixes: &Vec<Prefix>,
-        items: &Vec<Item>,
-        buffs: &Vec<Buff>,
-    ) -> Result<()> {
+    pub fn load(&mut self, item_meta: &Vec<ItemMeta>, filepath: &Path) -> Result<()> {
         let file = match File::open(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -669,16 +658,10 @@ impl Player {
             Err(_) => return Err(PlayerError::Failure(filepath.to_path_buf()).into()),
         };
 
-        self._load(filepath, &mut reader, prefixes, items, buffs)
+        self._load(item_meta, filepath, &mut reader)
     }
 
-    pub fn load_decrypted(
-        &mut self,
-        filepath: &Path,
-        prefixes: &Vec<Prefix>,
-        items: &Vec<Item>,
-        buffs: &Vec<Buff>,
-    ) -> Result<()> {
+    pub fn load_decrypted(&mut self, item_meta: &Vec<ItemMeta>, filepath: &Path) -> Result<()> {
         let mut file = match File::open(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -693,10 +676,10 @@ impl Player {
             }
         };
 
-        self._load(filepath, &mut file, prefixes, items, buffs)
+        self._load(item_meta, filepath, &mut file)
     }
 
-    fn _save(&self, writer: &mut dyn Write) -> Result<()> {
+    fn _save(&self, item_meta: &Vec<ItemMeta>, writer: &mut dyn Write) -> Result<()> {
         writer.write_i32::<LE>(self.version)?;
 
         if self.version >= 135 {
@@ -797,21 +780,45 @@ impl Player {
         let has_prefix = self.version >= 36;
         let has_favourited = self.version >= 114;
 
-        self.loadouts[0].save(writer, self.version, false, has_prefix)?;
+        self.loadouts[0].save(writer, item_meta, self.version, false, has_prefix)?;
 
         let inventory_count = if self.version >= 58 { 50 } else { 40 };
 
         for i in 0..inventory_count {
-            self.inventory[i].save(writer, true, false, true, has_prefix, has_favourited)?;
+            self.inventory[i].save(
+                writer,
+                item_meta,
+                true,
+                false,
+                true,
+                has_prefix,
+                has_favourited,
+            )?;
         }
 
         for i in 0..COINS_COUNT {
-            self.coins[i].save(writer, true, false, true, has_prefix, has_favourited)?;
+            self.coins[i].save(
+                writer,
+                item_meta,
+                true,
+                false,
+                true,
+                has_prefix,
+                has_favourited,
+            )?;
         }
 
         if self.version >= 15 {
             for i in 0..AMMO_COUNT {
-                self.ammo[i].save(writer, true, false, true, has_prefix, has_favourited)?;
+                self.ammo[i].save(
+                    writer,
+                    item_meta,
+                    true,
+                    false,
+                    true,
+                    has_prefix,
+                    has_favourited,
+                )?;
             }
         }
 
@@ -819,32 +826,40 @@ impl Player {
             let start = if self.version >= 136 { 0 } else { 1 };
 
             for i in start..EQUIPMENT_COUNT {
-                self.equipment[i].save(writer, true, false, false, true, false)?;
-                self.equipment_dyes[i].save(writer, true, false, false, true, false)?;
+                self.equipment[i].save(writer, item_meta, true, false, false, true, false)?;
+                self.equipment_dyes[i].save(writer, item_meta, true, false, false, true, false)?;
             }
         }
 
         let bank_count = if self.version >= 58 { 40 } else { 20 };
 
         for i in 0..bank_count {
-            self.piggy_bank[i].save(writer, true, false, true, has_prefix, false)?;
+            self.piggy_bank[i].save(writer, item_meta, true, false, true, has_prefix, false)?;
         }
 
         if self.version >= 20 {
             for i in 0..bank_count {
-                self.safe[i].save(writer, true, false, true, has_prefix, false)?;
+                self.safe[i].save(writer, item_meta, true, false, true, has_prefix, false)?;
             }
         }
 
         if self.version >= 182 {
             for i in 0..bank_count {
-                self.defenders_forge[i].save(writer, true, false, true, true, false)?;
+                self.defenders_forge[i].save(writer, item_meta, true, false, true, true, false)?;
             }
         }
 
         if self.version >= 198 {
             for i in 0..bank_count {
-                self.void_vault[i].save(writer, true, false, true, true, self.version >= 255)?;
+                self.void_vault[i].save(
+                    writer,
+                    item_meta,
+                    true,
+                    false,
+                    true,
+                    true,
+                    self.version >= 255,
+                )?;
             }
 
             if self.version >= 199 {
@@ -935,7 +950,7 @@ impl Player {
             writer.write_i32::<LE>(self.research.len() as i32)?;
 
             for item in self.research.iter() {
-                item.save(writer, false, true, true, false, false)?;
+                item.save(writer, item_meta, false, true, true, false, false)?;
             }
         }
 
@@ -955,7 +970,7 @@ impl Player {
                     continue;
                 }
 
-                slot.save(writer, true, false, true, true, false)?;
+                slot.save(writer, item_meta, true, false, true, true, false)?;
             }
         }
 
@@ -976,7 +991,7 @@ impl Player {
             writer.write_i32::<LE>(self.current_loadout_index)?;
 
             for i in 1..LOADOUT_COUNT {
-                self.loadouts[i].save(writer, self.version, true, true)?;
+                self.loadouts[i].save(writer, item_meta, self.version, true, true)?;
                 self.loadouts[i].save_visuals(writer, self.version, false)?;
             }
         }
@@ -984,7 +999,7 @@ impl Player {
         Ok(())
     }
 
-    pub fn save(&self, filepath: &Path) -> Result<()> {
+    pub fn save(&self, item_meta: &Vec<ItemMeta>, filepath: &Path) -> Result<()> {
         let file = match File::create(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -1005,10 +1020,10 @@ impl Player {
             Err(_) => return Err(PlayerError::Failure(filepath.to_path_buf()).into()),
         };
 
-        self._save(&mut writer)
+        self._save(item_meta, &mut writer)
     }
 
-    pub fn save_decrypted(&self, filepath: &Path) -> Result<()> {
+    pub fn save_decrypted(&self, item_meta: &Vec<ItemMeta>, filepath: &Path) -> Result<()> {
         let mut file = match File::create(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -1023,7 +1038,7 @@ impl Player {
             }
         };
 
-        self._save(&mut file)
+        self._save(item_meta, &mut file)
     }
 
     pub fn decrypt_file(original_filepath: &Path, decrypted_filepath: &Path) -> Result<()> {

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     io::{TerraReadExt, TerraWriteExt},
-    utils, BoolByte, Item, Prefix, ACCESSORY_COUNT, ARMOR_COUNT, HIDDEN_VISUAL_COUNT,
+    utils, BoolByte, Item, ItemMeta, ACCESSORY_COUNT, ARMOR_COUNT, HIDDEN_VISUAL_COUNT,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -42,8 +42,7 @@ impl Loadout {
     pub fn load(
         &mut self,
         reader: &mut dyn Read,
-        prefixes: &Vec<Prefix>,
-        items: &Vec<Item>,
+        item_meta: &Vec<ItemMeta>,
         version: i32,
         stack: bool,
         prefix: bool,
@@ -52,27 +51,26 @@ impl Loadout {
 
         for armor in self.armor.iter_mut() {
             if version >= 38 {
-                armor.load(reader, items, prefixes, true, false, stack, prefix, false)?;
+                armor.load(reader, item_meta, true, false, stack, prefix, false)?;
             } else {
-                armor.load_legacy_name(reader, items, version, stack)?;
+                armor.load_legacy_name(reader, item_meta, version, stack)?;
             }
         }
 
         for i in 0..accessory_count {
             if version >= 38 {
-                self.accessories[i]
-                    .load(reader, items, prefixes, true, false, stack, prefix, false)?;
+                self.accessories[i].load(reader, item_meta, true, false, stack, prefix, false)?;
             } else {
-                self.accessories[i].load_legacy_name(reader, items, version, stack)?;
+                self.accessories[i].load_legacy_name(reader, item_meta, version, stack)?;
             }
         }
 
         if version >= 6 {
             for vanity in self.vanity_armor.iter_mut() {
                 if version >= 38 {
-                    vanity.load(reader, items, prefixes, true, false, stack, prefix, false)?;
+                    vanity.load(reader, item_meta, true, false, stack, prefix, false)?;
                 } else {
-                    vanity.load_legacy_name(reader, items, version, stack)?;
+                    vanity.load_legacy_name(reader, item_meta, version, stack)?;
                 }
             }
         }
@@ -80,20 +78,20 @@ impl Loadout {
         if version >= 81 {
             for i in 0..accessory_count {
                 self.vanity_accessories[i]
-                    .load(reader, items, prefixes, true, false, stack, prefix, false)?;
+                    .load(reader, item_meta, true, false, stack, prefix, false)?;
             }
         }
 
         if version >= 47 {
             for dye in self.armor_dyes.iter_mut() {
-                dye.load(reader, items, prefixes, true, false, stack, prefix, false)?;
+                dye.load(reader, item_meta, true, false, stack, prefix, false)?;
             }
         }
 
         if version >= 81 {
             for i in 0..accessory_count {
                 self.accessory_dyes[i]
-                    .load(reader, items, prefixes, true, false, stack, prefix, false)?;
+                    .load(reader, item_meta, true, false, stack, prefix, false)?;
             }
         }
 
@@ -133,6 +131,7 @@ impl Loadout {
     pub fn save(
         &self,
         writer: &mut dyn Write,
+        item_meta: &Vec<ItemMeta>,
         version: i32,
         stack: bool,
         prefix: bool,
@@ -141,45 +140,47 @@ impl Loadout {
 
         for armor in self.armor.iter() {
             if version >= 38 {
-                armor.save(writer, true, false, stack, prefix, false)?;
+                armor.save(writer, item_meta, true, false, stack, prefix, false)?;
             } else {
-                armor.save_legacy_name(writer, version, stack)?;
+                armor.save_legacy_name(writer, item_meta, version, stack)?;
             }
         }
 
         for i in 0..accessory_count {
             if version >= 38 {
-                self.accessories[i].save(writer, true, false, stack, prefix, false)?;
+                self.accessories[i].save(writer, item_meta, true, false, stack, prefix, false)?;
             } else {
-                self.accessories[i].save_legacy_name(writer, version, stack)?;
+                self.accessories[i].save_legacy_name(writer, item_meta, version, stack)?;
             }
         }
 
         if version >= 6 {
             for vanity in self.vanity_armor.iter() {
                 if version >= 38 {
-                    vanity.save(writer, true, false, stack, prefix, false)?;
+                    vanity.save(writer, item_meta, true, false, stack, prefix, false)?;
                 } else {
-                    vanity.save_legacy_name(writer, version, stack)?;
+                    vanity.save_legacy_name(writer, item_meta, version, stack)?;
                 }
             }
         }
 
         if version >= 81 {
             for i in 0..accessory_count {
-                self.vanity_accessories[i].save(writer, true, false, stack, prefix, false)?;
+                self.vanity_accessories[i]
+                    .save(writer, item_meta, true, false, stack, prefix, false)?;
             }
         }
 
         if version >= 47 {
             for dye in self.armor_dyes.iter() {
-                dye.save(writer, true, false, stack, prefix, false)?;
+                dye.save(writer, item_meta, true, false, stack, prefix, false)?;
             }
         }
 
         if version >= 81 {
             for i in 0..accessory_count {
-                self.accessory_dyes[i].save(writer, true, false, stack, prefix, false)?;
+                self.accessory_dyes[i]
+                    .save(writer, item_meta, true, false, stack, prefix, false)?;
             }
         }
 

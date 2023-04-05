@@ -1,6 +1,6 @@
 use terra_core::{
     utils::{get_player_dir, to_hex, version_lookup},
-    Buff, Item, Player, Prefix, TICKS_PER_MICROSECOND,
+    BuffMeta, ItemMeta, Player, PrefixMeta, TICKS_PER_MICROSECOND,
 };
 
 fn usage() {
@@ -17,21 +17,21 @@ fn main() {
         return;
     }
 
-    let items = Item::load_items().expect("Could not load items.");
-    let buffs = Buff::load_buffs().expect("Could not load buffs.");
-    let prefixes = Prefix::load_prefixes().expect("Could not load prefixes.");
+    let item_meta = ItemMeta::load().expect("Could not load items.");
+    let buff_meta = BuffMeta::load().expect("Could not load buffs.");
+    let prefixe_meta = PrefixMeta::load().expect("Could not load prefixes.");
 
     let player_filename: String = args.next().unwrap();
 
-    println!("Items count: {}", items.len());
-    println!("Buffs count: {}", buffs.len());
-    println!("Prefixes count: {}", prefixes.len());
+    println!("Items count: {}", item_meta.len());
+    println!("Buffs count: {}", buff_meta.len());
+    println!("Prefixes count: {}", prefixe_meta.len());
 
     let filepath = player_dir.join(format!("{}.plr", &player_filename));
 
     let mut player = Player::default();
 
-    if let Err(err) = player.load(&filepath, &prefixes, &items, &buffs) {
+    if let Err(err) = player.load(&item_meta, &filepath) {
         println!("Error loading player '{}': {}", player_filename, err);
         return;
     }

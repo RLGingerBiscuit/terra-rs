@@ -87,6 +87,7 @@ pub trait TerraReadExt: io::Read {
             read += 1;
         }
 
+        // TODO: Don't unwrap here
         let string = String::from_utf8(buf).unwrap();
 
         Ok(string)
@@ -184,7 +185,7 @@ pub trait TerraWriteExt: io::Write {
     ///
     /// [`Write::write_all`]: https://doc.rust-lang.org/std/io/trait.Write.html#method.write_all
     /// [`ULEB128`]: https://wikipedia.org/wiki/LEB128#Unsigned_LEB128
-    fn write_lpstring(&mut self, value: &String) -> IOResult<()> {
+    fn write_lpstring(&mut self, value: &str) -> IOResult<()> {
         self.write_uleb128_usize(value.len())?;
 
         self.write(value.as_bytes())?;

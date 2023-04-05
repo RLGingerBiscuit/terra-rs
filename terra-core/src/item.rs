@@ -1,16 +1,10 @@
-use std::{
-    fs::File,
-    io::{BufReader, Read, Write},
-};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use anyhow::Result;
-use byteorder::{ReadBytesExt, WriteBytesExt, LE};
-use serde::{Deserialize, Serialize};
+mod item;
+mod item_meta;
 
-use crate::{
-    io::{TerraReadExt, TerraWriteExt},
-    Prefix,
-};
+pub use item::{Item, ItemError};
+pub use item_meta::ItemMeta;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ItemError {
@@ -179,146 +173,5 @@ impl Item {
         if stack {
             self.stack = reader.read_i32::<LE>()?
         }
-        if prefix {
-            self.prefix.load(reader, prefixes)?
-        }
-        if favourited {
-            self.favourited = reader.read_bool()?
-        }
-
-        if (id && self.id != 0) || (internal_name && internal_name_string.len() != 0) {
-            if let Some(item) = items
-                .iter()
-                .filter(|i| {
-                    (id && i.id == self.id)
-                        || (internal_name && i.internal_name == internal_name_string)
-                })
-                .next()
-            {
-                self.copy(item)
-            } else {
-                if !id {
-                    self.id = 0
-                }
-                if !internal_name {
-                    self.internal_name = "Unknown".to_owned()
-                }
-
-                self.name = "Unknown".to_owned();
-            }
-
-            if self.stack == 0 {
-                self.stack = 1
-            }
-        }
-
-        Ok(())
-    }
-
-    pub fn load_legacy_name(
-        &mut self,
-        reader: &mut dyn Read,
-        items: &Vec<Self>,
-        version: i32,
-        stack: bool,
-    ) -> Result<()> {
-        let legacy_name = reader.read_lpstring()?;
-        let name = Self::legacy_lookup(version, &legacy_name);
-
-        if stack {
-            self.stack = reader.read_i32::<LE>()?
-        }
-
-        if name == "" {
-            self.id = 0;
-            self.name = name;
-            self.internal_name = "Air".to_owned();
-        } else if let Some(item) = items.iter().filter(|i| i.name == name).next() {
-            self.copy(item);
-            if self.stack == 0 {
-                self.stack = 1;
-            }
-        } else {
-            self.id = 0;
-            self.name = "Unknown".to_owned();
-            self.stack = 0;
-        }
-
-        Ok(())
-    }
-
-    pub fn load_new(
-        reader: &mut dyn Read,
-        items: &Vec<Self>,
-        prefixes: &Vec<Prefix>,
-        id: bool,
-        internal_name: bool,
-        stack: bool,
-        prefix: bool,
-        favourited: bool,
-    ) -> Result<Self> {
-        let mut item = Item::default();
-
-        item.load(
-            reader,
-            items,
-            prefixes,
-            id,
-            internal_name,
-            stack,
-            prefix,
-            favourited,
-        )?;
-
-        return Ok(item);
-    }
-
-    pub fn save(
-        &self,
-        writer: &mut dyn Write,
-        id: bool,
-        internal_name: bool,
-        stack: bool,
-        prefix: bool,
-        favourited: bool,
-    ) -> Result<()> {
-        if !id && !internal_name {
-            return Err(ItemError::NoIdOrInternalName.into());
-        }
-
-        if id {
-            writer.write_i32::<LE>(self.id)?
-        }
-        if internal_name {
-            writer.write_lpstring(&self.internal_name)?
-        }
-        if stack {
-            writer.write_i32::<LE>(self.stack)?
-        }
-        if prefix {
-            self.prefix.save(writer)?
-        }
-        if favourited {
-            writer.write_bool(self.favourited)?
-        }
-
-        Ok(())
-    }
-
-    pub fn save_legacy_name(
-        &self,
-        writer: &mut dyn Write,
-        version: i32,
-        stack: bool,
-    ) -> Result<()> {
-        let name = Self::reverse_legacy_lookup(version, &self.name);
-
-        writer.write_lpstring(&name)?;
-
-        if stack {
-            writer.write_i32::<LE>(self.stack)?;
-        }
-
-        Ok(())
     }
 }

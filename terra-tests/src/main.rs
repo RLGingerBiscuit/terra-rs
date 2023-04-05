@@ -2,7 +2,7 @@ use std::{fs::File, io::Read, path::PathBuf};
 
 use anyhow::Result;
 
-use terra_core::{Buff, Item, Player, Prefix};
+use terra_core::{BuffMeta, ItemMeta, Player, PrefixMeta};
 
 #[derive(thiserror::Error, Debug)]
 pub enum TestError {
@@ -21,9 +21,7 @@ const VERSIONS: [usize; 17] = [
 fn run_test(
     chara_name: &String,
     directory: &PathBuf,
-    items: &Vec<Item>,
-    buffs: &Vec<Buff>,
-    prefixes: &Vec<Prefix>,
+    item_meta: &Vec<ItemMeta>,
 ) -> Result<(), TestError> {
     let filepath = directory.join(format!("{}.plr", chara_name));
 
@@ -38,7 +36,7 @@ fn run_test(
 
     let mut plr = Player::default();
 
-    if let Err(err) = plr.load(&filepath, prefixes, items, buffs) {
+    if let Err(err) = plr.load(item_meta, &filepath) {
         return Err(TestError::Load(err));
     }
 
@@ -46,13 +44,13 @@ fn run_test(
     println!("\tName: {}", &plr.name);
 
     let out_filepath = directory.join(format!("{}.saved.plr", &chara_name));
-    let out_d_filepath = directory.join(format!("{}.saved.dplr", &chara_name));
+    let out_decrypted_filepath = directory.join(format!("{}.saved.dplr", &chara_name));
 
-    if let Err(err) = plr.save(&out_filepath) {
+    if let Err(err) = plr.save(item_meta, &out_filepath) {
         return Err(TestError::Save(err));
     }
 
-    if let Err(err) = plr.save_decrypted(&out_d_filepath) {
+    if let Err(err) = plr.save_decrypted(item_meta, &out_decrypted_filepath) {
         return Err(TestError::Save(err));
     }
 
@@ -90,20 +88,20 @@ fn main() {
     let mut player_dir = PathBuf::new();
     player_dir.push("tests");
 
-    let items = Item::load_items().expect("Could not load items.");
-    let buffs = Buff::load_buffs().expect("Could not load buffs.");
-    let prefixes = Prefix::load_prefixes().expect("Could not load prefixes.");
+    let item_meta = ItemMeta::load().expect("Could not load items.");
+    let buff_meta = BuffMeta::load().expect("Could not load buffs.");
+    let prefix_meta = PrefixMeta::load().expect("Could not load prefixes.");
 
-    println!("Items count: {}", items.len());
-    println!("Buffs count: {}", buffs.len());
-    println!("Prefixes count: {}", prefixes.len());
+    println!("Items count: {}", item_meta.len());
+    println!("Buffs count: {}", buff_meta.len());
+    println!("Prefixes count: {}", prefix_meta.len());
 
     let mut tests: Vec<String> = Vec::new();
     tests.extend(VERSIONS.iter().map(|v| format!("v{v}")));
     tests.push("テラリア".to_owned());
 
     for chara_name in tests {
-        match run_test(&chara_name, &player_dir, &items, &buffs, &prefixes) {
+        match run_test(&chara_name, &player_dir, &item_meta) {
             Ok(_) => println!("'{}.plr' loaded/saved successfully", &chara_name),
             Err(err) => match err {
                 TestError::Load(err) => println!("Error whilst loading\n---\n{:?}\n---", err),

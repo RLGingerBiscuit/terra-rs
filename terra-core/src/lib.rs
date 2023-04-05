@@ -53,13 +53,13 @@ pub mod spawnpoint;
 pub mod utils;
 
 pub use bool_byte::{BoolByte, BoolByteError};
-pub use buff::{Buff, BuffType};
+pub use buff::{Buff, BuffMeta, BuffType};
 pub use difficulty::Difficulty;
 pub use file_type::FileType;
 use io_extensions as io;
-pub use item::{Item, ItemError};
+pub use item::{Item, ItemError, ItemMeta};
 pub use journey_powers::{JourneyPowerId, JourneyPowers};
 pub use loadout::Loadout;
 pub use player::{Player, PlayerError};
-pub use prefix::Prefix;
+pub use prefix::{Prefix, PrefixMeta};
 pub use spawnpoint::Spawnpoint;

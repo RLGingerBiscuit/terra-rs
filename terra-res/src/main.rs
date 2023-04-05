@@ -13,9 +13,9 @@ use regex::{Captures, Regex};
 use fs_extra::dir::{copy as copy_dir, create as create_dir, CopyOptions as DirCopyOptions};
 
 use rlua::{Lua, Table};
-use terra_core::{buff::Buff, buff::BuffType, item::Item, prefix::Prefix};
+use terra_core::{BuffMeta, BuffType, ItemMeta, PrefixMeta};
 
-const ITEM_INFO_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/data";
+const ITEM_DATA_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/data";
 const BUFF_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Buff_IDs";
 const PREFIX_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Prefix_IDs";
 
@@ -64,18 +64,18 @@ fn expand_templates(
     }
 }
 
-fn get_item_info(
+fn get_item_meta(
     template: &Regex,
     game: &serde_json::Value,
     items: &serde_json::Value,
     npcs: &serde_json::Value,
-) -> Result<Vec<Item>> {
+) -> Result<Vec<ItemMeta>> {
     // https://terraria.wiki.gg/wiki/Module:Iteminfo/data
     // API: https://terraria.wiki.gg/api.php?action=query&prop=revisions&titles=Module:Iteminfo/data&rvlimit=1&rvslots=*&rvprop=ids|content&format=json
     // r[query][pages][18021][revisions][0][slots][main][*]
     // Split on "local cache = require 'mw.ext.LuaCache'"
 
-    let lua_resp = reqwest::blocking::get(ITEM_INFO_URL)?;
+    let lua_resp = reqwest::blocking::get(ITEM_DATA_URL)?;
     let lua_json: serde_json::Value = lua_resp.json()?;
 
     // Yeesh
@@ -105,7 +105,7 @@ fn get_item_info(
         .unwrap()
         .replace("local cache =", "return info");
 
-    let mut item_info: Vec<Item> = Vec::new();
+    let mut item_meta: Vec<ItemMeta> = Vec::new();
 
     let lua = Lua::new();
 
@@ -121,21 +121,18 @@ fn get_item_info(
 
             if let rlua::Value::Table(lua_item) = val {
                 let id = i32::from_str(key.to_str()?)?;
-                let internal_name = lua_item.get("internalName").unwrap_or("".to_owned());
-                let name = lua_item.get("name").unwrap_or("".to_owned());
+                let name = lua_item.get("name").unwrap_or(String::new());
+                let internal_name = lua_item.get("internalName").unwrap_or(String::new());
                 let max_stack = lua_item.get("maxStack").unwrap_or(1);
                 let sacrifices = lua_item.get("sacrifices").unwrap_or(1);
 
-                let tooltip = match items["ItemTooltip"][&internal_name].as_str() {
-                    Some(tt) => tt
-                        .lines()
+                let tooltip = items["ItemTooltip"][&internal_name].as_str().map(|tt| {
+                    tt.lines()
                         .map(|s| expand_templates(s.to_owned(), &template, &game, &items, &npcs))
                         .collect::<Vec<_>>()
-                        .join("\n"),
-                    None => "".to_owned(),
-                };
+                });
 
-                let item = Item {
+                let item = ItemMeta {
                     id,
                     internal_name,
                     name,
@@ -145,24 +142,24 @@ fn get_item_info(
                     ..Default::default()
                 };
 
-                item_info.push(item);
+                item_meta.push(item);
             }
         }
 
         Ok(())
     })?;
 
-    item_info.sort_by_key(|i| i.id);
+    item_meta.sort_by_key(|i| i.id);
 
-    Ok(item_info)
+    Ok(item_meta)
 }
 
-fn get_buff_info(
+fn get_buff_meta(
     template: &Regex,
     game: &serde_json::Value,
     items: &serde_json::Value,
     npcs: &serde_json::Value,
-) -> Result<Vec<Buff>> {
+) -> Result<Vec<BuffMeta>> {
     let resp = reqwest::blocking::get(BUFF_IDS_URL)?;
     let text = resp.text()?;
 
@@ -176,7 +173,7 @@ fn get_buff_info(
     let name_selector = scraper::Selector::parse("span.i>span>span>a").unwrap();
     let image_selector = scraper::Selector::parse("span.i>a>img").unwrap();
 
-    let mut buff_info: Vec<Buff> = doc
+    let mut buff_meta: Vec<BuffMeta> = doc
         .select(&tbody_selector)
         .next()
         .unwrap()
@@ -219,16 +216,13 @@ fn get_buff_info(
                 _ => panic!("TF THIS?"),
             };
 
-            let tooltip = match &game["BuffDescription"][&internal_name].as_str() {
-                Some(tt) => tt
-                    .lines()
+            let tooltip = game["BuffDescription"][&internal_name].as_str().map(|tt| {
+                tt.lines()
                     .map(|s| expand_templates(s.to_owned(), template, game, items, npcs))
                     .collect::<Vec<_>>()
-                    .join("\n"),
-                None => "".to_owned(),
-            };
+            });
 
-            Buff {
+            BuffMeta {
                 id,
                 name,
                 internal_name,
@@ -239,34 +233,27 @@ fn get_buff_info(
         })
         .collect();
 
-    buff_info.sort_by_key(|b| b.id);
+    buff_meta.sort_by_key(|b| b.id);
 
-    Ok(buff_info)
+    Ok(buff_meta)
 }
 
-fn get_prefix_info(
+fn get_prefix_meta(
     _template: &Regex,
     _game: &serde_json::Value,
     items: &serde_json::Value,
     _npcs: &serde_json::Value,
-) -> Result<Vec<Prefix>> {
+) -> Result<Vec<PrefixMeta>> {
     let resp = reqwest::blocking::get(PREFIX_IDS_URL)?;
     let text = resp.text()?;
 
     let doc = scraper::Html::parse_document(&text);
 
-    // Edge cases:
-    // 20 = Deadly2
-    // 75 = Hasty2
-    // 76 = Quick2
-    // 84 = Legendary2
-    // 90 = Piercing (mobile only)
-
     let tbody_selector = scraper::Selector::parse("table.terraria.sortable").unwrap();
     let tr_selector = scraper::Selector::parse("tbody>tr").unwrap();
     let td_selector = scraper::Selector::parse("td").unwrap();
 
-    let mut prefix_info: Vec<Prefix> = doc
+    let mut prefix_meta: Vec<PrefixMeta> = doc
         .select(&tbody_selector)
         .next()
         .unwrap()
@@ -278,6 +265,7 @@ fn get_prefix_info(
             let id = u8::from_str(tds.next().unwrap().inner_html().trim()).unwrap();
 
             let internal_name = match id {
+                // Edge Cases
                 20 => "Deadly2".to_owned(),
                 75 => "Hasty2".to_owned(),
                 76 => "Quick2".to_owned(),
@@ -290,13 +278,10 @@ fn get_prefix_info(
             let name = if internal_name == "Piercing" {
                 internal_name.clone()
             } else {
-                items["Prefix"][&internal_name]
-                    .as_str()
-                    .unwrap()
-                    .to_owned()
+                items["Prefix"][&internal_name].as_str().unwrap().to_owned()
             };
 
-            Prefix {
+            PrefixMeta {
                 id,
                 internal_name,
                 name,
@@ -304,9 +289,9 @@ fn get_prefix_info(
         })
         .collect();
 
-    prefix_info.sort_by_key(|p| p.id);
+    prefix_meta.sort_by_key(|p| p.id);
 
-    Ok(prefix_info)
+    Ok(prefix_meta)
 }
 
 fn generate_spritesheet(items_fol: &PathBuf) -> Result<DynamicImage> {
@@ -416,19 +401,19 @@ fn main() -> Result<()> {
 
     let template = Regex::new(r"\{\$([A-z\d]+)\.([A-z\d]+)\}")?;
 
-    let item_info = get_item_info(
+    let item_meta = get_item_meta(
         &template,
         &game_localization,
         &item_localization,
         &npc_localization,
     )?;
-    let buff_info = get_buff_info(
+    let buff_meta = get_buff_meta(
         &template,
         &game_localization,
         &item_localization,
         &npc_localization,
     )?;
-    let prefix_info = get_prefix_info(
+    let prefix_meta = get_prefix_meta(
         &template,
         &game_localization,
         &item_localization,
@@ -436,14 +421,20 @@ fn main() -> Result<()> {
     )?;
     let spritesheet = generate_spritesheet(&items_fol)?;
 
-    serde_json::to_writer_pretty(item_writer, &item_info)?;
-    serde_json::to_writer_pretty(buff_writer, &buff_info)?;
-    serde_json::to_writer_pretty(prefix_writer, &prefix_info)?;
-    spritesheet.write_to(&mut spritesheet_writer, ImageFormat::Png)?;
-
     // Pretty scuffed but works for now
-    let mut build_type = "".to_owned();
+    let mut build_type = String::new();
     File::open("./terra-res/build_type.txt")?.read_to_string(&mut build_type)?;
+
+    if build_type == "debug" {
+        serde_json::to_writer_pretty(item_writer, &item_meta)?;
+        serde_json::to_writer_pretty(buff_writer, &buff_meta)?;
+        serde_json::to_writer_pretty(prefix_writer, &prefix_meta)?;
+    } else {
+        serde_json::to_writer(item_writer, &item_meta)?;
+        serde_json::to_writer(buff_writer, &buff_meta)?;
+        serde_json::to_writer(prefix_writer, &prefix_meta)?;
+    }
+    spritesheet.write_to(&mut spritesheet_writer, ImageFormat::Png)?;
 
     let target_dir = PathBuf::from("./target").join(&build_type);
     let final_dir = target_dir.join("resources");
