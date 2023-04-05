@@ -36,4 +36,8 @@ impl PrefixMeta {
 
         Ok(meta)
     }
+
+    pub fn meta_from_id<'a>(prefix_meta: &'a Vec<Self>, id: u8) -> Option<&'a Self> {
+        prefix_meta.iter().filter(|i| i.id == id).next()
+    }
 }

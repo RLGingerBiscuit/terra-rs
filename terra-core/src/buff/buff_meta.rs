@@ -46,4 +46,8 @@ impl BuffMeta {
 
         Ok(meta)
     }
+
+    pub fn meta_from_id<'a>(buff_meta: &'a Vec<Self>, id: i32) -> Option<&'a Self> {
+        buff_meta.iter().filter(|i| i.id == id).next()
+    }
 }
