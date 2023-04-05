@@ -9,9 +9,12 @@ terra-core = { path = "../terra-core" }
 anyhow = "1.0.70"
 thiserror = "1.0.40"
 
+once_cell = "1.17.1"
+parking_lot = "0.12.1"
 flume = "0.10.14"
 
 eframe = "0.21.3"
 egui = { version = "0.21.0", features = ["color-hex"] }
 
+rfd = "0.11.3"
 open = "4.0.1"

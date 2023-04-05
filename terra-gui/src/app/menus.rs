@@ -1,6 +1,8 @@
 use egui::Ui;
 
-use super::{App, Message};
+use crate::ext::UiExt;
+
+use super::{App, Message, SHORTCUT_EXIT, SHORTCUT_LOAD, SHORTCUT_SAVE};
 
 impl App {
     pub fn render_menu(&mut self, ctx: &egui::Context) {
@@ -14,7 +16,16 @@ impl App {
     }
 
     fn render_file_menu(&mut self, ui: &mut Ui) {
-        if ui.button("Exit").clicked() {
+        if ui.shortcut_button("Load", &SHORTCUT_LOAD).clicked() {
+            ui.close_menu();
+            self.do_update(Message::LoadPlayer);
+        }
+        if ui.shortcut_button("Save", &SHORTCUT_SAVE).clicked() {
+            ui.close_menu();
+            self.do_update(Message::SavePlayer);
+        }
+        if ui.shortcut_button("Exit", &SHORTCUT_EXIT).clicked() {
+            ui.close_menu();
             self.do_update(Message::Exit);
         }
     }
