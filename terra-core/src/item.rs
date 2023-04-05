@@ -1,7 +1,7 @@
-use serde_repr::{Deserialize_repr, Serialize_repr};
-
 mod item;
 mod item_meta;
+
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 pub use item::{Item, ItemError};
 pub use item_meta::ItemMeta;

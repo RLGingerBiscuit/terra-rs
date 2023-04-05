@@ -1,5 +1,4 @@
-use std::io;
-use std::io::{Error as IOError, ErrorKind as IOErrorKind, Result as IOResult};
+use std::io::{self, Error as IOError, ErrorKind as IOErrorKind, Result as IOResult};
 
 use byteorder::{ReadBytesExt, WriteBytesExt};
 

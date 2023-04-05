@@ -1,3 +1,16 @@
+pub mod bool_byte;
+pub mod buff;
+pub mod difficulty;
+mod ext;
+pub mod file_type;
+pub mod item;
+pub mod journey_powers;
+pub mod loadout;
+pub mod player;
+pub mod prefix;
+pub mod spawnpoint;
+pub mod utils;
+
 pub const MAGIC_MASK: u64 = 0xFFFFFFFFFFFFFF;
 pub const MAGIC_NUMBER: u64 = 0x6369676F6C6572;
 
@@ -40,19 +53,6 @@ pub const MALE_SKIN_VARIANTS: [i32; 6] = [0, 1, 2, 3, 8, 10];
 pub const BUFF_SPRITE_SIZE: usize = 16;
 
 pub type Color = [u8; 3];
-
-pub mod bool_byte;
-pub mod buff;
-pub mod difficulty;
-mod ext;
-pub mod file_type;
-pub mod item;
-pub mod journey_powers;
-pub mod loadout;
-pub mod player;
-pub mod prefix;
-pub mod spawnpoint;
-pub mod utils;
 
 pub use bool_byte::{BoolByte, BoolByteError};
 pub use buff::{Buff, BuffMeta, BuffType};

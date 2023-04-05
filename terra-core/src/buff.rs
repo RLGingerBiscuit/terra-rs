@@ -1,9 +1,9 @@
+mod buff;
+mod buff_meta;
+
 use std::fmt::Display;
 
 use serde_repr::{Deserialize_repr, Serialize_repr};
-
-mod buff;
-mod buff_meta;
 
 pub use buff::Buff;
 pub use buff_meta::BuffMeta;
