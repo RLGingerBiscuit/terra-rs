@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
-members = ["terra-core", "terra-res", "terra-tests", "terra-tui"]
-default-members = ["terra-core", "terra-tui"]
+members = ["terra-core", "terra-res", "terra-tests", "terra-tui", "terra-gui"]
+default-members = ["terra-core", "terra-gui"]
 
 [profile.release]
 opt-level = 2

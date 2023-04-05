@@ -1,0 +1,13 @@
+[package]
+name = "terra-gui"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+terra-core = { path = "../terra-core" }
+
+anyhow = "1.0.70"
+thiserror = "1.0.40"
+
+eframe = "0.21.3"
+egui = { version = "0.21.0", features = ["color-hex"] }
