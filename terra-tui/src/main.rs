@@ -1,6 +1,6 @@
 use terra_core::{
     utils::{get_player_dir, to_hex, version_lookup},
-    BuffMeta, ItemMeta, Player, PrefixMeta, TICKS_PER_MICROSECOND,
+    BuffMeta, Item, ItemMeta, Player, PrefixMeta, TICKS_PER_MICROSECOND,
 };
 
 fn usage() {
@@ -19,13 +19,13 @@ fn main() {
 
     let item_meta = ItemMeta::load().expect("Could not load items.");
     let buff_meta = BuffMeta::load().expect("Could not load buffs.");
-    let prefixe_meta = PrefixMeta::load().expect("Could not load prefixes.");
+    let prefix_meta = PrefixMeta::load().expect("Could not load prefixes.");
 
     let player_filename: String = args.next().unwrap();
 
-    println!("Items count: {}", item_meta.len());
-    println!("Buffs count: {}", buff_meta.len());
-    println!("Prefixes count: {}", prefixe_meta.len());
+    println!("Item count: {}", item_meta.len());
+    println!("Buff count: {}", buff_meta.len());
+    println!("Prefix count: {}", prefix_meta.len());
 
     let filepath = player_dir.join(format!("{}.plr", &player_filename));
 
@@ -87,4 +87,34 @@ fn main() {
     }
     println!("Golf Highscore: {}", player.golfer_score);
     println!("Upgraded Minecarts: {}", player.super_cart);
+
+    println!("Armor:");
+    print_items(&item_meta, &prefix_meta, &player.loadouts[0].armor);
+    println!("Vanity Armor:");
+    print_items(&item_meta, &prefix_meta, &player.loadouts[0].vanity_armor);
+    println!("Accessories:");
+    print_items(&item_meta, &prefix_meta, &player.loadouts[0].accessories);
+    println!("Vanity Accessories:");
+    print_items(
+        &item_meta,
+        &prefix_meta,
+        &player.loadouts[0].vanity_accessories,
+    );
+    println!("Equipment:");
+    print_items(&item_meta, &prefix_meta, &player.equipment);
+}
+
+fn print_items(item_meta: &Vec<ItemMeta>, prefix_meta: &Vec<PrefixMeta>, items: &[Item]) {
+    items.iter().for_each(|item| {
+        let item_meta = ItemMeta::meta_from_id(item_meta, item.id);
+        let name = item_meta.map_or("Unknown", |m| m.name.as_str());
+        let prefix_meta = PrefixMeta::meta_from_id(prefix_meta, item.prefix.id);
+        let prefix_name = prefix_meta.map_or(String::new(), |p| format!(" {}", p.name));
+
+        print!("  [{: >4}]", item.id);
+        if item.stack > 1 {
+            print!(" ({})", item.stack);
+        }
+        println!("{} {}", prefix_name, name);
+    });
 }
