@@ -106,4 +106,22 @@ impl ItemMeta {
 
         Ok(meta)
     }
+
+    pub fn meta_from_id<'a>(item_meta: &'a Vec<Self>, id: i32) -> Option<&'a Self> {
+        item_meta.iter().filter(|i| i.id == id).next()
+    }
+
+    pub fn meta_from_internal_name<'a>(
+        item_meta: &'a Vec<Self>,
+        internal_name: &str,
+    ) -> Option<&'a Self> {
+        item_meta
+            .iter()
+            .filter(|i| i.internal_name == internal_name)
+            .next()
+    }
+
+    pub fn meta_from_name<'a>(item_meta: &'a Vec<Self>, name: &str) -> Option<&'a Self> {
+        item_meta.iter().filter(|i| i.name == name).next()
+    }
 }

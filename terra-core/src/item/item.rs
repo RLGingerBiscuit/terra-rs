@@ -111,24 +111,6 @@ impl Item {
         }
     }
 
-    fn meta_from_id<'a>(item_meta: &'a Vec<ItemMeta>, id: i32) -> Option<&'a ItemMeta> {
-        item_meta.iter().filter(|i| i.id == id).next()
-    }
-
-    fn meta_from_internal_name<'a>(
-        item_meta: &'a Vec<ItemMeta>,
-        internal_name: &str,
-    ) -> Option<&'a ItemMeta> {
-        item_meta
-            .iter()
-            .filter(|i| i.internal_name == internal_name)
-            .next()
-    }
-
-    fn meta_from_name<'a>(item_meta: &'a Vec<ItemMeta>, name: &str) -> Option<&'a ItemMeta> {
-        item_meta.iter().filter(|i| i.name == name).next()
-    }
-
     pub fn load(
         &mut self,
         reader: &mut dyn Read,
@@ -149,7 +131,7 @@ impl Item {
         if internal_name {
             let internal_name = reader.read_lpstring()?;
 
-            if let Some(item) = Item::meta_from_internal_name(item_meta, &internal_name) {
+            if let Some(item) = ItemMeta::meta_from_internal_name(item_meta, &internal_name) {
                 self.id = item.id;
             }
         }
@@ -185,7 +167,7 @@ impl Item {
         }
 
         if name.len() != 0 {
-            if let Some(item) = Item::meta_from_name(item_meta, &name) {
+            if let Some(item) = ItemMeta::meta_from_name(item_meta, &name) {
                 self.id = item.id;
             }
 
@@ -239,7 +221,7 @@ impl Item {
             writer.write_i32::<LE>(self.id)?;
         }
         if internal_name {
-            if let Some(item) = Item::meta_from_id(item_meta, self.id) {
+            if let Some(item) = ItemMeta::meta_from_id(item_meta, self.id) {
                 writer.write_lpstring(&item.internal_name)?;
             } else {
                 writer.write_lpstring(&String::new())?;
@@ -265,7 +247,7 @@ impl Item {
         version: i32,
         stack: bool,
     ) -> Result<()> {
-        if let Some(item) = Item::meta_from_id(item_meta, self.id) {
+        if let Some(item) = ItemMeta::meta_from_id(item_meta, self.id) {
             let name = Self::reverse_legacy_lookup(version, &item.name);
             writer.write_lpstring(name)?;
         } else {
