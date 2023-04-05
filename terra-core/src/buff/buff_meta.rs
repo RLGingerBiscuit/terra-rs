@@ -10,6 +10,8 @@ pub struct BuffMeta {
     pub id: i32,
     pub name: String,
     pub internal_name: String,
+    pub x: i32,
+    pub y: i32,
     pub buff_type: BuffType,
     pub tooltip: Option<Vec<String>>,
 }
@@ -20,6 +22,8 @@ impl Default for BuffMeta {
             id: 0,
             name: String::new(),
             internal_name: String::new(),
+            x: 0,
+            y: 0,
             buff_type: BuffType::Buff,
             tooltip: None,
         }

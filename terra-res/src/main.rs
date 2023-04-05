@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::Result;
-use image::{DynamicImage, GenericImage, ImageFormat};
+// use image::{DynamicImage, GenericImage, ImageFormat};
 use regex::{Captures, Regex};
 
 use fs_extra::dir::{copy as copy_dir, create as create_dir, CopyOptions as DirCopyOptions};
@@ -18,6 +18,8 @@ use terra_core::{BuffMeta, BuffType, ItemMeta, PrefixMeta};
 const ITEM_DATA_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/data";
 const BUFF_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Buff_IDs";
 const PREFIX_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Prefix_IDs";
+const ITEM_CSS_URL: &str = "https://yal.cc/r/terrasavr/plus/img/items.css";
+const BUFF_CSS_URL: &str = "https://yal.cc/r/terrasavr/plus/img/buffs.css";
 
 fn expand_templates(
     s: String,
@@ -64,6 +66,46 @@ fn expand_templates(
     }
 }
 
+fn get_item_offsets() -> Result<HashMap<i32, [i32; 2]>> {
+    let offset_regex = Regex::new(r"^.*id='(\d+)'.*ofs: -(\d+)px -(\d+)")?;
+
+    let resp = reqwest::blocking::get(ITEM_CSS_URL)?;
+    let text = resp.text()?;
+
+    let mut offsets = HashMap::new();
+
+    text.lines().for_each(|line| {
+        let captures = offset_regex.captures(line).unwrap();
+        let id = i32::from_str(captures.get(1).unwrap().as_str()).unwrap();
+        let x = i32::from_str(captures.get(2).unwrap().as_str()).unwrap();
+        let y = i32::from_str(captures.get(3).unwrap().as_str()).unwrap();
+
+        offsets.insert(id, [x, y]);
+    });
+
+    Ok(offsets)
+}
+
+fn get_buff_offsets() -> Result<HashMap<i32, [i32; 2]>> {
+    let offset_regex = Regex::new(r"^.*id='(\d+)'.*ofs: -(\d+)px -(\d+)")?;
+
+    let resp = reqwest::blocking::get(BUFF_CSS_URL)?;
+    let text = resp.text()?;
+
+    let mut offsets = HashMap::new();
+
+    text.lines().for_each(|line| {
+        let captures = offset_regex.captures(line).unwrap();
+        let id = i32::from_str(captures.get(1).unwrap().as_str()).unwrap();
+        let x = i32::from_str(captures.get(2).unwrap().as_str()).unwrap();
+        let y = i32::from_str(captures.get(3).unwrap().as_str()).unwrap();
+
+        offsets.insert(id, [x, y]);
+    });
+
+    Ok(offsets)
+}
+
 fn get_item_meta(
     template: &Regex,
     game: &serde_json::Value,
@@ -107,6 +149,8 @@ fn get_item_meta(
 
     let mut item_meta: Vec<ItemMeta> = Vec::new();
 
+    let offsets = get_item_offsets()?;
+
     let lua = Lua::new();
 
     lua.context(|ctx| -> Result<()> {
@@ -124,6 +168,8 @@ fn get_item_meta(
                 let name = lua_item.get("name").unwrap_or(String::new());
                 let internal_name = lua_item.get("internalName").unwrap_or(String::new());
                 let max_stack = lua_item.get("maxStack").unwrap_or(1);
+                let width = lua_item.get("width").unwrap_or(0);
+                let height = lua_item.get("height").unwrap_or(0);
                 let sacrifices = lua_item.get("sacrifices").unwrap_or(1);
 
                 let tooltip = items["ItemTooltip"][&internal_name].as_str().map(|tt| {
@@ -132,10 +178,18 @@ fn get_item_meta(
                         .collect::<Vec<_>>()
                 });
 
+                let [x, y] = offsets.get(&id).unwrap_or(&[-1, -1]);
+                let x = x.to_owned();
+                let y = y.to_owned();
+
                 let item = ItemMeta {
                     id,
                     internal_name,
                     name,
+                    width,
+                    height,
+                    x,
+                    y,
                     max_stack,
                     sacrifices,
                     tooltip,
@@ -173,6 +227,8 @@ fn get_buff_meta(
     let name_selector = scraper::Selector::parse("span.i>span>span>a").unwrap();
     let image_selector = scraper::Selector::parse("span.i>a>img").unwrap();
 
+    let offsets = get_buff_offsets()?;
+
     let mut buff_meta: Vec<BuffMeta> = doc
         .select(&tbody_selector)
         .next()
@@ -200,6 +256,10 @@ fn get_buff_meta(
                 None => image_text,
             };
 
+            let [x, y] = offsets.get(&id).unwrap_or(&[-1, -1]);
+            let x = x.to_owned();
+            let y = y.to_owned();
+
             let internal_name = tds
                 .next()
                 .unwrap()
@@ -225,6 +285,8 @@ fn get_buff_meta(
             BuffMeta {
                 id,
                 name,
+                x,
+                y,
                 internal_name,
                 buff_type,
                 tooltip,
@@ -294,75 +356,75 @@ fn get_prefix_meta(
     Ok(prefix_meta)
 }
 
-fn generate_spritesheet(items_fol: &PathBuf) -> Result<DynamicImage> {
-    let iter = fs::read_dir(items_fol)?;
+// fn generate_spritesheet(items_fol: &PathBuf) -> Result<DynamicImage> {
+//     let iter = fs::read_dir(items_fol)?;
 
-    let mut items: HashMap<u32, DynamicImage> = HashMap::new();
+//     let mut items: HashMap<u32, DynamicImage> = HashMap::new();
 
-    const ITEM_WIDTH: u32 = 50;
-    const ITEM_HEIGHT: u32 = 50;
-    const H_ITEM_COUNT: u32 = 64;
+//     const ITEM_WIDTH: u32 = 50;
+//     const ITEM_HEIGHT: u32 = 50;
+//     const H_ITEM_COUNT: u32 = 64;
 
-    for (i, item) in iter.enumerate() {
-        let item = item?;
-        let file_name = item.file_name();
-        let file_name = file_name.to_string_lossy().to_owned();
+//     for (i, item) in iter.enumerate() {
+//         let item = item?;
+//         let file_name = item.file_name();
+//         let file_name = file_name.to_string_lossy().to_owned();
 
-        if !file_name.ends_with(".png") {
-            continue;
-        }
+//         if !file_name.ends_with(".png") {
+//             continue;
+//         }
 
-        let item_id = u32::from_str(
-            file_name
-                .rsplit_once(".")
-                .unwrap()
-                .0
-                .rsplit_once("_")
-                .unwrap()
-                .1,
-        )?;
+//         let item_id = u32::from_str(
+//             file_name
+//                 .rsplit_once(".")
+//                 .unwrap()
+//                 .0
+//                 .rsplit_once("_")
+//                 .unwrap()
+//                 .1,
+//         )?;
 
-        if i % 1000 == 0 {
-            println!("loaded {} items", i);
-        }
+//         if i % 1000 == 0 {
+//             println!("loaded {} items", i);
+//         }
 
-        let mut image = image::open(item.path())?;
-        if image.width() > ITEM_WIDTH || image.height() > ITEM_HEIGHT {
-            image = image.resize(
-                ITEM_WIDTH,
-                ITEM_HEIGHT,
-                image::imageops::FilterType::CatmullRom,
-            );
-        }
+//         let mut image = image::open(item.path())?;
+//         if image.width() > ITEM_WIDTH || image.height() > ITEM_HEIGHT {
+//             image = image.resize(
+//                 ITEM_WIDTH,
+//                 ITEM_HEIGHT,
+//                 image::imageops::FilterType::CatmullRom,
+//             );
+//         }
 
-        items.insert(item_id, image);
-    }
+//         items.insert(item_id, image);
+//     }
 
-    let highest_id = items.keys().max_by(|a, b| a.cmp(b)).unwrap();
+//     let highest_id = items.keys().max_by(|a, b| a.cmp(b)).unwrap();
 
-    let width = ITEM_WIDTH * H_ITEM_COUNT;
-    let height = (highest_id / H_ITEM_COUNT + 1) * ITEM_HEIGHT;
+//     let width = ITEM_WIDTH * H_ITEM_COUNT;
+//     let height = (highest_id / H_ITEM_COUNT + 1) * ITEM_HEIGHT;
 
-    let mut new_image = DynamicImage::new_rgba8(width, height);
+//     let mut new_image = DynamicImage::new_rgba8(width, height);
 
-    let mut count = 0;
-    for (i, img) in items.iter() {
-        let x = i % H_ITEM_COUNT * ITEM_WIDTH + (ITEM_WIDTH - img.width()) / 2;
-        let y = i / H_ITEM_COUNT * ITEM_HEIGHT + (ITEM_HEIGHT - img.height()) / 2;
-        new_image.copy_from(img, x, y)?;
+//     let mut count = 0;
+//     for (i, img) in items.iter() {
+//         let x = i % H_ITEM_COUNT * ITEM_WIDTH + (ITEM_WIDTH - img.width()) / 2;
+//         let y = i / H_ITEM_COUNT * ITEM_HEIGHT + (ITEM_HEIGHT - img.height()) / 2;
+//         new_image.copy_from(img, x, y)?;
 
-        count += 1;
-        if count % 1000 == 0 {
-            println!("{} items", count);
-        }
-    }
+//         count += 1;
+//         if count % 1000 == 0 {
+//             println!("{} items", count);
+//         }
+//     }
 
-    Ok(new_image)
-}
+//     Ok(new_image)
+// }
 
 fn main() -> Result<()> {
     let res_fol = PathBuf::from_str("./terra-res/resources")?;
-    let items_fol = res_fol.join("items");
+    // let items_fol = res_fol.join("items");
     let gen_fol = PathBuf::from_str("./terra-res/generated")?;
 
     create_dir(&gen_fol, true)?;
@@ -388,8 +450,8 @@ fn main() -> Result<()> {
         .open(gen_fol.join("prefixes.json"))?;
     let prefix_writer = BufWriter::new(&mut prefix_file);
 
-    let mut spritesheet_file = File::create(gen_fol.join("items.png"))?;
-    let mut spritesheet_writer = BufWriter::new(&mut spritesheet_file);
+    // let mut spritesheet_file = File::create(gen_fol.join("items.png"))?;
+    // let mut spritesheet_writer = BufWriter::new(&mut spritesheet_file);
 
     let item_localization_file = File::open(res_fol.join("Items.json"))?;
     let npc_localization_file = File::open(res_fol.join("NPCs.json"))?;
@@ -419,7 +481,7 @@ fn main() -> Result<()> {
         &item_localization,
         &npc_localization,
     )?;
-    let spritesheet = generate_spritesheet(&items_fol)?;
+    // let spritesheet = generate_spritesheet(&items_fol)?;
 
     // Pretty scuffed but works for now
     let mut build_type = String::new();
@@ -434,7 +496,7 @@ fn main() -> Result<()> {
         serde_json::to_writer(buff_writer, &buff_meta)?;
         serde_json::to_writer(prefix_writer, &prefix_meta)?;
     }
-    spritesheet.write_to(&mut spritesheet_writer, ImageFormat::Png)?;
+    // spritesheet.write_to(&mut spritesheet_writer, ImageFormat::Png)?;
 
     let target_dir = PathBuf::from("./target").join(&build_type);
     let final_dir = target_dir.join("resources");
@@ -447,6 +509,9 @@ fn main() -> Result<()> {
     options.overwrite = true;
     options.copy_inside = true;
     copy_dir(&gen_fol, &final_dir, &options)?;
+
+    fs::copy(res_fol.join("items.png"), final_dir.join("items.png"))?;
+    fs::copy(res_fol.join("buffs.png"), final_dir.join("buffs.png"))?;
 
     Ok(())
 }

@@ -37,6 +37,8 @@ pub const MAX_RESPAWN_TIME: i32 = 60000;
 pub const FEMALE_SKIN_VARIANTS: [i32; 4] = [5, 6, 9, 11];
 pub const MALE_SKIN_VARIANTS: [i32; 6] = [0, 1, 2, 3, 8, 10];
 
+pub const BUFF_SPRITE_SIZE: usize = 16;
+
 pub type Color = [u8; 3];
 
 pub mod bool_byte;
@@ -57,7 +59,7 @@ pub use buff::{Buff, BuffMeta, BuffType};
 pub use difficulty::Difficulty;
 pub use file_type::FileType;
 use io_extensions as io;
-pub use item::{Item, ItemError, ItemMeta};
+pub use item::{Item, ItemError, ItemMeta, ItemRarity};
 pub use journey_powers::{JourneyPowerId, JourneyPowers};
 pub use loadout::Loadout;
 pub use player::{Player, PlayerError};

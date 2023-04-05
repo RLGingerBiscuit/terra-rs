@@ -8,9 +8,13 @@ pub struct ItemMeta {
     pub id: i32,
     pub name: String,
     pub internal_name: String,
+    pub width: i32,
+    pub height: i32,
+    pub x: i32,
+    pub y: i32,
     pub max_stack: i32,
-    pub tooltip: Option<Vec<String>>,
     pub sacrifices: i32,
+    pub tooltip: Option<Vec<String>>,
 }
 
 impl Default for ItemMeta {
@@ -19,6 +23,10 @@ impl Default for ItemMeta {
             id: 0,
             name: String::new(),
             internal_name: String::new(),
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
             max_stack: 0,
             sacrifices: 0,
             tooltip: None,
