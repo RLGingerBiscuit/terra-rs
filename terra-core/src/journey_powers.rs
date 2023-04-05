@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use crate::{
-    io::{TerraReadExt, TerraWriteExt},
+    ext::{TerraReadExt, TerraWriteExt},
     Difficulty,
 };
 

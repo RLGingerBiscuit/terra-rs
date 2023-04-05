@@ -5,7 +5,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    io::{TerraReadExt, TerraWriteExt},
+    ext::{TerraReadExt, TerraWriteExt},
     ItemMeta, Prefix,
 };
 

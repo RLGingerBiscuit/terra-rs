@@ -5,7 +5,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    io::{TerraReadExt, TerraWriteExt},
+    ext::{TerraReadExt, TerraWriteExt},
     utils, BoolByte, Item, ItemMeta, ACCESSORY_COUNT, ARMOR_COUNT, HIDDEN_VISUAL_COUNT,
 };
 
