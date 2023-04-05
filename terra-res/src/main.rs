@@ -13,7 +13,7 @@ use regex::{Captures, Regex};
 use fs_extra::dir::{copy as copy_dir, create as create_dir, CopyOptions as DirCopyOptions};
 
 use rlua::{Lua, Table};
-use terra_core::{BuffMeta, BuffType, ItemMeta, PrefixMeta};
+use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, PrefixMeta};
 
 const ITEM_DATA_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/data";
 const BUFF_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Buff_IDs";
@@ -170,6 +170,24 @@ fn get_item_meta(
                 let max_stack = lua_item.get("maxStack").unwrap_or(1);
                 let width = lua_item.get("width").unwrap_or(0);
                 let height = lua_item.get("height").unwrap_or(0);
+                let value = lua_item.get("value").unwrap_or(0);
+                #[allow(unused)] // but it's not unused tho
+                let rarity = ItemRarity::from(lua_item.get("rare").unwrap_or(0));
+                let use_time: Option<i32> = lua_item.get("useTime").ok();
+                let damage: Option<i32> = lua_item.get("damage").ok();
+                let crit: Option<i32> = lua_item.get("crit").ok();
+                let knockback: Option<f32> = lua_item.get("knockBack").ok();
+                let defense: Option<i32> = lua_item.get("defense").ok();
+                let use_ammo: Option<i32> = lua_item.get("useAmmo").ok();
+                let mana_cost: Option<i32> = lua_item.get("mana").ok();
+                let heal_life: Option<i32> = lua_item.get("healLife").ok();
+                let heal_mana: Option<i32> = lua_item.get("healMana").ok();
+                let pickaxe_power: Option<i32> = lua_item.get("pick").ok();
+                let axe_power: Option<i32> = lua_item.get("axe").ok();
+                let hammer_power: Option<i32> = lua_item.get("hammer").ok();
+                let fishing_power: Option<i32> = lua_item.get("fishingPole").ok();
+                let fishing_bait: Option<i32> = lua_item.get("bait").ok();
+                let range_boost: Option<i32> = lua_item.get("tileBoost").ok();
                 let sacrifices = lua_item.get("sacrifices").unwrap_or(1);
 
                 let tooltip = items["ItemTooltip"][&internal_name].as_str().map(|tt| {
@@ -177,6 +195,10 @@ fn get_item_meta(
                         .map(|s| expand_templates(s.to_owned(), &template, &game, &items, &npcs))
                         .collect::<Vec<_>>()
                 });
+
+                let consumable = lua_item.get("consumable").unwrap_or(false);
+                let expert = lua_item.get("expert").unwrap_or(false);
+                let rarity = ItemRarity::from(lua_item.get("rarity").unwrap_or(0));
 
                 let [x, y] = offsets.get(&id).unwrap_or(&[-1, -1]);
                 let x = x.to_owned();
@@ -191,9 +213,27 @@ fn get_item_meta(
                     x,
                     y,
                     max_stack,
+                    value,
+                    rarity,
+                    use_time,
+                    damage,
+                    crit,
+                    knockback,
+                    defense,
+                    use_ammo,
+                    mana_cost,
+                    heal_life,
+                    heal_mana,
+                    pickaxe_power,
+                    axe_power,
+                    hammer_power,
+                    fishing_power,
+                    fishing_bait,
+                    range_boost,
                     sacrifices,
                     tooltip,
-                    ..Default::default()
+                    consumable,
+                    expert,
                 };
 
                 item_meta.push(item);
