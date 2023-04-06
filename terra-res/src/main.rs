@@ -320,6 +320,21 @@ fn get_buff_meta(
         })
         .collect();
 
+    {
+        let [x, y, _, _] = offsets.get(&0).unwrap_or(&[-1, -1, 0, 0]);
+        let x = x.to_owned();
+        let y = y.to_owned();
+        buff_meta.push(BuffMeta {
+            id: 0,
+            name: String::new(),
+            internal_name: "None".to_owned(),
+            x,
+            y,
+            buff_type: BuffType::Buff,
+            tooltip: None,
+        });
+    }
+
     buff_meta.sort_by_key(|b| b.id);
 
     Ok(buff_meta)
@@ -375,6 +390,12 @@ fn get_prefix_meta(
             }
         })
         .collect();
+
+    prefix_meta.push(PrefixMeta {
+        id: 0,
+        name: String::new(),
+        internal_name: "None".to_owned(),
+    });
 
     prefix_meta.sort_by_key(|p| p.id);
 
