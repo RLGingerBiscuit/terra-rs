@@ -35,6 +35,7 @@ impl App {
             let mut spritesheet = spritesheet.lock();
             *spritesheet = Some(handle);
 
+            ctx.request_repaint();
             Ok(Message::Noop)
         });
     }
