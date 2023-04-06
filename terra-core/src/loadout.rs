@@ -102,9 +102,9 @@ impl Loadout {
         &mut self,
         reader: &mut dyn Read,
         version: i32,
-        bb_visuals: bool,
+        use_boolbyte: bool,
     ) -> Result<()> {
-        if bb_visuals {
+        if use_boolbyte {
             let mut bb = BoolByte::from(reader.read_u8()?);
 
             for i in 0u8..8 {
@@ -179,13 +179,14 @@ impl Loadout {
         Ok(())
     }
 
-    pub fn skip_visuals(reader: &mut dyn Read, version: i32, bb_visuals: bool) -> Result<()> {
-        if bb_visuals {
+    pub fn skip_visuals(reader: &mut dyn Read, version: i32, use_boolbyte: bool) -> Result<()> {
+        if use_boolbyte {
             let _ = BoolByte::from(reader.read_u8()?);
             if version >= 124 {
                 let _ = BoolByte::from(reader.read_u8()?);
             }
         } else {
+            // We don't need to do version checking here since this only happens in 1.4.4+
             for _ in 0..HIDDEN_VISUAL_COUNT {
                 let _ = reader.read_bool();
             }
@@ -257,9 +258,9 @@ impl Loadout {
         &self,
         writer: &mut dyn Write,
         version: i32,
-        bb_visuals: bool,
+        use_boolbyte: bool,
     ) -> Result<()> {
-        if bb_visuals {
+        if use_boolbyte {
             let mut bb = BoolByte::default();
 
             for i in 0u8..8 {
