@@ -101,7 +101,7 @@ impl App {
     }
 
     fn modal_open(&self) -> bool {
-        self.busy || self.error.is_some()
+        self.busy || self.error.is_some() || self.show_about
     }
 
     fn do_task(&mut self, task: impl 'static + Send + Sync + FnOnce() -> anyhow::Result<Message>) {
@@ -232,17 +232,19 @@ impl App {
     }
 
     fn handle_keyboard(&mut self, ctx: &egui::Context) {
-        ctx.input_mut(|input| {
-            if input.consume_shortcut(&SHORTCUT_LOAD) {
-                self.do_update(Message::LoadPlayer);
-            }
-            if input.consume_shortcut(&SHORTCUT_SAVE) {
-                self.do_update(Message::SavePlayer);
-            }
-            if input.consume_shortcut(&SHORTCUT_EXIT) {
-                self.do_update(Message::Exit);
-            }
-        });
+        if !self.modal_open() {
+            ctx.input_mut(|input| {
+                if input.consume_shortcut(&SHORTCUT_LOAD) {
+                    self.do_update(Message::LoadPlayer);
+                }
+                if input.consume_shortcut(&SHORTCUT_SAVE) {
+                    self.do_update(Message::SavePlayer);
+                }
+                if input.consume_shortcut(&SHORTCUT_EXIT) {
+                    self.do_update(Message::Exit);
+                }
+            });
+        }
     }
 }
 
@@ -262,6 +264,7 @@ impl eframe::App for App {
         let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
 
         ui.spacing_mut().item_spacing = [8.0, 8.0].into();
+        ui.set_enabled(!self.modal_open());
 
         DockArea::new(self.tree.clone().write().deref_mut())
             .style(
