@@ -627,10 +627,19 @@ impl Player {
 
         if self.version >= 262 {
             self.current_loadout_index = reader.read_i32::<LE>()?;
+            if self.current_loadout_index > 0 {
+                self.loadouts[self.current_loadout_index as usize] = self.loadouts[0].clone();
+                self.loadouts[0] = Loadout::default();
+            }
 
-            for i in 1..LOADOUT_COUNT {
-                self.loadouts[i].load(reader, item_meta, self.version, true, true)?;
-                self.loadouts[i].load_visuals(reader, self.version, false)?;
+            for i in 0..LOADOUT_COUNT {
+                if i == self.current_loadout_index as usize {
+                    Loadout::skip(reader, self.version, true, true)?;
+                    Loadout::skip_visuals(reader, self.version, false)?;
+                } else {
+                    self.loadouts[i].load(reader, item_meta, self.version, true, true)?;
+                    self.loadouts[i].load_visuals(reader, self.version, false)?;
+                }
             }
         }
 
@@ -709,7 +718,11 @@ impl Player {
         }
 
         if self.version >= 83 {
-            self.loadouts[0].save_visuals(writer, self.version, true)?;
+            self.loadouts[self.current_loadout_index as usize].save_visuals(
+                writer,
+                self.version,
+                true,
+            )?;
         }
 
         if self.version >= 119 {
@@ -780,7 +793,13 @@ impl Player {
         let has_prefix = self.version >= 36;
         let has_favourited = self.version >= 114;
 
-        self.loadouts[0].save(writer, item_meta, self.version, false, has_prefix)?;
+        self.loadouts[self.current_loadout_index as usize].save(
+            writer,
+            item_meta,
+            self.version,
+            false,
+            has_prefix,
+        )?;
 
         let inventory_count = if self.version >= 58 { 50 } else { 40 };
 
@@ -990,9 +1009,15 @@ impl Player {
         if self.version >= 262 {
             writer.write_i32::<LE>(self.current_loadout_index)?;
 
-            for i in 1..LOADOUT_COUNT {
-                self.loadouts[i].save(writer, item_meta, self.version, true, true)?;
-                self.loadouts[i].save_visuals(writer, self.version, false)?;
+            for i in 0..LOADOUT_COUNT {
+                if i == self.current_loadout_index as usize {
+                    let loadout = Loadout::default();
+                    loadout.save(writer, item_meta, self.version, true, true)?;
+                    loadout.save_visuals(writer, self.version, false)?;
+                } else {
+                    self.loadouts[i].save(writer, item_meta, self.version, true, true)?;
+                    self.loadouts[i].save_visuals(writer, self.version, false)?;
+                }
             }
         }
 
@@ -1058,14 +1083,13 @@ impl Player {
             || utils::has_item(id, &self.coins)
             || utils::has_item(id, &self.ammo)
             || self.loadouts[0].has_item(id)
+            || self.loadouts[1].has_item(id)
+            || self.loadouts[2].has_item(id)
             || utils::has_item(id, &self.equipment)
             || utils::has_item(id, &self.equipment_dyes)
             || utils::has_item(id, &self.piggy_bank)
             || utils::has_item(id, &self.safe)
             || utils::has_item(id, &self.defenders_forge)
             || utils::has_item(id, &self.void_vault)
-            || self.loadouts[1].has_item(id)
-            || self.loadouts[2].has_item(id)
-            || self.loadouts[3].has_item(id)
     }
 }

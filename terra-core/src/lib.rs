@@ -42,8 +42,7 @@ pub const DPAD_BINDINGS_COUNT: usize = 4;
 pub const BUILDER_ACCESSORY_COUNT: usize = 12;
 /// Mouse, ItemByIndex, GuideItem, ReforgeItem
 pub const TEMPORARY_SLOT_COUNT: usize = 4;
-/// The current armor/accessories are also counted as a loadout
-pub const LOADOUT_COUNT: usize = 4;
+pub const LOADOUT_COUNT: usize = 3;
 
 pub const MAX_RESPAWN_TIME: i32 = 60000;
 
