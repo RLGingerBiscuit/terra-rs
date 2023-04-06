@@ -55,7 +55,7 @@ impl App {
 
     // TODO: render slot icons
     // TODO: render coloured slots
-    fn render_sprite(
+    fn render_slot(
         &self,
         ui: &mut Ui,
         slot_size: f32,
@@ -127,7 +127,7 @@ impl App {
             let x = meta.x as f32;
             let y = meta.y as f32;
 
-            self.render_sprite(
+            self.render_slot(
                 ui,
                 ITEM_SLOT_SIZE,
                 ITEM_SPRITE_SCALE,
@@ -153,7 +153,7 @@ impl App {
             let x = meta.x as f32;
             let y = meta.y as f32;
 
-            self.render_sprite(
+            self.render_slot(
                 ui,
                 BUFF_SLOT_SIZE,
                 BUFF_SPRITE_SCALE,
