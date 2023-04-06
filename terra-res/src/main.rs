@@ -388,102 +388,104 @@ fn animated_items() -> HashMap<u32, [u32; 4]> {
     // h = maxy - miny
     // x = minx
     // y = miny
-    map.insert(75, [22, 24, 0, 0]);
-    map.insert(353, [18, 18, 0, 0]);
-    map.insert(357, [30, 22, 0, 0]);
-    map.insert(520, [22, 22, 0, 1]);
-    map.insert(521, [22, 22, 0, 1]);
-    map.insert(547, [22, 22, 0, 1]);
-    map.insert(548, [22, 22, 0, 1]);
-    map.insert(549, [22, 22, 0, 1]);
-    map.insert(575, [22, 22, 0, 1]);
-    map.insert(967, [12, 14, 0, 0]);
-    map.insert(969, [12, 14, 0, 0]);
-    map.insert(1787, [38, 25, 0, 0]);
-    map.insert(1911, [28, 30, 0, 0]);
-    map.insert(1912, [28, 32, 0, 0]);
-    map.insert(1919, [26, 26, 0, 0]);
-    map.insert(1920, [28, 32, 0, 0]);
-    map.insert(2266, [18, 30, 0, 0]);
-    map.insert(2267, [30, 22, 0, 0]);
-    map.insert(2268, [30, 28, 0, 0]);
-    map.insert(3195, [28, 24, 0, 0]);
-    map.insert(3453, [16, 22, 0, 32]);
-    map.insert(3454, [16, 22, 0, 32]);
-    map.insert(3455, [16, 22, 0, 32]);
-    map.insert(3532, [32, 30, 0, 0]);
-    map.insert(3580, [22, 22, 0, 2]);
-    map.insert(3581, [21, 20, 0, 4]);
-    map.insert(4009, [24, 26, 0, 0]);
-    map.insert(4010, [29, 20, 2, 0]);
-    map.insert(4011, [34, 22, 0, 0]);
-    map.insert(4012, [36, 28, 0, 0]);
-    map.insert(4013, [30, 26, 0, 0]);
-    map.insert(4014, [28, 24, 0, 0]);
-    map.insert(4015, [28, 24, 0, 0]);
-    map.insert(4016, [22, 24, 0, 0]);
-    map.insert(4017, [30, 28, 0, 0]);
-    map.insert(4018, [16, 28, 0, 0]);
-    map.insert(4019, [30, 18, 0, 0]);
-    map.insert(4020, [28, 16, 0, 0]);
-    map.insert(4021, [24, 28, 0, 0]);
-    map.insert(4022, [30, 28, 0, 0]);
-    map.insert(4023, [22, 28, 0, 0]);
-    map.insert(4024, [26, 24, 0, 0]);
-    map.insert(4025, [32, 16, 0, 0]);
-    map.insert(4026, [28, 34, 0, 0]);
-    map.insert(4027, [24, 40, 0, 0]);
-    map.insert(4028, [29, 28, 0, 0]);
-    map.insert(4029, [28, 26, 0, 0]);
-    map.insert(4030, [32, 32, 0, 0]);
-    map.insert(4031, [30, 18, 0, 0]);
-    map.insert(4032, [28, 22, 0, 0]);
-    map.insert(4033, [30, 16, 0, 0]);
-    map.insert(4034, [34, 20, 0, 0]);
-    map.insert(4035, [34, 26, 0, 0]);
-    map.insert(4036, [30, 18, 0, 0]);
-    map.insert(4037, [34, 22, 0, 0]);
-    map.insert(4068, [14, 18, 2, 4]);
-    map.insert(4069, [18, 18, 2, 2]);
-    map.insert(4070, [14, 18, 2, 2]);
-    map.insert(4282, [22, 26, 0, 0]);
-    map.insert(4283, [26, 30, 0, 0]);
-    map.insert(4284, [20, 28, 0, 0]);
-    map.insert(4285, [22, 24, 0, 0]);
-    map.insert(4286, [22, 32, 0, 0]);
-    map.insert(4287, [24, 24, 0, 0]);
-    map.insert(4288, [26, 26, 0, 0]);
-    map.insert(4289, [28, 30, 0, 0]);
-    map.insert(4290, [26, 24, 0, 0]);
-    map.insert(4291, [18, 28, 0, 0]);
-    map.insert(4292, [28, 24, 0, 0]);
-    map.insert(4293, [22, 24, 0, 0]);
-    map.insert(4294, [20, 32, 0, 0]);
-    map.insert(4295, [24, 28, 0, 0]);
-    map.insert(4296, [30, 32, 0, 0]);
-    map.insert(4297, [24, 24, 0, 0]);
-    map.insert(4403, [30, 20, 0, 2]);
-    map.insert(4411, [32, 22, 0, 0]);
-    map.insert(4614, [14, 26, 0, 6]);
-    map.insert(4615, [14, 26, 0, 6]);
-    map.insert(4616, [16, 28, 0, 4]);
-    map.insert(4617, [20, 32, 0, 2]);
-    map.insert(4618, [20, 28, 0, 4]);
-    map.insert(4619, [14, 30, 0, 2]);
-    map.insert(4620, [10, 30, 0, 2]);
-    map.insert(4621, [18, 32, 0, 0]);
-    map.insert(4622, [18, 30, 0, 2]);
-    map.insert(4623, [20, 36, 0, 4]);
-    map.insert(4624, [18, 26, 0, 6]);
-    map.insert(4625, [18, 26, 0, 2]);
-    map.insert(5009, [34, 22, 0, 2]);
-    map.insert(5041, [24, 38, 0, 2]);
-    map.insert(5042, [32, 34, 0, 0]);
-    map.insert(5092, [36, 32, 0, 0]);
-    map.insert(5093, [36, 28, 0, 0]);
-    map.insert(5275, [16, 28, 0, 0]);
-    map.insert(5277, [20, 24, 0, 0]);
-    map.insert(5278, [20, 22, 2, 2]);
+
+    // These are halved, since Terraria's sprites' pixels are 2x2
+    map.insert(75, [11, 12, 0, 0]);
+    map.insert(353, [9, 9, 0, 0]);
+    map.insert(357, [15, 11, 0, 0]);
+    map.insert(520, [11, 11, 0, 0]);
+    map.insert(521, [11, 11, 0, 0]);
+    map.insert(547, [11, 11, 0, 0]);
+    map.insert(548, [11, 11, 0, 0]);
+    map.insert(549, [11, 11, 0, 0]);
+    map.insert(575, [11, 11, 0, 0]);
+    map.insert(967, [6, 7, 0, 0]);
+    map.insert(969, [6, 7, 0, 0]);
+    map.insert(1787, [19, 12, 0, 0]);
+    map.insert(1911, [14, 15, 0, 0]);
+    map.insert(1912, [14, 16, 0, 0]);
+    map.insert(1919, [13, 13, 0, 0]);
+    map.insert(1920, [14, 16, 0, 0]);
+    map.insert(2266, [9, 15, 0, 0]);
+    map.insert(2267, [15, 11, 0, 0]);
+    map.insert(2268, [15, 14, 0, 0]);
+    map.insert(3195, [14, 12, 0, 0]);
+    map.insert(3453, [8, 11, 0, 16]);
+    map.insert(3454, [8, 11, 0, 16]);
+    map.insert(3455, [8, 11, 0, 16]);
+    map.insert(3532, [16, 15, 0, 0]);
+    map.insert(3580, [11, 11, 0, 1]);
+    map.insert(3581, [10, 10, 0, 2]);
+    map.insert(4009, [12, 13, 0, 0]);
+    map.insert(4010, [14, 10, 1, 0]);
+    map.insert(4011, [17, 11, 0, 0]);
+    map.insert(4012, [18, 14, 0, 0]);
+    map.insert(4013, [15, 13, 0, 0]);
+    map.insert(4014, [14, 12, 0, 0]);
+    map.insert(4015, [14, 12, 0, 0]);
+    map.insert(4016, [11, 12, 0, 0]);
+    map.insert(4017, [15, 14, 0, 0]);
+    map.insert(4018, [8, 14, 0, 0]);
+    map.insert(4019, [15, 9, 0, 0]);
+    map.insert(4020, [14, 8, 0, 0]);
+    map.insert(4021, [12, 14, 0, 0]);
+    map.insert(4022, [15, 14, 0, 0]);
+    map.insert(4023, [11, 14, 0, 0]);
+    map.insert(4024, [13, 12, 0, 0]);
+    map.insert(4025, [16, 8, 0, 0]);
+    map.insert(4026, [14, 17, 0, 0]);
+    map.insert(4027, [12, 20, 0, 0]);
+    map.insert(4028, [14, 14, 0, 0]);
+    map.insert(4029, [14, 13, 0, 0]);
+    map.insert(4030, [16, 16, 0, 0]);
+    map.insert(4031, [15, 9, 0, 0]);
+    map.insert(4032, [14, 11, 0, 0]);
+    map.insert(4033, [15, 8, 0, 0]);
+    map.insert(4034, [17, 10, 0, 0]);
+    map.insert(4035, [17, 13, 0, 0]);
+    map.insert(4036, [15, 9, 0, 0]);
+    map.insert(4037, [17, 11, 0, 0]);
+    map.insert(4068, [7, 9, 1, 2]);
+    map.insert(4069, [9, 9, 1, 1]);
+    map.insert(4070, [7, 9, 1, 1]);
+    map.insert(4282, [11, 13, 0, 0]);
+    map.insert(4283, [13, 15, 0, 0]);
+    map.insert(4284, [10, 14, 0, 0]);
+    map.insert(4285, [11, 12, 0, 0]);
+    map.insert(4286, [11, 16, 0, 0]);
+    map.insert(4287, [12, 12, 0, 0]);
+    map.insert(4288, [13, 13, 0, 0]);
+    map.insert(4289, [14, 15, 0, 0]);
+    map.insert(4290, [13, 12, 0, 0]);
+    map.insert(4291, [9, 14, 0, 0]);
+    map.insert(4292, [14, 12, 0, 0]);
+    map.insert(4293, [11, 12, 0, 0]);
+    map.insert(4294, [10, 16, 0, 0]);
+    map.insert(4295, [12, 14, 0, 0]);
+    map.insert(4296, [15, 16, 0, 0]);
+    map.insert(4297, [12, 12, 0, 0]);
+    map.insert(4403, [15, 10, 0, 1]);
+    map.insert(4411, [16, 11, 0, 0]);
+    map.insert(4614, [7, 13, 0, 3]);
+    map.insert(4615, [7, 13, 0, 3]);
+    map.insert(4616, [8, 14, 0, 2]);
+    map.insert(4617, [10, 16, 0, 1]);
+    map.insert(4618, [10, 14, 0, 2]);
+    map.insert(4619, [7, 15, 0, 1]);
+    map.insert(4620, [5, 15, 0, 1]);
+    map.insert(4621, [9, 16, 0, 0]);
+    map.insert(4622, [9, 15, 0, 1]);
+    map.insert(4623, [10, 18, 0, 2]);
+    map.insert(4624, [9, 13, 0, 3]);
+    map.insert(4625, [9, 13, 0, 1]);
+    map.insert(5009, [17, 11, 0, 1]);
+    map.insert(5041, [12, 19, 0, 1]);
+    map.insert(5042, [16, 17, 0, 0]);
+    map.insert(5092, [18, 16, 0, 0]);
+    map.insert(5093, [18, 14, 0, 0]);
+    map.insert(5275, [8, 14, 0, 0]);
+    map.insert(5277, [10, 12, 0, 0]);
+    map.insert(5278, [10, 11, 1, 1]);
     map
 }
 
@@ -493,7 +495,6 @@ fn generate_spritesheet(
     max_width: u32,
     offset_filepath: &Path,
 ) -> Result<DynamicImage> {
-    // TODO: Scale sprites by 1/2
     let animated_items = animated_items();
 
     let iter = fs::read_dir(fol)?;
@@ -529,6 +530,13 @@ fn generate_spritesheet(
         }
 
         let image = image::open(item.path())?;
+
+        // Terraria's sprites' have 2x2 pixels, so we halve them in the name of size
+        let image = image.resize(
+            image.width() / 2,
+            image.height() / 2,
+            image::imageops::FilterType::Nearest,
+        );
 
         sprites.insert(id, image);
     }
