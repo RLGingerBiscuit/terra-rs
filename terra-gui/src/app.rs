@@ -17,6 +17,8 @@ use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta, BUFF_SPRITE_SIZE
 
 pub const GITHUB_REPO_NAME: &str = "Hub-of-Cringe-Nerds/RLGingerBiscuit-terra-rs";
 pub const GITHUB_REPO_URL: &str = "https://github.com/Hub-of-Cringe-Nerds/RLGingerBiscuit-terra-rs";
+pub const EGUI_GITHUB_REPO_NAME: &str = "emilk/egui";
+pub const EGUI_GITHUB_REPO_URL: &str = "https://github.com/emilk/egui";
 
 static SHORTCUT_LOAD: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::O);
 static SHORTCUT_SAVE: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::S);

@@ -2,7 +2,9 @@ use egui::{Align2, Frame, Grid, RichText, Vec2, Window};
 
 use crate::ext::UiExt;
 
-use super::{App, Message, GITHUB_REPO_NAME, GITHUB_REPO_URL};
+use super::{
+    App, Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,
+};
 
 impl App {
     pub fn render_about(&mut self, ctx: &egui::Context) {
@@ -29,8 +31,8 @@ impl App {
                         ui.end_row();
 
                         ui.label("GUI Library:");
-                        if ui.link("emilk/egui").clicked() {
-                            open::that("https://github.com/emilk/egui").ok();
+                        if ui.link(EGUI_GITHUB_REPO_NAME).clicked() {
+                            open::that(EGUI_GITHUB_REPO_URL).ok();
                         }
                         ui.end_row();
                     });
