@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::Result;
-use image::{DynamicImage, GenericImage, GenericImageView, ImageFormat};
+use image::{DynamicImage, GenericImage, GenericImageView};
 use itertools::Itertools;
 use regex::{Captures, Regex};
 
@@ -787,12 +787,6 @@ fn main() -> Result<()> {
         .open(gen_fol.join("prefixes.json"))?;
     let prefix_writer = BufWriter::new(&mut prefix_file);
 
-    let mut item_spritesheet_file = File::create(gen_fol.join("items.png"))?;
-    let mut item_spritesheet_writer = BufWriter::new(&mut item_spritesheet_file);
-
-    let mut buff_spritesheet_file = File::create(gen_fol.join("buffs.png"))?;
-    let mut buff_spritesheet_writer = BufWriter::new(&mut buff_spritesheet_file);
-
     let item_localization_file = File::open(res_fol.join("Items.json"))?;
     let npc_localization_file = File::open(res_fol.join("NPCs.json"))?;
     let game_localization_file = File::open(res_fol.join("Game.json"))?;
@@ -845,8 +839,8 @@ fn main() -> Result<()> {
         serde_json::to_writer(buff_writer, &buff_meta)?;
         serde_json::to_writer(prefix_writer, &prefix_meta)?;
     }
-    item_spritesheet.write_to(&mut item_spritesheet_writer, ImageFormat::Png)?;
-    buff_spritesheet.write_to(&mut buff_spritesheet_writer, ImageFormat::Png)?;
+    item_spritesheet.save(gen_fol.join("items.png"))?;
+    buff_spritesheet.save(gen_fol.join("buffs.png"))?;
 
     let target_dir = PathBuf::from("./target").join(&build_type);
     let final_dir = target_dir.join("resources");
