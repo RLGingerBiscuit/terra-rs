@@ -3,14 +3,13 @@ use terra_core::{Buff, BuffMeta, Item, ItemMeta, BUFF_SPRITE_SIZE as CORE_BUFF_S
 
 use super::{App, Message};
 
-pub const ITEM_SIZE: f32 = 40.;
-pub const ITEM_SCALE: f32 = 2.;
+pub const ITEM_SLOT_SIZE: f32 = 40.;
+pub const ITEM_SPRITE_SCALE: f32 = 2.;
 
+pub const BUFF_SLOT_SIZE: f32 = 32.;
 pub const BUFF_SPRITE_SIZE: f32 = CORE_BUFF_SPRITE_SIZE as f32;
-pub const BUFF_SIZE: f32 = 32.;
-pub const BUFF_SCALE: f32 = 2.;
+pub const BUFF_SPRITE_SCALE: f32 = 2.;
 
-// TODO: Get correct meta
 impl App {
     fn get_item_meta_or_default<'a>(&'a self, id: i32) -> &'a ItemMeta {
         self.item_meta
@@ -54,6 +53,8 @@ impl App {
             )
     }
 
+    // TODO: render slot icons
+    // TODO: render coloured slots
     fn render_sprite(
         &self,
         ui: &mut Ui,
@@ -128,8 +129,8 @@ impl App {
 
             self.render_sprite(
                 ui,
-                ITEM_SIZE,
-                ITEM_SCALE,
+                ITEM_SLOT_SIZE,
+                ITEM_SPRITE_SCALE,
                 width,
                 height,
                 x,
@@ -154,8 +155,8 @@ impl App {
 
             self.render_sprite(
                 ui,
-                BUFF_SIZE,
-                BUFF_SCALE,
+                BUFF_SLOT_SIZE,
+                BUFF_SPRITE_SCALE,
                 BUFF_SPRITE_SIZE,
                 BUFF_SPRITE_SIZE,
                 x,
