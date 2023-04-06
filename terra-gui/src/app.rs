@@ -263,7 +263,11 @@ impl eframe::App for App {
         ui.spacing_mut().item_spacing = [8.0, 8.0].into();
 
         DockArea::new(self.tree.clone().write().deref_mut())
-            .style(StyleBuilder::from_egui(&ctx.style()).build())
+            .style(
+                StyleBuilder::from_egui(&ctx.style())
+                    .show_close_buttons(false)
+                    .build(),
+            )
             .show_inside(&mut ui, self);
     }
 }
