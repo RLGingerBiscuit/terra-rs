@@ -6,12 +6,14 @@ use std::{path::PathBuf, sync::Arc, thread};
 
 use anyhow::anyhow;
 use eframe::CreationContext;
-use egui::{self, Key, KeyboardShortcut, Modifiers, TextureHandle};
+use egui::{
+    self, Color32, Image, Key, KeyboardShortcut, Modifiers, Pos2, Rect, TextureHandle, Vec2,
+};
 use flume::{Receiver, Sender};
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
 
-use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta};
+use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta, BUFF_SPRITE_SIZE};
 
 pub const GITHUB_REPO_NAME: &str = "Hub-of-Cringe-Nerds/RLGingerBiscuit-terra-rs";
 pub const GITHUB_REPO_URL: &str = "https://github.com/Hub-of-Cringe-Nerds/RLGingerBiscuit-terra-rs";
@@ -84,6 +86,10 @@ impl App {
             busy: false,
             show_about: false,
         }
+    }
+
+    fn modal_open(&self) -> bool {
+        self.busy || self.error.is_some()
     }
 
     fn do_task(&mut self, task: impl 'static + Send + Sync + FnOnce() -> anyhow::Result<Message>) {
@@ -238,8 +244,95 @@ impl eframe::App for App {
         self.render_error(ctx);
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.vertical_centered_justified(|ui| {
-                ui.heading("Hello World!");
+            ui.spacing_mut().item_spacing.y = 8.;
+
+            ui.add_enabled_ui(!self.modal_open(), |ui| {
+                let player = self.player.read();
+
+                ui.heading(format!("Name: {}", player.name));
+
+                ui.horizontal(|ui| {
+                    if ui.button("Load Player").clicked() {
+                        self.do_update(Message::LoadPlayer);
+                    }
+                    if ui.button("Save Player").clicked() {
+                        self.do_update(Message::SavePlayer);
+                    }
+                    if ui.button("Reset Player").clicked() {
+                        self.do_update(Message::ResetPlayer);
+                    }
+                });
+
+                ui.horizontal(|ui| {
+                    if ui.button("Load Item Spritesheet").clicked() {
+                        self.do_update(Message::LoadItemSpritesheet);
+                    }
+                    if ui.button("Load Buff Spritesheet").clicked() {
+                        self.do_update(Message::LoadBuffSpritesheet);
+                    }
+                });
+
+                ui.horizontal(|ui| {
+                    {
+                        let spritesheet = self.item_spritesheet.lock();
+
+                        if let Some(spritesheet) = &*spritesheet {
+                            let spritesheet_size = spritesheet.size().map(|s| s as f32);
+
+                            let sprite = self.item_meta.get(426).unwrap();
+                            let width = sprite.width as f32;
+                            let height = sprite.height as f32;
+                            let x = sprite.x as f32;
+                            let y = sprite.y as f32;
+
+                            let min = Pos2::new(x / spritesheet_size[0], y / spritesheet_size[1]);
+                            let sprite_size = Vec2::new(
+                                width / spritesheet_size[0],
+                                height / spritesheet_size[1],
+                            );
+                            let uv = Rect::from_min_size(min, sprite_size);
+
+                            let size = Vec2::new(width, height) * 4.;
+
+                            ui.vertical(|ui| {
+                                ui.label("Item Sprite");
+                                ui.add(
+                                    Image::new(spritesheet, size)
+                                        .uv(uv)
+                                        .bg_fill(Color32::LIGHT_GRAY),
+                                );
+                            });
+                        }
+                    }
+
+                    {
+                        let spritesheet = self.buff_spritesheet.lock();
+
+                        if let Some(spritesheet) = &*spritesheet {
+                            let spritesheet_size = spritesheet.size().map(|s| s as f32);
+
+                            let sprite = self.buff_meta.get(1).unwrap();
+                            let width = BUFF_SPRITE_SIZE as f32;
+                            let height = BUFF_SPRITE_SIZE as f32;
+                            let x = sprite.x as f32;
+                            let y = sprite.y as f32;
+
+                            let min = Pos2::new(x / spritesheet_size[0], y / spritesheet_size[1]);
+                            let sprite_size = Vec2::new(
+                                width / spritesheet_size[0],
+                                height / spritesheet_size[1],
+                            );
+                            let uv = Rect::from_min_size(min, sprite_size);
+
+                            let size = Vec2::new(width, height) * 4.;
+
+                            ui.vertical(|ui| {
+                                ui.label("Buff Sprite");
+                                ui.add(Image::new(spritesheet, size).uv(uv));
+                            });
+                        }
+                    }
+                });
             });
         });
     }
