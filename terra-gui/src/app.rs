@@ -1,13 +1,15 @@
 mod menus;
 mod modals;
+mod tasks;
 
 use std::{path::PathBuf, sync::Arc, thread};
 
+use anyhow::anyhow;
 use eframe::CreationContext;
-use egui::{self, Key, KeyboardShortcut, Modifiers};
+use egui::{self, Key, KeyboardShortcut, Modifiers, TextureHandle};
 use flume::{Receiver, Sender};
 use once_cell::sync::Lazy;
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
 
 use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta};
 
@@ -27,6 +29,8 @@ static DEFAULT_PLAYER: Lazy<Player> = Lazy::new(|| Player::default());
 pub enum Message {
     Noop,
     Exit,
+    LoadItemSpritesheet,
+    LoadBuffSpritesheet,
     ShowAbout,
     CloseAbout,
     ShowError(anyhow::Error),
@@ -46,6 +50,9 @@ pub struct App {
     prefix_meta: Arc<Vec<PrefixMeta>>,
     item_meta: Arc<Vec<ItemMeta>>,
     buff_meta: Arc<Vec<BuffMeta>>,
+
+    item_spritesheet: Arc<Mutex<Option<TextureHandle>>>,
+    buff_spritesheet: Arc<Mutex<Option<TextureHandle>>>,
 
     error: Option<anyhow::Error>,
     busy: bool,
@@ -70,6 +77,9 @@ impl App {
             item_meta: Arc::new(item_meta),
             buff_meta: Arc::new(buff_meta),
 
+            item_spritesheet: Arc::new(Mutex::new(None)),
+            buff_spritesheet: Arc::new(Mutex::new(None)),
+
             error: None,
             busy: false,
             show_about: false,
@@ -93,11 +103,37 @@ impl App {
         self.channel.0.send(msg).unwrap();
     }
 
-    fn handle_update(&mut self, _ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn handle_update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if let Ok(msg) = self.channel.1.try_recv() {
             match msg {
                 Message::Noop => self.busy = false,
                 Message::Exit => frame.close(),
+                Message::LoadItemSpritesheet => {
+                    {
+                        let spritesheet = self.item_spritesheet.lock();
+                        if (*spritesheet).is_some() {
+                            self.do_update(Message::ShowError(anyhow!(
+                                "Item sprites should only be loaded once."
+                            )));
+                            return;
+                        }
+                    }
+                    let spritesheet = self.item_spritesheet.clone();
+                    self.load_spritesheet(ctx, "items.png", spritesheet);
+                }
+                Message::LoadBuffSpritesheet => {
+                    {
+                        let spritesheet = self.buff_spritesheet.lock();
+                        if (*spritesheet).is_some() {
+                            self.do_update(Message::ShowError(anyhow!(
+                                "Buff sprites should only be loaded once."
+                            )));
+                            return;
+                        }
+                    }
+                    let spritesheet = self.buff_spritesheet.clone();
+                    self.load_spritesheet(ctx, "buffs.png", spritesheet);
+                }
                 Message::ShowAbout => self.show_about = true,
                 Message::CloseAbout => self.show_about = false,
                 Message::ShowError(err) => {

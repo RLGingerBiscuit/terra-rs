@@ -3390,6 +3390,7 @@ dependencies = [
  "eframe",
  "egui",
  "flume",
+ "image",
  "once_cell",
  "open",
  "parking_lot",
