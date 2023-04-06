@@ -1,13 +1,14 @@
 use std::{
     collections::HashMap,
     fs::{self, File, OpenOptions},
-    io::{BufWriter, Read},
-    path::PathBuf,
+    io::{BufWriter, LineWriter, Read, Write},
+    path::{Path, PathBuf},
     str::FromStr,
 };
 
 use anyhow::Result;
-// use image::{DynamicImage, GenericImage, ImageFormat};
+use image::{DynamicImage, GenericImage, ImageFormat};
+use itertools::Itertools;
 use regex::{Captures, Regex};
 
 use fs_extra::dir::{copy as copy_dir, create as create_dir, CopyOptions as DirCopyOptions};
@@ -18,8 +19,6 @@ use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, PrefixMeta};
 const ITEM_DATA_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/data";
 const BUFF_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Buff_IDs";
 const PREFIX_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Prefix_IDs";
-const ITEM_CSS_URL: &str = "https://yal.cc/r/terrasavr/plus/img/items.css";
-const BUFF_CSS_URL: &str = "https://yal.cc/r/terrasavr/plus/img/buffs.css";
 
 fn expand_templates(
     s: String,
@@ -66,31 +65,11 @@ fn expand_templates(
     }
 }
 
-fn get_item_offsets() -> Result<HashMap<i32, [i32; 2]>> {
+fn get_offsets(path: &Path) -> Result<HashMap<i32, [i32; 2]>> {
     let offset_regex = Regex::new(r"^.*id='(\d+)'.*ofs: -(\d+)px -(\d+)")?;
 
-    let resp = reqwest::blocking::get(ITEM_CSS_URL)?;
-    let text = resp.text()?;
-
-    let mut offsets = HashMap::new();
-
-    text.lines().for_each(|line| {
-        let captures = offset_regex.captures(line).unwrap();
-        let id = i32::from_str(captures.get(1).unwrap().as_str()).unwrap();
-        let x = i32::from_str(captures.get(2).unwrap().as_str()).unwrap();
-        let y = i32::from_str(captures.get(3).unwrap().as_str()).unwrap();
-
-        offsets.insert(id, [x, y]);
-    });
-
-    Ok(offsets)
-}
-
-fn get_buff_offsets() -> Result<HashMap<i32, [i32; 2]>> {
-    let offset_regex = Regex::new(r"^.*id='(\d+)'.*ofs: -(\d+)px -(\d+)")?;
-
-    let resp = reqwest::blocking::get(BUFF_CSS_URL)?;
-    let text = resp.text()?;
+    let mut text = String::new();
+    File::open(path).unwrap().read_to_string(&mut text)?;
 
     let mut offsets = HashMap::new();
 
@@ -111,6 +90,7 @@ fn get_item_meta(
     game: &serde_json::Value,
     items: &serde_json::Value,
     npcs: &serde_json::Value,
+    offset_filepath: &Path,
 ) -> Result<Vec<ItemMeta>> {
     // https://terraria.wiki.gg/wiki/Module:Iteminfo/data
     // API: https://terraria.wiki.gg/api.php?action=query&prop=revisions&titles=Module:Iteminfo/data&rvlimit=1&rvslots=*&rvprop=ids|content&format=json
@@ -149,7 +129,7 @@ fn get_item_meta(
 
     let mut item_meta: Vec<ItemMeta> = Vec::new();
 
-    let offsets = get_item_offsets()?;
+    let offsets = get_offsets(offset_filepath)?;
 
     let lua = Lua::new();
 
@@ -253,6 +233,7 @@ fn get_buff_meta(
     game: &serde_json::Value,
     items: &serde_json::Value,
     npcs: &serde_json::Value,
+    offset_filepath: &Path,
 ) -> Result<Vec<BuffMeta>> {
     let resp = reqwest::blocking::get(BUFF_IDS_URL)?;
     let text = resp.text()?;
@@ -267,7 +248,7 @@ fn get_buff_meta(
     let name_selector = scraper::Selector::parse("span.i>span>span>a").unwrap();
     let image_selector = scraper::Selector::parse("span.i>a>img").unwrap();
 
-    let offsets = get_buff_offsets()?;
+    let offsets = get_offsets(offset_filepath)?;
 
     let mut buff_meta: Vec<BuffMeta> = doc
         .select(&tbody_selector)
@@ -396,75 +377,273 @@ fn get_prefix_meta(
     Ok(prefix_meta)
 }
 
-// fn generate_spritesheet(items_fol: &PathBuf) -> Result<DynamicImage> {
-//     let iter = fs::read_dir(items_fol)?;
+fn animated_items() -> HashMap<u32, [u32; 4]> {
+    let mut map = HashMap::new();
+    // TODO: This kinda sucks, but I just want to get this working, so here's an algo for doing this a little better
+    // iterate through all the rows, taking note of the bounds for each row (first & last pixel)
+    // and the first row where a non-transparent pixel was encountered, let that be miny
+    // stop once all pixels are transparent or at the end, let the index of the final row be maxy
+    // Find minx and maxx using the bounds
+    // w = maxx - minx
+    // h = maxy - miny
+    // x = minx
+    // y = miny
+    map.insert(75, [22, 24, 0, 0]);
+    map.insert(353, [18, 18, 0, 0]);
+    map.insert(357, [30, 22, 0, 0]);
+    map.insert(520, [22, 22, 0, 1]);
+    map.insert(521, [22, 22, 0, 1]);
+    map.insert(547, [22, 22, 0, 1]);
+    map.insert(548, [22, 22, 0, 1]);
+    map.insert(549, [22, 22, 0, 1]);
+    map.insert(575, [22, 22, 0, 1]);
+    map.insert(967, [12, 14, 0, 0]);
+    map.insert(969, [12, 14, 0, 0]);
+    map.insert(1787, [38, 25, 0, 0]);
+    map.insert(1911, [28, 30, 0, 0]);
+    map.insert(1912, [28, 32, 0, 0]);
+    map.insert(1919, [26, 26, 0, 0]);
+    map.insert(1920, [28, 32, 0, 0]);
+    map.insert(2266, [18, 30, 0, 0]);
+    map.insert(2267, [30, 22, 0, 0]);
+    map.insert(2268, [30, 28, 0, 0]);
+    map.insert(3195, [28, 24, 0, 0]);
+    map.insert(3453, [16, 22, 0, 32]);
+    map.insert(3454, [16, 22, 0, 32]);
+    map.insert(3455, [16, 22, 0, 32]);
+    map.insert(3532, [32, 30, 0, 0]);
+    map.insert(3580, [22, 22, 0, 2]);
+    map.insert(3581, [21, 20, 0, 4]);
+    map.insert(4009, [24, 26, 0, 0]);
+    map.insert(4010, [29, 20, 2, 0]);
+    map.insert(4011, [34, 22, 0, 0]);
+    map.insert(4012, [36, 28, 0, 0]);
+    map.insert(4013, [30, 26, 0, 0]);
+    map.insert(4014, [28, 24, 0, 0]);
+    map.insert(4015, [28, 24, 0, 0]);
+    map.insert(4016, [22, 24, 0, 0]);
+    map.insert(4017, [30, 28, 0, 0]);
+    map.insert(4018, [16, 28, 0, 0]);
+    map.insert(4019, [30, 18, 0, 0]);
+    map.insert(4020, [28, 16, 0, 0]);
+    map.insert(4021, [24, 28, 0, 0]);
+    map.insert(4022, [30, 28, 0, 0]);
+    map.insert(4023, [22, 28, 0, 0]);
+    map.insert(4024, [26, 24, 0, 0]);
+    map.insert(4025, [32, 16, 0, 0]);
+    map.insert(4026, [28, 34, 0, 0]);
+    map.insert(4027, [24, 40, 0, 0]);
+    map.insert(4028, [29, 28, 0, 0]);
+    map.insert(4029, [28, 26, 0, 0]);
+    map.insert(4030, [32, 32, 0, 0]);
+    map.insert(4031, [30, 18, 0, 0]);
+    map.insert(4032, [28, 22, 0, 0]);
+    map.insert(4033, [30, 16, 0, 0]);
+    map.insert(4034, [34, 20, 0, 0]);
+    map.insert(4035, [34, 26, 0, 0]);
+    map.insert(4036, [30, 18, 0, 0]);
+    map.insert(4037, [34, 22, 0, 0]);
+    map.insert(4068, [14, 18, 2, 4]);
+    map.insert(4069, [18, 18, 2, 2]);
+    map.insert(4070, [14, 18, 2, 2]);
+    map.insert(4282, [22, 26, 0, 0]);
+    map.insert(4283, [26, 30, 0, 0]);
+    map.insert(4284, [20, 28, 0, 0]);
+    map.insert(4285, [22, 24, 0, 0]);
+    map.insert(4286, [22, 32, 0, 0]);
+    map.insert(4287, [24, 24, 0, 0]);
+    map.insert(4288, [26, 26, 0, 0]);
+    map.insert(4289, [28, 30, 0, 0]);
+    map.insert(4290, [26, 24, 0, 0]);
+    map.insert(4291, [18, 28, 0, 0]);
+    map.insert(4292, [28, 24, 0, 0]);
+    map.insert(4293, [22, 24, 0, 0]);
+    map.insert(4294, [20, 32, 0, 0]);
+    map.insert(4295, [24, 28, 0, 0]);
+    map.insert(4296, [30, 32, 0, 0]);
+    map.insert(4297, [24, 24, 0, 0]);
+    map.insert(4403, [30, 20, 0, 2]);
+    map.insert(4411, [32, 22, 0, 0]);
+    map.insert(4614, [14, 26, 0, 6]);
+    map.insert(4615, [14, 26, 0, 6]);
+    map.insert(4616, [16, 28, 0, 4]);
+    map.insert(4617, [20, 32, 0, 2]);
+    map.insert(4618, [20, 28, 0, 4]);
+    map.insert(4619, [14, 30, 0, 2]);
+    map.insert(4620, [10, 30, 0, 2]);
+    map.insert(4621, [18, 32, 0, 0]);
+    map.insert(4622, [18, 30, 0, 2]);
+    map.insert(4623, [20, 36, 0, 4]);
+    map.insert(4624, [18, 26, 0, 6]);
+    map.insert(4625, [18, 26, 0, 2]);
+    map.insert(5009, [34, 22, 0, 2]);
+    map.insert(5041, [24, 38, 0, 2]);
+    map.insert(5042, [32, 34, 0, 0]);
+    map.insert(5092, [36, 32, 0, 0]);
+    map.insert(5093, [36, 28, 0, 0]);
+    map.insert(5275, [16, 28, 0, 0]);
+    map.insert(5277, [20, 24, 0, 0]);
+    map.insert(5278, [20, 22, 2, 2]);
+    map
+}
 
-//     let mut items: HashMap<u32, DynamicImage> = HashMap::new();
+fn generate_spritesheet(
+    fol: &Path,
+    text: &str,
+    max_width: u32,
+    offset_filepath: &Path,
+) -> Result<DynamicImage> {
+    // TODO: Scale sprites by 1/2
+    let animated_items = animated_items();
 
-//     const ITEM_WIDTH: u32 = 50;
-//     const ITEM_HEIGHT: u32 = 50;
-//     const H_ITEM_COUNT: u32 = 64;
+    let iter = fs::read_dir(fol)?;
 
-//     for (i, item) in iter.enumerate() {
-//         let item = item?;
-//         let file_name = item.file_name();
-//         let file_name = file_name.to_string_lossy().to_owned();
+    let mut sprites: HashMap<u32, DynamicImage> = HashMap::new();
 
-//         if !file_name.ends_with(".png") {
-//             continue;
-//         }
+    let file = File::create(offset_filepath)?;
+    let mut writer = LineWriter::new(file);
 
-//         let item_id = u32::from_str(
-//             file_name
-//                 .rsplit_once(".")
-//                 .unwrap()
-//                 .0
-//                 .rsplit_once("_")
-//                 .unwrap()
-//                 .1,
-//         )?;
+    const SPRITE_SPACING: u32 = 2;
 
-//         if i % 1000 == 0 {
-//             println!("loaded {} items", i);
-//         }
+    for (i, sprite) in iter.enumerate() {
+        let item = sprite?;
+        let filename = item.file_name();
+        let filename = filename.to_string_lossy().to_owned();
 
-//         let mut image = image::open(item.path())?;
-//         if image.width() > ITEM_WIDTH || image.height() > ITEM_HEIGHT {
-//             image = image.resize(
-//                 ITEM_WIDTH,
-//                 ITEM_HEIGHT,
-//                 image::imageops::FilterType::CatmullRom,
-//             );
-//         }
+        if !filename.ends_with(".png") {
+            continue;
+        }
 
-//         items.insert(item_id, image);
-//     }
+        let id = filename.rsplit_once(".").unwrap().0;
+        let id = id
+            .rsplit_once("_")
+            .unwrap_or_else(|| {
+                println!("File {} doesn't have an id, assuming 0", filename);
+                ("", "0")
+            })
+            .1;
+        let id = u32::from_str(id)?;
 
-//     let highest_id = items.keys().max_by(|a, b| a.cmp(b)).unwrap();
+        if i % 1000 == 0 {
+            println!("loaded {} sprites", i);
+        }
 
-//     let width = ITEM_WIDTH * H_ITEM_COUNT;
-//     let height = (highest_id / H_ITEM_COUNT + 1) * ITEM_HEIGHT;
+        let image = image::open(item.path())?;
 
-//     let mut new_image = DynamicImage::new_rgba8(width, height);
+        sprites.insert(id, image);
+    }
 
-//     let mut count = 0;
-//     for (i, img) in items.iter() {
-//         let x = i % H_ITEM_COUNT * ITEM_WIDTH + (ITEM_WIDTH - img.width()) / 2;
-//         let y = i / H_ITEM_COUNT * ITEM_HEIGHT + (ITEM_HEIGHT - img.height()) / 2;
-//         new_image.copy_from(img, x, y)?;
+    let sprite_iter = sprites
+        .iter()
+        .sorted_by(|(a, _), (b, _)| a.cmp(b))
+        .sorted_by(|(i, a), (j, b)| {
+            let (a, b) = if text == "slot" {
+                (
+                    if let Some([_, a, _, _]) = animated_items.get(i) {
+                        a.to_owned()
+                    } else {
+                        a.height()
+                    },
+                    if let Some([_, b, _, _]) = animated_items.get(j) {
+                        b.to_owned()
+                    } else {
+                        b.height()
+                    },
+                )
+            } else {
+                (a.height(), b.height())
+            };
 
-//         count += 1;
-//         if count % 1000 == 0 {
-//             println!("{} items", count);
-//         }
-//     }
+            a.cmp(&b)
+        });
 
-//     Ok(new_image)
-// }
+    let mut running_x = SPRITE_SPACING;
+    let mut running_y = SPRITE_SPACING;
+
+    let mut final_height = 0;
+    let mut largest_width = 0;
+    let mut largest_height = 0;
+
+    for (i, image) in sprite_iter.as_ref() {
+        let (width, height) = if text == "slot" {
+            if let Some([width, height, _, _]) = animated_items.get(i) {
+                (width.to_owned(), height.to_owned())
+            } else {
+                (image.width(), image.height())
+            }
+        } else {
+            (image.width(), image.height())
+        };
+
+        if running_x + width > max_width {
+            running_x = SPRITE_SPACING;
+            running_y += largest_height + SPRITE_SPACING * 2;
+            final_height = running_y + height + SPRITE_SPACING;
+        }
+
+        if width > largest_width {
+            largest_width = width;
+        }
+        if height > largest_height {
+            largest_height = height;
+            final_height = running_y + height + SPRITE_SPACING;
+        }
+
+        running_x += SPRITE_SPACING + width + SPRITE_SPACING;
+    }
+
+    let mut new_image = DynamicImage::new_rgba8(max_width, final_height);
+
+    largest_width = 0;
+    largest_height = 0;
+    running_x = SPRITE_SPACING;
+    running_y = SPRITE_SPACING;
+
+    let mut count = 0;
+
+    sprite_iter
+        .for_each(|(i, image)| {
+            let (width, height) = if text == "slot" {
+                if let Some([width, height, _, _]) = animated_items.get(i) {
+                    (width.to_owned(), height.to_owned())
+                } else {
+                    (image.width(), image.height())
+                }
+            } else {
+                (image.width(), image.height())
+            };
+
+            if running_x + width > max_width {
+                running_y += largest_height + SPRITE_SPACING * 2;
+                running_x = SPRITE_SPACING;
+            }
+
+            if width > largest_width {
+                largest_width = width;
+            }
+            if height > largest_height {
+                largest_height = height;
+            }
+
+            writeln!(writer, ".{text}[data-id='{i}'] {{ --ofs: -{running_x}px -{running_y}px; --w: {width}px; --h: {height}px; }}").expect("Wut");
+
+            new_image.copy_from(image, running_x, running_y).expect("Wut");
+
+            running_x += SPRITE_SPACING + width + SPRITE_SPACING;
+
+            count += 1;
+            if count % 1000 == 0 {
+                println!("{} sprites", count);
+            }
+        });
+
+    Ok(new_image)
+}
 
 fn main() -> Result<()> {
     let res_fol = PathBuf::from_str("./terra-res/resources")?;
-    // let items_fol = res_fol.join("items");
+    let items_fol = res_fol.join("items");
+    let buffs_fol = res_fol.join("buffs");
     let gen_fol = PathBuf::from_str("./terra-res/generated")?;
 
     create_dir(&gen_fol, true)?;
@@ -490,8 +669,11 @@ fn main() -> Result<()> {
         .open(gen_fol.join("prefixes.json"))?;
     let prefix_writer = BufWriter::new(&mut prefix_file);
 
-    // let mut spritesheet_file = File::create(gen_fol.join("items.png"))?;
-    // let mut spritesheet_writer = BufWriter::new(&mut spritesheet_file);
+    let mut item_spritesheet_file = File::create(gen_fol.join("items.png"))?;
+    let mut item_spritesheet_writer = BufWriter::new(&mut item_spritesheet_file);
+
+    let mut buff_spritesheet_file = File::create(gen_fol.join("buffs.png"))?;
+    let mut buff_spritesheet_writer = BufWriter::new(&mut buff_spritesheet_file);
 
     let item_localization_file = File::open(res_fol.join("Items.json"))?;
     let npc_localization_file = File::open(res_fol.join("NPCs.json"))?;
@@ -503,17 +685,25 @@ fn main() -> Result<()> {
 
     let template = Regex::new(r"\{\$([A-z\d]+)\.([A-z\d]+)\}")?;
 
+    let item_offset_filepath = gen_fol.join("items.css");
+    let buff_offset_filepath = gen_fol.join("buffs.css");
+
+    let item_spritesheet = generate_spritesheet(&items_fol, "slot", 2560, &item_offset_filepath)?;
+    let buff_spritesheet = generate_spritesheet(&buffs_fol, "buff", 512, &buff_offset_filepath)?;
+
     let item_meta = get_item_meta(
         &template,
         &game_localization,
         &item_localization,
         &npc_localization,
+        &item_offset_filepath,
     )?;
     let buff_meta = get_buff_meta(
         &template,
         &game_localization,
         &item_localization,
         &npc_localization,
+        &buff_offset_filepath,
     )?;
     let prefix_meta = get_prefix_meta(
         &template,
@@ -521,7 +711,6 @@ fn main() -> Result<()> {
         &item_localization,
         &npc_localization,
     )?;
-    // let spritesheet = generate_spritesheet(&items_fol)?;
 
     // Pretty scuffed but works for now
     let mut build_type = String::new();
@@ -536,7 +725,8 @@ fn main() -> Result<()> {
         serde_json::to_writer(buff_writer, &buff_meta)?;
         serde_json::to_writer(prefix_writer, &prefix_meta)?;
     }
-    // spritesheet.write_to(&mut spritesheet_writer, ImageFormat::Png)?;
+    item_spritesheet.write_to(&mut item_spritesheet_writer, ImageFormat::Png)?;
+    buff_spritesheet.write_to(&mut buff_spritesheet_writer, ImageFormat::Png)?;
 
     let target_dir = PathBuf::from("./target").join(&build_type);
     let final_dir = target_dir.join("resources");
@@ -549,9 +739,6 @@ fn main() -> Result<()> {
     options.overwrite = true;
     options.copy_inside = true;
     copy_dir(&gen_fol, &final_dir, &options)?;
-
-    fs::copy(res_fol.join("items.png"), final_dir.join("items.png"))?;
-    fs::copy(res_fol.join("buffs.png"), final_dir.join("buffs.png"))?;
 
     Ok(())
 }
