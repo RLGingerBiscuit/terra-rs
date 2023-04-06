@@ -52,15 +52,6 @@ impl App {
             }
         });
 
-        ui.horizontal(|ui| {
-            if ui.button("Load Item Spritesheet").clicked() {
-                self.do_update(Message::LoadItemSpritesheet);
-            }
-            if ui.button("Load Buff Spritesheet").clicked() {
-                self.do_update(Message::LoadBuffSpritesheet);
-            }
-        });
-
         ui.vertical(|ui| {
             ui.label("Item Sprites");
 

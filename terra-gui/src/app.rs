@@ -6,7 +6,7 @@ mod tasks;
 
 use std::{ops::DerefMut, path::PathBuf, sync::Arc, thread};
 
-use anyhow::anyhow;
+// use anyhow::anyhow;
 use eframe::CreationContext;
 use egui::{self, Id, Key, KeyboardShortcut, LayerId, Modifiers, TextureHandle, Ui};
 use egui_dock::{DockArea, NodeIndex, StyleBuilder, Tree};
@@ -129,10 +129,10 @@ impl App {
                 Message::LoadItemSpritesheet => {
                     {
                         let spritesheet = self.item_spritesheet.lock();
-                        if (*spritesheet).is_some() {
-                            self.do_update(Message::ShowError(anyhow!(
-                                "Item sprites should only be loaded once."
-                            )));
+                        if self.busy || (*spritesheet).is_some() {
+                            // self.do_update(Message::ShowError(anyhow!(
+                            //     "Item sprites should only be loaded once."
+                            // )));
                             return;
                         }
                     }
@@ -142,10 +142,10 @@ impl App {
                 Message::LoadBuffSpritesheet => {
                     {
                         let spritesheet = self.buff_spritesheet.lock();
-                        if (*spritesheet).is_some() {
-                            self.do_update(Message::ShowError(anyhow!(
-                                "Buff sprites should only be loaded once."
-                            )));
+                        if self.busy || (*spritesheet).is_some() {
+                            // self.do_update(Message::ShowError(anyhow!(
+                            //     "Buff sprites should only be loaded once."
+                            // )));
                             return;
                         }
                     }

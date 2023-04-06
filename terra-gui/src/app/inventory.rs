@@ -137,6 +137,8 @@ impl App {
                 spritesheet,
                 None,
             );
+        } else if !self.busy {
+            self.do_update(Message::LoadItemSpritesheet);
         }
     }
 
@@ -161,6 +163,8 @@ impl App {
                 spritesheet,
                 None,
             );
+        } else if !self.busy {
+            self.do_update(Message::LoadBuffSpritesheet);
         }
     }
 }
