@@ -66,8 +66,9 @@ fn expand_templates(
     }
 }
 
-fn get_offsets(path: &Path) -> Result<HashMap<i32, [i32; 2]>> {
-    let offset_regex = Regex::new(r"^.*id='(\d+)'.*ofs: -(\d+)px -(\d+)")?;
+fn get_offsets(path: &Path) -> Result<HashMap<i32, [i32; 4]>> {
+    let offset_regex =
+        Regex::new(r"^.*id='(\d+)'.*ofs: -(\d+)px -(\d+)px; --w: (\d+)px; --h: (\d+)")?;
 
     let mut text = String::new();
     File::open(path).unwrap().read_to_string(&mut text)?;
@@ -79,8 +80,10 @@ fn get_offsets(path: &Path) -> Result<HashMap<i32, [i32; 2]>> {
         let id = i32::from_str(captures.get(1).unwrap().as_str()).unwrap();
         let x = i32::from_str(captures.get(2).unwrap().as_str()).unwrap();
         let y = i32::from_str(captures.get(3).unwrap().as_str()).unwrap();
+        let w = i32::from_str(captures.get(4).unwrap().as_str()).unwrap();
+        let h = i32::from_str(captures.get(5).unwrap().as_str()).unwrap();
 
-        offsets.insert(id, [x, y]);
+        offsets.insert(id, [x, y, w, h]);
     });
 
     Ok(offsets)
@@ -149,8 +152,6 @@ fn get_item_meta(
                 let name = lua_item.get("name").unwrap_or(String::new());
                 let internal_name = lua_item.get("internalName").unwrap_or(String::new());
                 let max_stack = lua_item.get("maxStack").unwrap_or(1);
-                let width = lua_item.get("width").unwrap_or(0);
-                let height = lua_item.get("height").unwrap_or(0);
                 let value = lua_item.get("value").unwrap_or(0);
                 #[allow(unused)] // but it's not unused tho
                 let rarity = ItemRarity::from(lua_item.get("rare").unwrap_or(0));
@@ -181,9 +182,11 @@ fn get_item_meta(
                 let expert = lua_item.get("expert").unwrap_or(false);
                 let rarity = ItemRarity::from(lua_item.get("rarity").unwrap_or(0));
 
-                let [x, y] = offsets.get(&id).unwrap_or(&[-1, -1]);
+                let [x, y, width, height] = offsets.get(&id).unwrap_or(&[-1, -1, 0, 0]);
                 let x = x.to_owned();
                 let y = y.to_owned();
+                let width = width.to_owned();
+                let height = height.to_owned();
 
                 let item = ItemMeta {
                     id,
@@ -278,7 +281,7 @@ fn get_buff_meta(
                 None => image_text,
             };
 
-            let [x, y] = offsets.get(&id).unwrap_or(&[-1, -1]);
+            let [x, y, _, _] = offsets.get(&id).unwrap_or(&[-1, -1, 0, 0]);
             let x = x.to_owned();
             let y = y.to_owned();
 
