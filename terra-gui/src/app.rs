@@ -1,19 +1,22 @@
 mod menus;
 mod modals;
+mod tabs;
 mod tasks;
 
-use std::{path::PathBuf, sync::Arc, thread};
+use std::{ops::DerefMut, path::PathBuf, sync::Arc, thread};
 
 use anyhow::anyhow;
 use eframe::CreationContext;
-use egui::{
-    self, Color32, Image, Key, KeyboardShortcut, Modifiers, Pos2, Rect, TextureHandle, Vec2,
-};
+use egui::{self, Id, Key, KeyboardShortcut, LayerId, Modifiers, TextureHandle, Ui};
+use egui_dock::{DockArea, NodeIndex, StyleBuilder, Tree};
 use flume::{Receiver, Sender};
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
+use rustc_hash::FxHashMap;
 
-use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta, BUFF_SPRITE_SIZE};
+use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta};
+
+use self::tabs::{default_ui, Tabs};
 
 pub const GITHUB_REPO_NAME: &str = "Hub-of-Cringe-Nerds/RLGingerBiscuit-terra-rs";
 pub const GITHUB_REPO_URL: &str = "https://github.com/Hub-of-Cringe-Nerds/RLGingerBiscuit-terra-rs";
@@ -58,6 +61,9 @@ pub struct App {
     item_spritesheet: Arc<Mutex<Option<TextureHandle>>>,
     buff_spritesheet: Arc<Mutex<Option<TextureHandle>>>,
 
+    tree: Arc<RwLock<Tree<Tabs>>>,
+    closed_tabs: FxHashMap<Tabs, NodeIndex>,
+
     error: Option<anyhow::Error>,
     busy: bool,
     show_about: bool,
@@ -83,6 +89,9 @@ impl App {
 
             item_spritesheet: Arc::new(Mutex::new(None)),
             buff_spritesheet: Arc::new(Mutex::new(None)),
+
+            tree: Arc::new(RwLock::new(default_ui())),
+            closed_tabs: FxHashMap::default(),
 
             error: None,
             busy: false,
@@ -245,97 +254,16 @@ impl eframe::App for App {
         self.render_about(ctx);
         self.render_error(ctx);
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.spacing_mut().item_spacing.y = 8.;
+        let layer_id = LayerId::background();
+        let max_rect = ctx.available_rect();
+        let clip_rect = ctx.available_rect();
+        let id = Id::new("dock_area");
+        let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
 
-            ui.add_enabled_ui(!self.modal_open(), |ui| {
-                let player = self.player.read();
+        ui.spacing_mut().item_spacing = [8.0, 8.0].into();
 
-                ui.heading(format!("Name: {}", player.name));
-
-                ui.horizontal(|ui| {
-                    if ui.button("Load Player").clicked() {
-                        self.do_update(Message::LoadPlayer);
-                    }
-                    if ui.button("Save Player").clicked() {
-                        self.do_update(Message::SavePlayer);
-                    }
-                    if ui.button("Reset Player").clicked() {
-                        self.do_update(Message::ResetPlayer);
-                    }
-                });
-
-                ui.horizontal(|ui| {
-                    if ui.button("Load Item Spritesheet").clicked() {
-                        self.do_update(Message::LoadItemSpritesheet);
-                    }
-                    if ui.button("Load Buff Spritesheet").clicked() {
-                        self.do_update(Message::LoadBuffSpritesheet);
-                    }
-                });
-
-                ui.horizontal(|ui| {
-                    {
-                        let spritesheet = self.item_spritesheet.lock();
-
-                        if let Some(spritesheet) = &*spritesheet {
-                            let spritesheet_size = spritesheet.size().map(|s| s as f32);
-
-                            let sprite = self.item_meta.get(426).unwrap();
-                            let width = sprite.width as f32;
-                            let height = sprite.height as f32;
-                            let x = sprite.x as f32;
-                            let y = sprite.y as f32;
-
-                            let min = Pos2::new(x / spritesheet_size[0], y / spritesheet_size[1]);
-                            let sprite_size = Vec2::new(
-                                width / spritesheet_size[0],
-                                height / spritesheet_size[1],
-                            );
-                            let uv = Rect::from_min_size(min, sprite_size);
-
-                            let size = Vec2::new(width, height) * 4.;
-
-                            ui.vertical(|ui| {
-                                ui.label("Item Sprite");
-                                ui.add(
-                                    Image::new(spritesheet, size)
-                                        .uv(uv)
-                                        .bg_fill(Color32::LIGHT_GRAY),
-                                );
-                            });
-                        }
-                    }
-
-                    {
-                        let spritesheet = self.buff_spritesheet.lock();
-
-                        if let Some(spritesheet) = &*spritesheet {
-                            let spritesheet_size = spritesheet.size().map(|s| s as f32);
-
-                            let sprite = self.buff_meta.get(1).unwrap();
-                            let width = BUFF_SPRITE_SIZE as f32;
-                            let height = BUFF_SPRITE_SIZE as f32;
-                            let x = sprite.x as f32;
-                            let y = sprite.y as f32;
-
-                            let min = Pos2::new(x / spritesheet_size[0], y / spritesheet_size[1]);
-                            let sprite_size = Vec2::new(
-                                width / spritesheet_size[0],
-                                height / spritesheet_size[1],
-                            );
-                            let uv = Rect::from_min_size(min, sprite_size);
-
-                            let size = Vec2::new(width, height) * 4.;
-
-                            ui.vertical(|ui| {
-                                ui.label("Buff Sprite");
-                                ui.add(Image::new(spritesheet, size).uv(uv));
-                            });
-                        }
-                    }
-                });
-            });
-        });
+        DockArea::new(self.tree.clone().write().deref_mut())
+            .style(StyleBuilder::from_egui(&ctx.style()).build())
+            .show_inside(&mut ui, self);
     }
 }
