@@ -1,3 +1,4 @@
+mod inventory;
 mod menus;
 mod modals;
 mod tabs;

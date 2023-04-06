@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
-use egui::{Color32, Image, Pos2, Rect, Ui, Vec2, WidgetText};
+use egui::{Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
-use terra_core::BUFF_SPRITE_SIZE;
+use terra_core::{Buff, Item};
 
 use super::{App, Message};
 
@@ -61,62 +61,55 @@ impl App {
             }
         });
 
-        ui.horizontal(|ui| {
-            {
-                let spritesheet = self.item_spritesheet.lock();
+        ui.vertical(|ui| {
+            ui.label("Item Sprites");
 
-                if let Some(spritesheet) = &*spritesheet {
-                    let spritesheet_size = spritesheet.size().map(|s| s as f32);
+            let item_426 = Item {
+                id: 426,
+                ..Default::default()
+            };
+            let item_2 = Item {
+                id: 2,
+                ..Default::default()
+            };
+            let item_69 = Item {
+                id: 69,
+                ..Default::default()
+            };
 
-                    let sprite = self.item_meta.get(426).unwrap();
-                    let width = sprite.width as f32;
-                    let height = sprite.height as f32;
-                    let x = sprite.x as f32;
-                    let y = sprite.y as f32;
+            ui.horizontal(|ui| {
+                self.render_item(ui, &item_426);
+                self.render_item(ui, &item_2);
+                self.render_item(ui, &item_69);
+            });
+        });
 
-                    let min = Pos2::new(x / spritesheet_size[0], y / spritesheet_size[1]);
-                    let sprite_size =
-                        Vec2::new(width / spritesheet_size[0], height / spritesheet_size[1]);
-                    let uv = Rect::from_min_size(min, sprite_size);
+        ui.vertical(|ui| {
+            ui.label("Buff Sprites");
 
-                    let size = Vec2::new(width, height) * 4.;
+            let buff_0 = Buff {
+                id: 0,
+                ..Default::default()
+            };
+            let buff_1 = Buff {
+                id: 1,
+                ..Default::default()
+            };
+            let buff_69 = Buff {
+                id: 69,
+                ..Default::default()
+            };
+            let buff_27 = Buff {
+                id: 27,
+                ..Default::default()
+            };
 
-                    ui.vertical(|ui| {
-                        ui.label("Item Sprite");
-                        ui.add(
-                            Image::new(spritesheet, size)
-                                .uv(uv)
-                                .bg_fill(Color32::LIGHT_GRAY),
-                        );
-                    });
-                }
-            }
-
-            {
-                let spritesheet = self.buff_spritesheet.lock();
-
-                if let Some(spritesheet) = &*spritesheet {
-                    let spritesheet_size = spritesheet.size().map(|s| s as f32);
-
-                    let sprite = self.buff_meta.get(1).unwrap();
-                    let width = BUFF_SPRITE_SIZE as f32;
-                    let height = BUFF_SPRITE_SIZE as f32;
-                    let x = sprite.x as f32;
-                    let y = sprite.y as f32;
-
-                    let min = Pos2::new(x / spritesheet_size[0], y / spritesheet_size[1]);
-                    let sprite_size =
-                        Vec2::new(width / spritesheet_size[0], height / spritesheet_size[1]);
-                    let uv = Rect::from_min_size(min, sprite_size);
-
-                    let size = Vec2::new(width, height) * 4.;
-
-                    ui.vertical(|ui| {
-                        ui.label("Buff Sprite");
-                        ui.add(Image::new(spritesheet, size).uv(uv));
-                    });
-                }
-            }
+            ui.horizontal(|ui| {
+                self.render_buff(ui, &buff_0);
+                self.render_buff(ui, &buff_1);
+                self.render_buff(ui, &buff_69);
+                self.render_buff(ui, &buff_27);
+            });
         });
     }
 

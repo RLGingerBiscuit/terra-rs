@@ -12,6 +12,9 @@ impl App {
         filename: &str,
         spritesheet: Arc<Mutex<Option<TextureHandle>>>,
     ) {
+        if self.busy {
+            return;
+        }
         let ctx = ctx.clone();
         let debug_name = format!("{}_spritesheet", filename);
         let path = std::env::current_exe()
