@@ -22,6 +22,12 @@ impl Prefix {
         Ok(())
     }
 
+    pub fn skip(reader: &mut dyn Read) -> Result<()> {
+        let _ = reader.read_u8()?;
+
+        Ok(())
+    }
+
     pub fn save(&self, writer: &mut dyn Write) -> Result<()> {
         writer.write_u8(self.id)?;
 

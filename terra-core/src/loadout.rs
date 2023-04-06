@@ -128,6 +128,72 @@ impl Loadout {
         Ok(())
     }
 
+    pub fn skip(reader: &mut dyn Read, version: i32, stack: bool, prefix: bool) -> Result<()> {
+        let accessory_count = if version >= 124 { 7 } else { 5 };
+
+        for _ in 0..ARMOR_COUNT {
+            if version >= 38 {
+                Item::skip(reader, true, false, stack, prefix, false)?;
+            } else {
+                // This should technically be never used, but oh well
+                Item::skip_legacy_name(reader, stack)?;
+            }
+        }
+
+        for _ in 0..accessory_count {
+            if version >= 38 {
+                Item::skip(reader, true, false, stack, prefix, false)?;
+            } else {
+                Item::skip_legacy_name(reader, stack)?;
+            }
+        }
+
+        if version >= 6 {
+            for _ in 0..ARMOR_COUNT {
+                if version >= 38 {
+                    Item::skip(reader, true, false, stack, prefix, false)?;
+                } else {
+                    Item::skip_legacy_name(reader, stack)?;
+                }
+            }
+        }
+
+        if version >= 81 {
+            for _ in 0..accessory_count {
+                Item::skip(reader, true, false, stack, prefix, false)?;
+            }
+        }
+
+        if version >= 47 {
+            for _ in 0..ARMOR_COUNT {
+                Item::skip(reader, true, false, stack, prefix, false)?;
+            }
+        }
+
+        if version >= 81 {
+            for _ in 0..accessory_count {
+                Item::skip(reader, true, false, stack, prefix, false)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn skip_visuals(reader: &mut dyn Read, version: i32, bb_visuals: bool) -> Result<()> {
+        if bb_visuals {
+            let _ = BoolByte::from(reader.read_u8()?);
+            if version >= 124 {
+                let _ = BoolByte::from(reader.read_u8()?);
+            }
+        } else {
+            for _ in 0..HIDDEN_VISUAL_COUNT {
+                let _ = reader.read_bool();
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn save(
         &self,
         writer: &mut dyn Write,

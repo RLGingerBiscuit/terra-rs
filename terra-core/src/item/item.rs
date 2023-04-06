@@ -203,6 +203,47 @@ impl Item {
         Ok(item)
     }
 
+    pub fn skip(
+        reader: &mut dyn Read,
+        id: bool,
+        internal_name: bool,
+        stack: bool,
+        prefix: bool,
+        favourited: bool,
+    ) -> Result<()> {
+        if !id && !internal_name || id && internal_name {
+            return Err(ItemError::OnlyIdOrInternalName.into());
+        }
+
+        if id {
+            let _ = reader.read_i32::<LE>()?;
+        }
+        if internal_name {
+            let _ = reader.read_lpstring()?;
+        }
+        if stack {
+            _ = reader.read_i32::<LE>()?;
+        }
+        if prefix {
+            Prefix::skip(reader)?;
+        }
+        if favourited {
+            let _ = reader.read_bool()?;
+        }
+
+        Ok(())
+    }
+
+    pub fn skip_legacy_name(reader: &mut dyn Read, stack: bool) -> Result<()> {
+        let _ = reader.read_lpstring()?;
+
+        if stack {
+            let _ = reader.read_i32::<LE>()?;
+        }
+
+        Ok(())
+    }
+
     pub fn save(
         &self,
         writer: &mut dyn Write,
