@@ -42,15 +42,18 @@ pub fn default_ui() -> Tree<Tabs> {
 
 impl App {
     fn render_load_save_tab(&mut self, ui: &mut Ui) {
-        if ui.button("Load Player").clicked() {
-            self.do_update(Message::LoadPlayer);
-        }
-        if ui.button("Save Player").clicked() {
-            self.do_update(Message::SavePlayer);
-        }
-        if ui.button("Reset Player").clicked() {
-            self.do_update(Message::ResetPlayer);
-        }
+        ui.vertical_centered_justified(|ui| {
+            ui.spacing_mut().item_spacing = [16., 16.].into();
+            if ui.button("Load Player").clicked() {
+                self.do_update(Message::LoadPlayer);
+            }
+            if ui.button("Save Player").clicked() {
+                self.do_update(Message::SavePlayer);
+            }
+            if ui.button("Reset Player").clicked() {
+                self.do_update(Message::ResetPlayer);
+            }
+        });
     }
 
     fn render_stats_tab(&mut self, ui: &mut Ui) {
