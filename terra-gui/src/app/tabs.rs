@@ -95,7 +95,7 @@ impl App {
         ui.labelled("Fishing quests: ", |ui| {
             ui.drag_value_with_buttons(&mut player.angler_quests, 1., 0..=i32::MAX);
         });
-        
+
         ui.labelled("Golfer score: ", |ui| {
             ui.drag_value_with_buttons(&mut player.golfer_score, 1., 0..=i32::MAX);
         });
@@ -237,9 +237,6 @@ impl TabViewer for App {
     }
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
-        // TODO: Remove this once all tabs are implemented
-        ui.heading(tab.to_string());
-
         match tab {
             Tabs::LoadSave => self.render_load_save_tab(ui),
             Tabs::Stats => self.render_stats_tab(ui),
