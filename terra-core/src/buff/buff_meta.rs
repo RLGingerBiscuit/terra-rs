@@ -42,7 +42,8 @@ impl BuffMeta {
 
         let reader = BufReader::new(file);
 
-        let meta: Vec<Self> = serde_json::from_reader(reader)?;
+        let mut meta: Vec<Self> = serde_json::from_reader(reader)?;
+        meta.sort_by(|a, b| a.id.cmp(&b.id));
 
         Ok(meta)
     }

@@ -67,11 +67,21 @@ impl App {
                 id: 69,
                 ..Default::default()
             };
+            let item_5455 = Item {
+                id: 5455,
+                ..Default::default()
+            };
+            let item_7500 = Item {
+                id: 7500,
+                ..Default::default()
+            };
 
             ui.horizontal(|ui| {
                 self.render_item(ui, &item_426);
                 self.render_item(ui, &item_2);
                 self.render_item(ui, &item_69);
+                self.render_item(ui, &item_5455);
+                self.render_item(ui, &item_7500);
             });
         });
 
@@ -94,12 +104,27 @@ impl App {
                 id: 27,
                 ..Default::default()
             };
+            let buff_353 = Buff {
+                id: 353,
+                ..Default::default()
+            };
+            let buff_354 = Buff {
+                id: 354,
+                ..Default::default()
+            };
+            let buff_999 = Buff {
+                id: 999,
+                ..Default::default()
+            };
 
             ui.horizontal(|ui| {
                 self.render_buff(ui, &buff_0);
                 self.render_buff(ui, &buff_1);
                 self.render_buff(ui, &buff_69);
                 self.render_buff(ui, &buff_27);
+                self.render_buff(ui, &buff_353);
+                self.render_buff(ui, &buff_354);
+                self.render_buff(ui, &buff_999);
             });
         });
     }

@@ -1,7 +1,9 @@
 #![allow(dead_code)]
 
 use egui::{Image, Pos2, Rect, TextureHandle, Ui, Vec2};
-use terra_core::{Buff, BuffMeta, Item, ItemMeta, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE, PrefixMeta};
+use terra_core::{
+    Buff, BuffMeta, Item, ItemMeta, PrefixMeta, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE,
+};
 
 use super::{App, Message};
 
@@ -15,42 +17,36 @@ pub const BUFF_SPRITE_SCALE: f32 = 2.;
 impl App {
     fn get_item_meta_or_default<'a>(&'a self, id: i32) -> &'a ItemMeta {
         self.item_meta
-            .iter()
-            .filter(|m| m.id == id)
-            .next()
+            .get(id as usize)
+            // .iter().filter(|m| m.id == id).next()
             .unwrap_or(
                 self.item_meta
-                    .iter()
-                    // .filter(|m| m.id == 0)
-                    .next()
+                    .get(0)
+                    // .iter().next()
                     .expect("We really should have a zeroth item"),
             )
     }
 
     fn get_buff_meta_or_default<'a>(&'a self, id: i32) -> &'a BuffMeta {
         self.buff_meta
-            .iter()
-            .filter(|m| m.id == id)
-            .next()
+            .get(id as usize)
+            // .iter().filter(|m| m.id == id).next()
             .unwrap_or(
                 self.buff_meta
-                    .iter()
-                    // .filter(|m| m.id == 0)
-                    .next()
+                    .get(0)
+                    // .iter().next()
                     .expect("We really should have a zeroth buff"),
             )
     }
 
     fn get_prefix_meta_or_default<'a>(&'a self, id: u8) -> &'a PrefixMeta {
         self.prefix_meta
-            .iter()
-            .filter(|m| m.id == id)
-            .next()
+            .get(id as usize)
+            // .iter().filter(|m| m.id == id).next()
             .unwrap_or(
                 self.prefix_meta
-                    .iter()
-                    // .filter(|m| m.id == 0)
-                    .next()
+                    .get(0)
+                    // .iter().next()
                     .expect("We really should have a zeroth prefix"),
             )
     }
@@ -150,6 +146,8 @@ impl App {
         if let Some(spritesheet) = &*spritesheet {
             let meta = self.get_buff_meta_or_default(buff.id);
 
+            let width = BUFF_SPRITE_SIZE;
+            let height = BUFF_SPRITE_SIZE;
             let x = meta.x as f32;
             let y = meta.y as f32;
 
@@ -157,8 +155,8 @@ impl App {
                 ui,
                 BUFF_SLOT_SIZE,
                 BUFF_SPRITE_SCALE,
-                BUFF_SPRITE_SIZE,
-                BUFF_SPRITE_SIZE,
+                width,
+                height,
                 x,
                 y,
                 spritesheet,
