@@ -12,6 +12,7 @@ use super::{App, Message};
 pub enum Tabs {
     Stats,
     LoadSave,
+    Bonuses,
     Inventory,
 }
 
@@ -23,6 +24,7 @@ impl Display for Tabs {
             match self {
                 Tabs::LoadSave => "Load & Save",
                 Tabs::Stats => "Stats",
+                Tabs::Bonuses => "Permanent Bonuses",
                 Tabs::Inventory => "Inventory",
             }
         )
@@ -31,8 +33,8 @@ impl Display for Tabs {
 
 pub fn default_ui() -> Tree<Tabs> {
     let mut tree = Tree::new(vec![Tabs::LoadSave]);
-    let [load_save, _inventory] = tree.split_below(0.into(), 0.4, vec![Tabs::Inventory]);
-    let [load_save, _stats] = tree.split_right(load_save, 0.2, vec![Tabs::Stats]);
+    let [load_save, _inventory] = tree.split_below(0.into(), 0.315, vec![Tabs::Inventory]);
+    let [load_save, _stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats]);
 
     tree.set_focused_node(load_save);
     tree
@@ -94,6 +96,50 @@ impl App {
         ui.labelled("Golfer score: ", |ui| {
             ui.drag_value_with_buttons(&mut player.golfer_score, 1., 0..=i32::MAX);
         });
+    }
+
+    fn render_bonuses_tab(&mut self, ui: &mut Ui) {
+        let mut player = self.player.write();
+        // TODO: Display icons
+        // const HEART_ID: i32 = 3335;
+        // const FAVOR_ID: i32 = 5043;
+        // const LOAF_ID: i32 = 5326;
+        // const VITAL_ID: i32 = 5337;
+        // const FRUIT_ID: i32 = 5338;
+        // const ARCANE_ID: i32 = 5339;
+        // const PEARL_ID: i32 = 5340;
+        // const WORM_ID: i32 = 5341;
+        // const AMBROSIA_ID: i32 = 5342;
+        // const ETERNIA_ID: i32 = 3828;
+        // const CART_ID: i32 = 5289;
+
+        egui::Grid::new("player_bonuses")
+            .num_columns(2)
+            .show(ui, |ui| {
+                ui.checkbox(&mut player.demon_heart, "Demon Heart");
+                ui.end_row();
+                ui.checkbox(&mut player.biome_torches, "Torch God's Favor");
+                ui.checkbox(
+                    &mut player.biome_torches_enabled,
+                    "Biome torch swap enabled",
+                );
+                ui.end_row();
+                ui.checkbox(&mut player.artisan_loaf, "Artisan Loaf");
+                ui.checkbox(&mut player.vital_crystal, "Vital Crystal");
+                ui.end_row();
+                ui.checkbox(&mut player.aegis_fruit, "Aegis Fruit");
+                ui.checkbox(&mut player.arcane_crystal, "Arcane Crystal");
+                ui.end_row();
+                ui.checkbox(&mut player.galaxy_pearl, "Galaxy Pearl");
+                ui.checkbox(&mut player.gummy_worm, "Gummy Worm");
+                ui.end_row();
+                ui.checkbox(&mut player.ambrosia, "Ambrosia");
+                ui.end_row();
+                ui.checkbox(&mut player.defeated_ooa, "Killed Old One's Army");
+                ui.end_row();
+                ui.checkbox(&mut player.super_cart, "Minecart Upgrade Kit");
+                ui.checkbox(&mut player.super_cart_enabled, "Boosted minecart enabled");
+            });
     }
 
     fn render_inventory_tab(&mut self, ui: &mut Ui) {
@@ -194,6 +240,7 @@ impl TabViewer for App {
         match tab {
             Tabs::LoadSave => self.render_load_save_tab(ui),
             Tabs::Stats => self.render_stats_tab(ui),
+            Tabs::Bonuses => self.render_bonuses_tab(ui),
             Tabs::Inventory => self.render_inventory_tab(ui),
         }
     }

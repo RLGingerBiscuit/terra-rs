@@ -51,9 +51,10 @@ impl App {
             )
     }
 
+    // TODO: split sprite into render_icon (or something)
     // TODO: render slot icons
     // TODO: render coloured slots
-    fn render_slot(
+    pub fn render_slot(
         &self,
         ui: &mut Ui,
         slot_size: f32,

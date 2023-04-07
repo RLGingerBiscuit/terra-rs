@@ -42,7 +42,7 @@ impl App {
 
         ui.separator();
 
-        for tab in [Tabs::Stats, Tabs::Inventory] {
+        for tab in [Tabs::Stats, Tabs::Bonuses, Tabs::Inventory] {
             let mut disabled = !self.closed_tabs.contains_key(&tab);
 
             if ui.checkbox(&mut disabled, format!(" {tab}")).changed() {
