@@ -1,10 +1,13 @@
 mod app;
 mod ext;
 
+use egui::Vec2;
+
 use app::App;
 
 fn main() {
     let options = eframe::NativeOptions {
+        initial_window_size: Some(Vec2::splat(800.)),
         ..Default::default()
     };
 
