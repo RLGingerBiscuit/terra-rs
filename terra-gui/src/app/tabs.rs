@@ -34,7 +34,7 @@ impl Display for Tabs {
 pub fn default_ui() -> Tree<Tabs> {
     let mut tree = Tree::new(vec![Tabs::LoadSave]);
     let [load_save, _inventory] = tree.split_below(0.into(), 0.315, vec![Tabs::Inventory]);
-    let [load_save, _stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats]);
+    let [load_save, _stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Bonuses]);
 
     tree.set_focused_node(load_save);
     tree
