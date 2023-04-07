@@ -42,9 +42,9 @@ impl App {
 
         ui.separator();
 
-        for tab in [Tabs::Inventory] {
+        for tab in [Tabs::Stats, Tabs::Inventory] {
             let mut disabled = !self.closed_tabs.contains_key(&tab);
-            
+
             if ui.checkbox(&mut disabled, format!(" {tab}")).changed() {
                 ui.close_menu();
 
@@ -59,7 +59,6 @@ impl App {
                     tree.remove_empty_leaf();
                 }
             }
-
         }
     }
 

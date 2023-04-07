@@ -6,7 +6,6 @@ mod tasks;
 
 use std::{ops::DerefMut, path::PathBuf, sync::Arc, thread};
 
-// use anyhow::anyhow;
 use eframe::CreationContext;
 use egui::{self, Id, Key, KeyboardShortcut, LayerId, Modifiers, TextureHandle, Ui};
 use egui_dock::{DockArea, NodeIndex, StyleBuilder, Tree};
@@ -107,7 +106,9 @@ impl App {
     fn do_task(&mut self, task: impl 'static + Send + Sync + FnOnce() -> anyhow::Result<Message>) {
         let tx = self.channel.0.clone();
         let task = Box::new(task);
+
         self.busy = true;
+
         thread::spawn(move || {
             tx.send(match task() {
                 Ok(msg) => msg,
@@ -130,9 +131,6 @@ impl App {
                     {
                         let spritesheet = self.item_spritesheet.read();
                         if self.busy || (*spritesheet).is_some() {
-                            // self.do_update(Message::ShowError(anyhow!(
-                            //     "Item sprites should only be loaded once."
-                            // )));
                             return;
                         }
                     }
@@ -143,9 +141,6 @@ impl App {
                     {
                         let spritesheet = self.buff_spritesheet.read();
                         if self.busy || (*spritesheet).is_some() {
-                            // self.do_update(Message::ShowError(anyhow!(
-                            //     "Buff sprites should only be loaded once."
-                            // )));
                             return;
                         }
                     }
