@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use egui::{Image, Pos2, Rect, TextureHandle, Ui, Vec2};
 use terra_core::{Buff, BuffMeta, Item, ItemMeta, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE, PrefixMeta};
 
@@ -116,8 +118,7 @@ impl App {
     }
 
     pub fn render_item(&self, ui: &mut Ui, item: &Item) {
-        // TODO: Should this be locked & unlocked every time?
-        let spritesheet = self.item_spritesheet.lock();
+        let spritesheet = self.item_spritesheet.read();
 
         if let Some(spritesheet) = &*spritesheet {
             let meta = self.get_item_meta_or_default(item.id);
@@ -144,8 +145,7 @@ impl App {
     }
 
     pub fn render_buff(&self, ui: &mut Ui, buff: &Buff) {
-        // TODO: Should this be locked & unlocked every time?
-        let spritesheet = self.buff_spritesheet.lock();
+        let spritesheet = self.buff_spritesheet.read();
 
         if let Some(spritesheet) = &*spritesheet {
             let meta = self.get_buff_meta_or_default(buff.id);

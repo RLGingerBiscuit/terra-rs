@@ -12,7 +12,7 @@ use egui::{self, Id, Key, KeyboardShortcut, LayerId, Modifiers, TextureHandle, U
 use egui_dock::{DockArea, NodeIndex, StyleBuilder, Tree};
 use flume::{Receiver, Sender};
 use once_cell::sync::Lazy;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 
 use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta};
@@ -55,12 +55,12 @@ pub struct App {
 
     channel: (Sender<Message>, Receiver<Message>),
 
-    prefix_meta: Arc<Vec<PrefixMeta>>,
-    item_meta: Arc<Vec<ItemMeta>>,
-    buff_meta: Arc<Vec<BuffMeta>>,
+    prefix_meta: Vec<PrefixMeta>,
+    item_meta: Vec<ItemMeta>,
+    buff_meta: Vec<BuffMeta>,
 
-    item_spritesheet: Arc<Mutex<Option<TextureHandle>>>,
-    buff_spritesheet: Arc<Mutex<Option<TextureHandle>>>,
+    item_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
+    buff_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
 
     tree: Arc<RwLock<Tree<Tabs>>>,
     closed_tabs: FxHashMap<Tabs, NodeIndex>,
@@ -84,12 +84,12 @@ impl App {
 
             channel: (tx, rx),
 
-            prefix_meta: Arc::new(prefix_meta),
-            item_meta: Arc::new(item_meta),
-            buff_meta: Arc::new(buff_meta),
+            prefix_meta,
+            item_meta,
+            buff_meta,
 
-            item_spritesheet: Arc::new(Mutex::new(None)),
-            buff_spritesheet: Arc::new(Mutex::new(None)),
+            item_spritesheet: Arc::new(RwLock::new(None)),
+            buff_spritesheet: Arc::new(RwLock::new(None)),
 
             tree: Arc::new(RwLock::new(default_ui())),
             closed_tabs: FxHashMap::default(),
@@ -128,7 +128,7 @@ impl App {
                 Message::Exit => frame.close(),
                 Message::LoadItemSpritesheet => {
                     {
-                        let spritesheet = self.item_spritesheet.lock();
+                        let spritesheet = self.item_spritesheet.read();
                         if self.busy || (*spritesheet).is_some() {
                             // self.do_update(Message::ShowError(anyhow!(
                             //     "Item sprites should only be loaded once."
@@ -141,7 +141,7 @@ impl App {
                 }
                 Message::LoadBuffSpritesheet => {
                     {
-                        let spritesheet = self.buff_spritesheet.lock();
+                        let spritesheet = self.buff_spritesheet.read();
                         if self.busy || (*spritesheet).is_some() {
                             // self.do_update(Message::ShowError(anyhow!(
                             //     "Buff sprites should only be loaded once."

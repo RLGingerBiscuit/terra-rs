@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use egui::{ColorImage, TextureHandle, TextureOptions};
-use parking_lot::Mutex;
+use parking_lot::RwLock;
 
 use super::{App, Message};
 
@@ -10,7 +10,7 @@ impl App {
         &mut self,
         ctx: &egui::Context,
         filename: &str,
-        spritesheet: Arc<Mutex<Option<TextureHandle>>>,
+        spritesheet: Arc<RwLock<Option<TextureHandle>>>,
     ) {
         if self.busy {
             return;
@@ -35,7 +35,7 @@ impl App {
 
             let handle = ctx.load_texture(debug_name, image, TextureOptions::NEAREST);
 
-            let mut spritesheet = spritesheet.lock();
+            let mut spritesheet = spritesheet.write();
             *spritesheet = Some(handle);
 
             ctx.request_repaint();
