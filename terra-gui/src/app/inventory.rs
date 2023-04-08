@@ -196,10 +196,41 @@ impl App {
     pub fn render_selected_buff(&mut self, ui: &mut Ui) {
         let mut player = self.player.write();
 
-        let item = &mut player.buffs[self.selected_buff.0];
+        let buff = &mut player.buffs[self.selected_buff.0];
 
-        let meta = meta_or_default!(self.buff_meta, item.id);
+        let meta = meta_or_default!(self.buff_meta, buff.id);
 
-        ui.label(&meta.name);
+        let largest_buff_id = self
+            .buff_meta
+            .last()
+            .expect("we really should have at least one buff")
+            .id;
+
+        const FRAMES_PER_SECOND: i32 = 60;
+        const FRAMES_PER_MINUTE: i32 = FRAMES_PER_SECOND * 60;
+        const FRAMES_PER_HOUR: i32 = FRAMES_PER_MINUTE * 60;
+        const FRAMES_PER_THOUSAND_HOURS: i32 = FRAMES_PER_HOUR * 1000;
+
+        let time = buff.time;
+        let time = if time < FRAMES_PER_SECOND {
+            format!("({}f)", buff.time)
+        } else if time < FRAMES_PER_MINUTE {
+            format!("({}s)", buff.time / FRAMES_PER_SECOND)
+        } else if time < FRAMES_PER_HOUR {
+            format!("({}m)", buff.time / FRAMES_PER_MINUTE)
+        } else if time < FRAMES_PER_THOUSAND_HOURS {
+            format!("({}h)", buff.time / FRAMES_PER_HOUR)
+        } else {
+            format!("(∞)")
+        };
+
+        ui.label(format!("{} {}", &meta.name, time));
+
+        ui.labelled("Id: ", |ui| {
+            ui.drag_value_with_buttons(&mut buff.id, 1., 0..=largest_buff_id);
+        });
+        ui.labelled("Duration: ", |ui| {
+            ui.drag_value_with_buttons(&mut buff.time, 1., 0..=i32::MAX);
+        });
     }
 }

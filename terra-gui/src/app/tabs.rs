@@ -97,6 +97,10 @@ impl App {
             ui.drag_value_with_buttons(&mut player.max_mana, 1., 0..=i32::MAX);
         });
 
+        // Add some space so bottom matches up with selected tab
+        const SEPARATOR_SPACING: f32 = 6.;
+        ui.add_space(SEPARATOR_SPACING);
+
         ui.labelled("Fishing quests: ", |ui| {
             ui.drag_value_with_buttons(&mut player.angler_quests, 1., 0..=i32::MAX);
         });
@@ -151,9 +155,8 @@ impl App {
     }
 
     fn render_selected_tab(&mut self, ui: &mut Ui) {
-        ui.label("Item");
         self.render_selected_item(ui);
-        ui.label("Buff");
+        ui.separator();
         self.render_selected_buff(ui);
     }
 
@@ -186,7 +189,7 @@ impl App {
                 for i in 0..player.buffs.len() {
                     let buff = &player.buffs[i];
 
-                    if self.render_buff(ui, &buff).clicked() {
+                    if self.render_buff(ui, buff).clicked() {
                         self.do_update(Message::SelectBuff(SelectedBuff(i)));
                     }
 
