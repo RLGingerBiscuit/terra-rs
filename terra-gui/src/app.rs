@@ -136,7 +136,10 @@ impl App {
     fn handle_update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if let Ok(msg) = self.channel.1.try_recv() {
             match msg {
-                Message::Noop => self.busy = false,
+                Message::Noop => {
+                    self.busy = false;
+                    ctx.request_repaint();
+                }
                 Message::Exit => frame.close(),
                 Message::LoadItemSpritesheet => {
                     {
