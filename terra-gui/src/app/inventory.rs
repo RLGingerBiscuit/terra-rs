@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use egui::{Image, Pos2, Rect, Response, TextureHandle, Ui, Vec2};
-use terra_core::{Buff, Item, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE};
+use terra_core::{Buff, BuffMeta, Item, ItemMeta, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE};
 
 use crate::ui::UiExt;
 
@@ -129,6 +129,16 @@ impl App {
         )
     }
 
+    pub fn render_item_name(&self, ui: &mut Ui, item: &Item, meta: &ItemMeta) {
+        let prefix_meta = meta_or_default!(self.prefix_meta, item.prefix.id);
+
+        if prefix_meta.id != 0 {
+            ui.label(format!("{} {}", &prefix_meta.name, &meta.name));
+        } else {
+            ui.label(&meta.name);
+        };
+    }
+
     pub fn render_selected_item(&mut self, ui: &mut Ui) {
         let mut player = self.player.write();
 
@@ -149,13 +159,7 @@ impl App {
             .expect("We really should have at least one prefix")
             .id;
 
-        if !self.prefix_meta[item.prefix.id as usize].name.is_empty() {
-            let prefix_meta = meta_or_default!(self.prefix_meta, item.prefix.id);
-
-            ui.label(format!("{} {}", &prefix_meta.name, &meta.name));
-        } else {
-            ui.label(&meta.name);
-        };
+        self.render_item_name(ui, item, meta);
 
         egui::Grid::new("selected_item")
             .num_columns(2)
@@ -197,19 +201,7 @@ impl App {
         )
     }
 
-    pub fn render_selected_buff(&mut self, ui: &mut Ui) {
-        let mut player = self.player.write();
-
-        let buff = &mut player.buffs[self.selected_buff.0];
-
-        let meta = meta_or_default!(self.buff_meta, buff.id);
-
-        let largest_buff_id = self
-            .buff_meta
-            .last()
-            .expect("we really should have at least one buff")
-            .id;
-
+    pub fn render_buff_name(&self, ui: &mut Ui, buff: &Buff, meta: &BuffMeta) {
         const FRAMES_PER_SECOND: i32 = 60;
         const FRAMES_PER_MINUTE: i32 = FRAMES_PER_SECOND * 60;
         const FRAMES_PER_HOUR: i32 = FRAMES_PER_MINUTE * 60;
@@ -225,10 +217,26 @@ impl App {
         } else if time < FRAMES_PER_THOUSAND_HOURS {
             format!("({}h)", buff.time / FRAMES_PER_HOUR)
         } else {
-            format!("(∞)")
+            "(∞)".to_owned()
         };
 
         ui.label(format!("{} {}", &meta.name, time));
+    }
+
+    pub fn render_selected_buff(&mut self, ui: &mut Ui) {
+        let mut player = self.player.write();
+
+        let buff = &mut player.buffs[self.selected_buff.0];
+
+        let meta = meta_or_default!(self.buff_meta, buff.id);
+
+        let largest_buff_id = self
+            .buff_meta
+            .last()
+            .expect("we really should have at least one buff")
+            .id;
+
+        self.render_buff_name(ui, buff, meta);
 
         egui::Grid::new("selected_buff")
             .num_columns(2)
