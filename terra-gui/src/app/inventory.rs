@@ -157,17 +157,21 @@ impl App {
             ui.label(&meta.name);
         };
 
-        ui.labelled("Id: ", |ui| {
-            ui.drag_value_with_buttons(&mut item.id, 1., 0..=largest_item_id);
-        });
+        egui::Grid::new("selected_item")
+            .num_columns(2)
+            .show(ui, |ui| {
+                ui.label("Id: ");
+                ui.drag_value_with_buttons(&mut item.id, 1., 0..=largest_item_id);
+                ui.end_row();
 
-        ui.labelled("Stack: ", |ui| {
-            ui.drag_value_with_buttons(&mut item.stack, 1., 0..=meta.max_stack);
-        });
+                ui.label("Stack: ");
+                ui.drag_value_with_buttons(&mut item.stack, 1., 0..=meta.max_stack);
+                ui.end_row();
 
-        ui.labelled("Prefix: ", |ui| {
-            ui.drag_value_with_buttons(&mut item.prefix.id, 1., 0..=largest_prefix_id);
-        });
+                ui.label("Prefix: ");
+                ui.drag_value_with_buttons(&mut item.prefix.id, 1., 0..=largest_prefix_id);
+                ui.end_row();
+            });
     }
 
     pub fn render_buff(&self, ui: &mut Ui, buff: &Buff) -> Response {
@@ -226,11 +230,16 @@ impl App {
 
         ui.label(format!("{} {}", &meta.name, time));
 
-        ui.labelled("Id: ", |ui| {
-            ui.drag_value_with_buttons(&mut buff.id, 1., 0..=largest_buff_id);
-        });
-        ui.labelled("Duration: ", |ui| {
-            ui.drag_value_with_buttons(&mut buff.time, 1., 0..=i32::MAX);
-        });
+        egui::Grid::new("selected_buff")
+            .num_columns(2)
+            .show(ui, |ui| {
+                ui.label("Id: ");
+                ui.drag_value_with_buttons(&mut buff.id, 1., 0..=largest_buff_id);
+                ui.end_row();
+
+                ui.label("Duration: ");
+                ui.drag_value_with_buttons(&mut buff.time, 1., 0..=i32::MAX);
+                ui.end_row();
+            });
     }
 }
