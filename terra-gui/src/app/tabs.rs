@@ -4,7 +4,7 @@ use egui::{Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
 use terra_core::{utils, Difficulty};
 
-use crate::{enum_radio_value, ext::UiExt};
+use crate::{enum_radio_value, ui::UiExt};
 
 use super::{App, Message};
 

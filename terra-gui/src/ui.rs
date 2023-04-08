@@ -1,3 +1,5 @@
+mod clickable_frame;
+
 use std::ops::RangeInclusive;
 
 use eframe::emath;
@@ -5,6 +7,8 @@ use egui::{
     Align, Button, DragValue, InnerResponse, KeyboardShortcut, Layout, Response, Ui, Vec2,
     WidgetText,
 };
+
+pub use clickable_frame::ClickableFrame;
 
 #[macro_export]
 macro_rules! enum_radio_value {
@@ -42,6 +46,8 @@ pub trait UiExt {
         text: impl Into<WidgetText>,
         shortcut: &KeyboardShortcut,
     ) -> Response;
+
+    fn clickable_group<R>(&mut self, add_contents: impl FnOnce(&mut Ui) -> R) -> InnerResponse<R>;
 
     fn vertical_right_justified<R>(
         &mut self,
@@ -104,6 +110,11 @@ impl UiExt for Ui {
         shortcut: &KeyboardShortcut,
     ) -> Response {
         self.add(Button::new(text).shortcut_text(self.ctx().format_shortcut(shortcut)))
+    }
+
+    #[inline]
+    fn clickable_group<R>(&mut self, add_contents: impl FnOnce(&mut Ui) -> R) -> InnerResponse<R> {
+        ClickableFrame::group(&self.style()).show(self, add_contents)
     }
 
     #[inline]

@@ -1,6 +1,6 @@
 use egui::Ui;
 
-use crate::ext::UiExt;
+use crate::ui::UiExt;
 
 use super::{
     tabs::{self, Tabs},

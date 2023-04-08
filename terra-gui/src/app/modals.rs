@@ -1,6 +1,6 @@
 use egui::{Align2, Frame, Grid, RichText, Vec2, Window};
 
-use crate::ext::UiExt;
+use crate::ui::UiExt;
 
 use super::{
     App, Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,

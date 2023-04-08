@@ -1,5 +1,5 @@
 mod app;
-mod ext;
+mod ui;
 
 use egui::Vec2;
 
