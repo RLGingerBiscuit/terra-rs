@@ -254,13 +254,14 @@ fn get_buff_meta(
 
     let offsets = get_offsets(offset_filepath)?;
 
-    let mut buff_meta: Vec<BuffMeta> = doc
-        .select(&tbody_selector)
+    let mut buff_meta = Vec::new();
+
+    doc.select(&tbody_selector)
         .next()
         .unwrap()
         .select(&tr_selector)
         .skip(1)
-        .map(|tr| {
+        .for_each(|tr| {
             let mut tds = tr.select(&td_selector);
 
             let id = i32::from_str(tds.next().unwrap().inner_html().trim()).unwrap();
@@ -307,7 +308,7 @@ fn get_buff_meta(
                     .collect::<Vec<_>>()
             });
 
-            BuffMeta {
+            buff_meta.push(BuffMeta {
                 id,
                 name,
                 x,
@@ -316,9 +317,8 @@ fn get_buff_meta(
                 buff_type,
                 tooltip,
                 ..Default::default()
-            }
-        })
-        .collect();
+            });
+        });
 
     {
         let [x, y, _, _] = offsets.get(&0).unwrap_or(&[-1, -1, 0, 0]);
@@ -355,16 +355,22 @@ fn get_prefix_meta(
     let tr_selector = scraper::Selector::parse("tbody>tr").unwrap();
     let td_selector = scraper::Selector::parse("td").unwrap();
 
-    let mut prefix_meta: Vec<PrefixMeta> = doc
-        .select(&tbody_selector)
+    let mut prefix_meta = Vec::new();
+
+    doc.select(&tbody_selector)
         .next()
         .unwrap()
         .select(&tr_selector)
         .skip(1)
-        .map(|tr| {
+        .for_each(|tr| {
             let mut tds = tr.select(&td_selector);
 
             let id = u8::from_str(tds.next().unwrap().inner_html().trim()).unwrap();
+
+            // NOTE: We're ignoring the mobile-only prefix 'Piercing' here
+            if id == 90 {
+                return;
+            }
 
             let internal_name = match id {
                 // Edge Cases
@@ -383,13 +389,12 @@ fn get_prefix_meta(
                 items["Prefix"][&internal_name].as_str().unwrap().to_owned()
             };
 
-            PrefixMeta {
+            prefix_meta.push(PrefixMeta {
                 id,
                 internal_name,
                 name,
-            }
-        })
-        .collect();
+            });
+        });
 
     prefix_meta.push(PrefixMeta {
         id: 0,

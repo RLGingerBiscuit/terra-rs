@@ -4,15 +4,16 @@ use egui::{Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
 use terra_core::{utils, Difficulty};
 
-use crate::{enum_radio_value, ui::UiExt};
+use crate::{app::inventory::SelectedItem, enum_radio_value, ui::UiExt};
 
-use super::{App, Message};
+use super::{inventory::SelectedBuff, App, Message};
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Tabs {
     Stats,
     LoadSave,
     Bonuses,
+    Selected,
     Inventory,
     Buffs,
 }
@@ -26,6 +27,7 @@ impl Display for Tabs {
                 Tabs::LoadSave => "Load & Save",
                 Tabs::Stats => "Stats",
                 Tabs::Bonuses => "Permanent Bonuses",
+                Tabs::Selected => "Selected",
                 Tabs::Inventory => "Inventory",
                 Tabs::Buffs => "Buffs",
             }
@@ -37,7 +39,8 @@ pub fn default_ui() -> Tree<Tabs> {
     let mut tree = Tree::new(vec![Tabs::LoadSave]);
     let [load_save, _inventory] =
         tree.split_below(0.into(), 0.315, vec![Tabs::Inventory, Tabs::Buffs]);
-    let [load_save, _stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Bonuses]);
+    let [load_save, stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Bonuses]);
+    let [_stats, _selected] = tree.split_right(stats, 0.65, vec![Tabs::Selected]);
 
     tree.set_focused_node(load_save);
     tree
@@ -147,6 +150,13 @@ impl App {
             });
     }
 
+    fn render_selected_tab(&mut self, ui: &mut Ui) {
+        ui.label("Item");
+        self.render_selected_item(ui);
+        ui.label("Buff");
+        self.render_selected_buff(ui);
+    }
+
     fn render_inventory_tab(&mut self, ui: &mut Ui) {
         let player = self.player.write();
 
@@ -155,7 +165,11 @@ impl App {
             .show(ui, |ui| {
                 for i in 0..player.inventory.len() {
                     let item = &player.inventory[i];
-                    self.render_item(ui, &item);
+
+                    if self.render_item(ui, item).clicked() {
+                        self.do_update(Message::SelectItem(SelectedItem::Inventory(i)));
+                    }
+
                     if (i + 1) % 10 == 0 {
                         ui.end_row();
                     }
@@ -171,7 +185,11 @@ impl App {
             .show(ui, |ui| {
                 for i in 0..player.buffs.len() {
                     let buff = &player.buffs[i];
-                    self.render_buff(ui, &buff);
+
+                    if self.render_buff(ui, &buff).clicked() {
+                        self.do_update(Message::SelectBuff(SelectedBuff(i)));
+                    }
+
                     if (i + 1) % 11 == 0 {
                         ui.end_row();
                     }
@@ -197,6 +215,7 @@ impl TabViewer for App {
             Tabs::LoadSave => self.render_load_save_tab(ui),
             Tabs::Stats => self.render_stats_tab(ui),
             Tabs::Bonuses => self.render_bonuses_tab(ui),
+            Tabs::Selected => self.render_selected_tab(ui),
             Tabs::Inventory => self.render_inventory_tab(ui),
             Tabs::Buffs => self.render_buffs_tab(ui),
         }

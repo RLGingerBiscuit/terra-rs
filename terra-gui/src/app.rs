@@ -16,7 +16,10 @@ use rustc_hash::FxHashMap;
 
 use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta};
 
-use self::tabs::{default_ui, Tabs};
+use self::{
+    inventory::{SelectedBuff, SelectedItem},
+    tabs::{default_ui, Tabs},
+};
 
 pub const GITHUB_REPO_NAME: &str = "Hub-of-Cringe-Nerds/RLGingerBiscuit-terra-rs";
 pub const GITHUB_REPO_URL: &str = "https://github.com/Hub-of-Cringe-Nerds/RLGingerBiscuit-terra-rs";
@@ -45,12 +48,17 @@ pub enum Message {
     ResetPlayer,
     LoadPlayer,
     SavePlayer,
+    SelectItem(SelectedItem),
+    SelectBuff(SelectedBuff),
 }
 
 #[allow(dead_code)]
 pub struct App {
     player: Arc<RwLock<Player>>,
     player_path: Option<PathBuf>,
+
+    selected_item: SelectedItem,
+    selected_buff: SelectedBuff,
 
     channel: (Sender<Message>, Receiver<Message>),
 
@@ -80,6 +88,9 @@ impl App {
         Self {
             player: Arc::new(RwLock::new(Player::default())),
             player_path: None,
+
+            selected_item: SelectedItem::Inventory(0),
+            selected_buff: SelectedBuff(0),
 
             channel: (tx, rx),
 
@@ -222,6 +233,8 @@ impl App {
                         });
                     }
                 }
+                Message::SelectItem(selection) => self.selected_item = selection,
+                Message::SelectBuff(selection) => self.selected_buff = selection,
             }
         }
     }
