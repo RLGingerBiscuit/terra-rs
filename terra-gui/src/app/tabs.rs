@@ -79,8 +79,7 @@ impl App {
 
         ui.labelled("Version:", |ui| {
             ui.drag_value_with_buttons(&mut player.version, 1., 0..=i32::MAX);
-            ui.label("/");
-            ui.label(utils::version_lookup(player.version));
+            ui.small(utils::version_lookup(player.version));
         });
 
         ui.labelled("Health: ", |ui| {
