@@ -1,11 +1,11 @@
-mod buff;
+mod buff_data;
 mod buff_meta;
 
 use std::fmt::Display;
 
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-pub use buff::Buff;
+pub use buff_data::Buff;
 pub use buff_meta::BuffMeta;
 
 #[repr(u8)]

@@ -3,21 +3,11 @@ use std::{fs::File, io::BufReader};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct PrefixMeta {
     pub id: u8,
     pub name: String,
     pub internal_name: String,
-}
-
-impl Default for PrefixMeta {
-    fn default() -> Self {
-        Self {
-            id: 0,
-            name: String::new(),
-            internal_name: String::new(),
-        }
-    }
 }
 
 impl PrefixMeta {
@@ -38,7 +28,7 @@ impl PrefixMeta {
         Ok(meta)
     }
 
-    pub fn meta_from_id<'a>(prefix_meta: &'a Vec<Self>, id: u8) -> Option<&'a Self> {
-        prefix_meta.iter().filter(|i| i.id == id).next()
+    pub fn meta_from_id(prefix_meta: &[Self], id: u8) -> Option<&Self> {
+        prefix_meta.iter().find(|i| i.id == id)
     }
 }

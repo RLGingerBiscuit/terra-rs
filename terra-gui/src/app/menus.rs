@@ -50,7 +50,7 @@ impl App {
 
                 let mut tree = self.tree.write();
 
-                if let Some(_) = self.closed_tabs.remove(&tab) {
+                if self.closed_tabs.remove(&tab).is_some() {
                     tree.push_to_focused_leaf(tab);
                 } else if let Some((parent_index, node_index)) = tree.find_tab(&tab) {
                     let parent = tree.iter_mut().nth(parent_index.0).unwrap();

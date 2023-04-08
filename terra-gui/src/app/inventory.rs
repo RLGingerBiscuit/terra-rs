@@ -40,15 +40,15 @@ impl App {
         ui: &mut Ui,
         slot_size: f32,
         scale: f32,
-        width: f32,
-        height: f32,
-        x: f32,
-        y: f32,
+        rect: Rect,
         spritesheet: Option<&TextureHandle>,
         _stack_size: Option<i32>,
     ) -> Response {
         let mut padding_x = slot_size;
         let mut padding_y = slot_size;
+
+        let [width, height]: [f32; 2] = rect.size().into();
+        let [x, y]: [f32; 2] = rect.left_top().into();
 
         ui.clickable_group(|ui| {
             ui.spacing_mut().item_spacing = [0., 0.].into();
@@ -111,10 +111,9 @@ impl App {
 
         let meta = meta_or_default!(self.item_meta, item.id);
 
-        let width = meta.width as f32;
-        let height = meta.height as f32;
-        let x = meta.x as f32;
-        let y = meta.y as f32;
+        let min = Pos2::new(meta.x as f32, meta.y as f32);
+        let size = Vec2::new(meta.width as f32, meta.height as f32);
+        let rect = Rect::from_min_size(min, size);
 
         if spritesheet.is_none() && !self.busy {
             self.do_update(Message::LoadItemSpritesheet);
@@ -124,10 +123,7 @@ impl App {
             ui,
             ITEM_SLOT_SIZE,
             ITEM_SPRITE_SCALE,
-            width,
-            height,
-            x,
-            y,
+            rect,
             spritesheet.as_ref(),
             None,
         )
@@ -146,14 +142,14 @@ impl App {
             .item_meta
             .last()
             .expect("We really should have at least one item")
-            .id as i32;
+            .id;
         let largest_prefix_id = self
             .prefix_meta
             .last()
             .expect("We really should have at least one prefix")
-            .id as u8;
+            .id;
 
-        if self.prefix_meta[item.prefix.id as usize].name.len() != 0 {
+        if self.prefix_meta[item.prefix.id as usize].name.is_empty() {
             let prefix_meta = meta_or_default!(self.prefix_meta, item.prefix.id);
             ui.label(format!("{} {}", &prefix_meta.name, &meta.name));
         } else {
@@ -178,10 +174,9 @@ impl App {
 
         let meta = meta_or_default!(self.buff_meta, buff.id);
 
-        let width = BUFF_SPRITE_SIZE;
-        let height = BUFF_SPRITE_SIZE;
-        let x = meta.x as f32;
-        let y = meta.y as f32;
+        let min = Pos2::new(meta.x as f32, meta.y as f32);
+        let size = Vec2::splat(BUFF_SPRITE_SIZE);
+        let rect = Rect::from_min_size(min, size);
 
         if spritesheet.is_none() && !self.busy {
             self.do_update(Message::LoadBuffSpritesheet);
@@ -191,10 +186,7 @@ impl App {
             ui,
             BUFF_SLOT_SIZE,
             BUFF_SPRITE_SCALE,
-            width,
-            height,
-            x,
-            y,
+            rect,
             spritesheet.as_ref(),
             None,
         )

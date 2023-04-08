@@ -120,7 +120,7 @@ impl UiExt for Ui {
 
     #[inline]
     fn clickable_group<R>(&mut self, add_contents: impl FnOnce(&mut Ui) -> R) -> InnerResponse<R> {
-        ClickableFrame::group(&self.style()).show(self, add_contents)
+        ClickableFrame::group(self.style()).show(self, add_contents)
     }
 
     #[inline]

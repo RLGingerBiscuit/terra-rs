@@ -259,7 +259,7 @@ impl Default for Player {
 impl Player {
     fn _load(
         &mut self,
-        item_meta: &Vec<ItemMeta>,
+        item_meta: &[ItemMeta],
         filepath: &Path,
         reader: &mut dyn Read,
     ) -> Result<()> {
@@ -646,7 +646,7 @@ impl Player {
         Ok(())
     }
 
-    pub fn load(&mut self, item_meta: &Vec<ItemMeta>, filepath: &Path) -> Result<()> {
+    pub fn load(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> Result<()> {
         let file = match File::open(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -670,7 +670,7 @@ impl Player {
         self._load(item_meta, filepath, &mut reader)
     }
 
-    pub fn load_decrypted(&mut self, item_meta: &Vec<ItemMeta>, filepath: &Path) -> Result<()> {
+    pub fn load_decrypted(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> Result<()> {
         let mut file = match File::open(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -688,7 +688,7 @@ impl Player {
         self._load(item_meta, filepath, &mut file)
     }
 
-    fn _save(&self, item_meta: &Vec<ItemMeta>, writer: &mut dyn Write) -> Result<()> {
+    fn _save(&self, item_meta: &[ItemMeta], writer: &mut dyn Write) -> Result<()> {
         writer.write_i32::<LE>(self.version)?;
 
         if self.version >= 135 {
@@ -1024,7 +1024,7 @@ impl Player {
         Ok(())
     }
 
-    pub fn save(&self, item_meta: &Vec<ItemMeta>, filepath: &Path) -> Result<()> {
+    pub fn save(&self, item_meta: &[ItemMeta], filepath: &Path) -> Result<()> {
         let file = match File::create(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -1048,7 +1048,7 @@ impl Player {
         self._save(item_meta, &mut writer)
     }
 
-    pub fn save_decrypted(&self, item_meta: &Vec<ItemMeta>, filepath: &Path) -> Result<()> {
+    pub fn save_decrypted(&self, item_meta: &[ItemMeta], filepath: &Path) -> Result<()> {
         let mut file = match File::create(filepath) {
             Ok(f) => f,
             Err(e) => {

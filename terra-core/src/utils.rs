@@ -172,8 +172,8 @@ pub fn version_lookup(version: i32) -> &'static str {
 }
 
 pub fn from_hex(hex: &str) -> Result<Color, ParseIntError> {
-    let start = if hex.starts_with("#") { 1 } else { 0 };
-    let r = u8::from_str_radix(&hex[(start + 0)..2], 16)?;
+    let start = if hex.starts_with('#') { 1 } else { 0 };
+    let r = u8::from_str_radix(&hex[start..2], 16)?;
     let g = u8::from_str_radix(&hex[(start + 2)..4], 16)?;
     let b = u8::from_str_radix(&hex[(start + 4)..6], 16)?;
     Ok([r, g, b])
@@ -183,7 +183,6 @@ pub fn to_hex(color: Color) -> String {
     format!("#{:x}{:x}{:x}", color[0], color[1], color[2])
 }
 
-// pub(crate) because it only takes [Item]
-pub(crate) fn has_item(id: i32, inventory: &[Item]) -> bool {
+pub fn has_item(id: i32, inventory: &[Item]) -> bool {
     inventory.iter().any(|a| a.id == id)
 }

@@ -42,7 +42,7 @@ impl Loadout {
     pub fn load(
         &mut self,
         reader: &mut dyn Read,
-        item_meta: &Vec<ItemMeta>,
+        item_meta: &[ItemMeta],
         version: i32,
         stack: bool,
         prefix: bool,
@@ -198,7 +198,7 @@ impl Loadout {
     pub fn save(
         &self,
         writer: &mut dyn Write,
-        item_meta: &Vec<ItemMeta>,
+        item_meta: &[ItemMeta],
         version: i32,
         stack: bool,
         prefix: bool,

@@ -1,9 +1,9 @@
-mod item;
+mod item_data;
 mod item_meta;
 
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-pub use item::{Item, ItemError};
+pub use item_data::{Item, ItemError};
 pub use item_meta::ItemMeta;
 
 #[repr(i32)]

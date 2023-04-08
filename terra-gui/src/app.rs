@@ -30,9 +30,9 @@ static SHORTCUT_LOAD: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAN
 static SHORTCUT_SAVE: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::S);
 static SHORTCUT_EXIT: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::Q);
 
-static DEFAULT_PLAYER_DIR: Lazy<PathBuf> = Lazy::new(|| utils::get_player_dir());
+static DEFAULT_PLAYER_DIR: Lazy<PathBuf> = Lazy::new(utils::get_player_dir);
 
-static DEFAULT_PLAYER: Lazy<Player> = Lazy::new(|| Player::default());
+static DEFAULT_PLAYER: Lazy<Player> = Lazy::new(Player::default);
 
 #[allow(dead_code)]
 #[derive(Debug)]

@@ -108,21 +108,18 @@ impl ItemMeta {
         Ok(meta)
     }
 
-    pub fn meta_from_id<'a>(item_meta: &'a Vec<Self>, id: i32) -> Option<&'a Self> {
-        item_meta.iter().filter(|i| i.id == id).next()
+    pub fn meta_from_id(item_meta: &[Self], id: i32) -> Option<&Self> {
+        item_meta.iter().find(|i| i.id == id)
     }
 
     pub fn meta_from_internal_name<'a>(
-        item_meta: &'a Vec<Self>,
+        item_meta: &'a [Self],
         internal_name: &str,
     ) -> Option<&'a Self> {
-        item_meta
-            .iter()
-            .filter(|i| i.internal_name == internal_name)
-            .next()
+        item_meta.iter().find(|i| i.internal_name == internal_name)
     }
 
-    pub fn meta_from_name<'a>(item_meta: &'a Vec<Self>, name: &str) -> Option<&'a Self> {
-        item_meta.iter().filter(|i| i.name == name).next()
+    pub fn meta_from_name<'a>(item_meta: &'a [Self], name: &str) -> Option<&'a Self> {
+        item_meta.iter().find(|i| i.name == name)
     }
 }

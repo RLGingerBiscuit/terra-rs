@@ -19,9 +19,7 @@ impl From<u8> for BoolByte {
 
 impl From<&u8> for BoolByte {
     fn from(value: &u8) -> Self {
-        Self {
-            value: value.clone(),
-        }
+        Self { value: *value }
     }
 }
 
@@ -40,7 +38,7 @@ impl From<&BoolByte> for u8 {
 impl BoolByte {
     fn check_index(&self, index: u8) -> Result<(), BoolByteError> {
         if index >= 8 {
-            Err(BoolByteError::InvalidIndex(index).into())
+            Err(BoolByteError::InvalidIndex(index))
         } else {
             Ok(())
         }

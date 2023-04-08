@@ -187,7 +187,7 @@ pub trait TerraWriteExt: io::Write {
     fn write_lpstring(&mut self, value: &str) -> IOResult<()> {
         self.write_uleb128_usize(value.len())?;
 
-        self.write(value.as_bytes())?;
+        let _ = self.write(value.as_bytes())?;
 
         Ok(())
     }
