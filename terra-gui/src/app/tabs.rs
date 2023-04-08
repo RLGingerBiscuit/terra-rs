@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use egui::{Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
-use terra_core::{utils, Buff, Difficulty, Item};
+use terra_core::{utils, Difficulty};
 
 use crate::{enum_radio_value, ext::UiExt};
 
@@ -14,6 +14,7 @@ pub enum Tabs {
     LoadSave,
     Bonuses,
     Inventory,
+    Buffs,
 }
 
 impl Display for Tabs {
@@ -26,6 +27,7 @@ impl Display for Tabs {
                 Tabs::Stats => "Stats",
                 Tabs::Bonuses => "Permanent Bonuses",
                 Tabs::Inventory => "Inventory",
+                Tabs::Buffs => "Buffs",
             }
         )
     }
@@ -33,7 +35,8 @@ impl Display for Tabs {
 
 pub fn default_ui() -> Tree<Tabs> {
     let mut tree = Tree::new(vec![Tabs::LoadSave]);
-    let [load_save, _inventory] = tree.split_below(0.into(), 0.315, vec![Tabs::Inventory]);
+    let [load_save, _inventory] =
+        tree.split_below(0.into(), 0.315, vec![Tabs::Inventory, Tabs::Buffs]);
     let [load_save, _stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Bonuses]);
 
     tree.set_focused_node(load_save);
@@ -146,81 +149,35 @@ impl App {
     }
 
     fn render_inventory_tab(&mut self, ui: &mut Ui) {
-        ui.vertical(|ui| {
-            ui.label("Item Sprites");
+        let player = self.player.write();
 
-            let item_426 = Item {
-                id: 426,
-                ..Default::default()
-            };
-            let item_2 = Item {
-                id: 2,
-                ..Default::default()
-            };
-            let item_69 = Item {
-                id: 69,
-                ..Default::default()
-            };
-            let item_5455 = Item {
-                id: 5455,
-                ..Default::default()
-            };
-            let item_7500 = Item {
-                id: 7500,
-                ..Default::default()
-            };
-
-            ui.horizontal(|ui| {
-                self.render_item(ui, &item_426);
-                self.render_item(ui, &item_2);
-                self.render_item(ui, &item_69);
-                self.render_item(ui, &item_5455);
-                self.render_item(ui, &item_7500);
+        egui::Grid::new("player_inventory")
+            .num_columns(10)
+            .show(ui, |ui| {
+                for i in 0..player.inventory.len() {
+                    let item = &player.inventory[i];
+                    self.render_item(ui, &item);
+                    if (i + 1) % 10 == 0 {
+                        ui.end_row();
+                    }
+                }
             });
-        });
+    }
 
-        ui.vertical(|ui| {
-            ui.label("Buff Sprites");
+    fn render_buffs_tab(&mut self, ui: &mut Ui) {
+        let player = self.player.write();
 
-            let buff_0 = Buff {
-                id: 0,
-                ..Default::default()
-            };
-            let buff_1 = Buff {
-                id: 1,
-                ..Default::default()
-            };
-            let buff_69 = Buff {
-                id: 69,
-                ..Default::default()
-            };
-            let buff_27 = Buff {
-                id: 27,
-                ..Default::default()
-            };
-            let buff_353 = Buff {
-                id: 353,
-                ..Default::default()
-            };
-            let buff_354 = Buff {
-                id: 354,
-                ..Default::default()
-            };
-            let buff_999 = Buff {
-                id: 999,
-                ..Default::default()
-            };
-
-            ui.horizontal(|ui| {
-                self.render_buff(ui, &buff_0);
-                self.render_buff(ui, &buff_1);
-                self.render_buff(ui, &buff_69);
-                self.render_buff(ui, &buff_27);
-                self.render_buff(ui, &buff_353);
-                self.render_buff(ui, &buff_354);
-                self.render_buff(ui, &buff_999);
+        egui::Grid::new("player_buffs")
+            .num_columns(10)
+            .show(ui, |ui| {
+                for i in 0..player.buffs.len() {
+                    let buff = &player.buffs[i];
+                    self.render_buff(ui, &buff);
+                    if (i + 1) % 11 == 0 {
+                        ui.end_row();
+                    }
+                }
             });
-        });
     }
 }
 
@@ -242,6 +199,7 @@ impl TabViewer for App {
             Tabs::Stats => self.render_stats_tab(ui),
             Tabs::Bonuses => self.render_bonuses_tab(ui),
             Tabs::Inventory => self.render_inventory_tab(ui),
+            Tabs::Buffs => self.render_buffs_tab(ui),
         }
     }
 }
