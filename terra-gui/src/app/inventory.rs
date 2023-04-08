@@ -149,8 +149,9 @@ impl App {
             .expect("We really should have at least one prefix")
             .id;
 
-        if self.prefix_meta[item.prefix.id as usize].name.is_empty() {
+        if !self.prefix_meta[item.prefix.id as usize].name.is_empty() {
             let prefix_meta = meta_or_default!(self.prefix_meta, item.prefix.id);
+
             ui.label(format!("{} {}", &prefix_meta.name, &meta.name));
         } else {
             ui.label(&meta.name);
