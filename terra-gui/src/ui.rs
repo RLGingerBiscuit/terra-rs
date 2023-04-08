@@ -87,17 +87,23 @@ impl UiExt for Ui {
     ) -> Response {
         self.horizontal(|ui| {
             if ui.button("<").clicked() {
-                *value = Num::from_f64(value.to_f64() - 1.);
+                let new_value = Num::from_f64(value.to_f64() - 1.);
+                if range.contains(&new_value) {
+                    *value = new_value;
+                }
             }
 
             let old_padding = ui.spacing().button_padding;
 
             ui.spacing_mut().button_padding = Vec2::splat(0.);
-            ui.drag_value(value, speed, range);
+            ui.drag_value(value, speed, range.clone());
             ui.spacing_mut().button_padding = old_padding;
 
             if ui.button(">").clicked() {
-                *value = Num::from_f64(value.to_f64() + 1.);
+                let new_value = Num::from_f64(value.to_f64() + 1.);
+                if range.contains(&new_value) {
+                    *value = new_value;
+                }
             }
         })
         .response
