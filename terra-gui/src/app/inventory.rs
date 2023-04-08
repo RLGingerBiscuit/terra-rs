@@ -142,8 +142,16 @@ impl App {
 
         let meta = meta_or_default!(self.item_meta, item.id);
 
-        let largest_item_id = self.item_meta.last().expect("We really should have at least one item").id as i32;
-        let largest_prefix_id = self.prefix_meta.last().expect("We really should have at least one prefix").id as u8;
+        let largest_item_id = self
+            .item_meta
+            .last()
+            .expect("We really should have at least one item")
+            .id as i32;
+        let largest_prefix_id = self
+            .prefix_meta
+            .last()
+            .expect("We really should have at least one prefix")
+            .id as u8;
 
         if self.prefix_meta[item.prefix.id as usize].name.len() != 0 {
             let prefix_meta = meta_or_default!(self.prefix_meta, item.prefix.id);
