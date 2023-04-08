@@ -1,9 +1,7 @@
 #![allow(dead_code)]
 
 use egui::{Image, Pos2, Rect, TextureHandle, Ui, Vec2};
-use terra_core::{
-    Buff, BuffMeta, Item, ItemMeta, PrefixMeta, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE,
-};
+use terra_core::{Buff, Item, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE};
 
 use super::{App, Message};
 
@@ -14,43 +12,16 @@ pub const BUFF_SLOT_SIZE: f32 = 32.;
 pub const BUFF_SPRITE_SIZE: f32 = CORE_BUFF_SPRITE_SIZE as f32;
 pub const BUFF_SPRITE_SCALE: f32 = 2.;
 
+macro_rules! meta_or_default {
+    ($meta:expr, $id:expr) => {
+        $meta
+            .get($id as usize)
+            // .iter().filter(|m| m.id == id).next()
+            .unwrap_or($meta.get(0).expect("We really should have a zeroth meta"))
+    };
+}
+
 impl App {
-    fn get_item_meta_or_default<'a>(&'a self, id: i32) -> &'a ItemMeta {
-        self.item_meta
-            .get(id as usize)
-            // .iter().filter(|m| m.id == id).next()
-            .unwrap_or(
-                self.item_meta
-                    .get(0)
-                    // .iter().next()
-                    .expect("We really should have a zeroth item"),
-            )
-    }
-
-    fn get_buff_meta_or_default<'a>(&'a self, id: i32) -> &'a BuffMeta {
-        self.buff_meta
-            .get(id as usize)
-            // .iter().filter(|m| m.id == id).next()
-            .unwrap_or(
-                self.buff_meta
-                    .get(0)
-                    // .iter().next()
-                    .expect("We really should have a zeroth buff"),
-            )
-    }
-
-    fn get_prefix_meta_or_default<'a>(&'a self, id: u8) -> &'a PrefixMeta {
-        self.prefix_meta
-            .get(id as usize)
-            // .iter().filter(|m| m.id == id).next()
-            .unwrap_or(
-                self.prefix_meta
-                    .get(0)
-                    // .iter().next()
-                    .expect("We really should have a zeroth prefix"),
-            )
-    }
-
     // TODO: split sprite into render_icon (or something)
     // TODO: render slot icons
     // TODO: render coloured slots
@@ -118,7 +89,7 @@ impl App {
         let spritesheet = self.item_spritesheet.read();
 
         if let Some(spritesheet) = &*spritesheet {
-            let meta = self.get_item_meta_or_default(item.id);
+            let meta = meta_or_default!(self.item_meta, item.id);
 
             let width = meta.width as f32;
             let height = meta.height as f32;
@@ -145,7 +116,7 @@ impl App {
         let spritesheet = self.buff_spritesheet.read();
 
         if let Some(spritesheet) = &*spritesheet {
-            let meta = self.get_buff_meta_or_default(buff.id);
+            let meta = meta_or_default!(self.buff_meta, buff.id);
 
             let width = BUFF_SPRITE_SIZE;
             let height = BUFF_SPRITE_SIZE;
