@@ -23,7 +23,7 @@ macro_rules! meta_or_default {
     };
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ItemTab {
     Inventory,
     Bank,

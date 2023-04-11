@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use egui::{Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
-use terra_core::{utils, Difficulty};
+use terra_core::{utils, Difficulty, Item};
 
 use crate::{app::inventory::SelectedItem, enum_radio_value, ui::UiExt};
 
@@ -181,104 +181,55 @@ impl App {
         self.render_selected_buff(ui);
     }
 
-    fn render_inventory_tab(&mut self, ui: &mut Ui) {
-        let player = self.player.write();
+    fn render_item_tab(&self, ui: &mut Ui, id: &str, tab: ItemTab, items: &mut [Item]) {
+        egui::Grid::new(id).num_columns(10).show(ui, |ui| {
+            for i in 0..items.len() {
+                let item = &items[i];
 
-        egui::Grid::new("player_inventory")
-            .num_columns(10)
-            .show(ui, |ui| {
-                for i in 0..player.inventory.len() {
-                    let item = &player.inventory[i];
-
-                    if self.render_item(ui, ItemTab::Inventory, i, item).clicked() {
-                        self.do_update(Message::SelectItem(SelectedItem(ItemTab::Inventory, i)));
-                    }
-
-                    if (i + 1) % 10 == 0 {
-                        ui.end_row();
-                    }
+                if self.render_item(ui, tab, i, item).clicked() {
+                    self.do_update(Message::SelectItem(SelectedItem(tab, i)));
                 }
-            });
+
+                if (i + 1) % 10 == 0 {
+                    ui.end_row();
+                }
+            }
+        });
+    }
+
+    fn render_inventory_tab(&mut self, ui: &mut Ui) {
+        let mut player = self.player.write();
+        self.render_item_tab(
+            ui,
+            "player_inventory",
+            ItemTab::Inventory,
+            &mut player.inventory,
+        );
     }
 
     fn render_bank_tab(&mut self, ui: &mut Ui) {
-        let player = self.player.write();
-
-        egui::Grid::new("player_bank")
-            .num_columns(10)
-            .show(ui, |ui| {
-                for i in 0..player.piggy_bank.len() {
-                    let item = &player.piggy_bank[i];
-
-                    if self.render_item(ui, ItemTab::Bank, i, item).clicked() {
-                        self.do_update(Message::SelectItem(SelectedItem(ItemTab::Bank, i)));
-                    }
-
-                    if (i + 1) % 10 == 0 {
-                        ui.end_row();
-                    }
-                }
-            });
+        let mut player = self.player.write();
+        self.render_item_tab(ui, "player_bank", ItemTab::Bank, &mut player.piggy_bank);
     }
 
     fn render_safe_tab(&mut self, ui: &mut Ui) {
-        let player = self.player.write();
-
-        egui::Grid::new("player_safe")
-            .num_columns(10)
-            .show(ui, |ui| {
-                for i in 0..player.safe.len() {
-                    let item = &player.safe[i];
-
-                    if self.render_item(ui, ItemTab::Safe, i, item).clicked() {
-                        self.do_update(Message::SelectItem(SelectedItem(ItemTab::Safe, i)));
-                    }
-
-                    if (i + 1) % 10 == 0 {
-                        ui.end_row();
-                    }
-                }
-            });
+        let mut player = self.player.write();
+        self.render_item_tab(ui, "player_safe", ItemTab::Safe, &mut player.safe);
     }
 
     fn render_forge_tab(&mut self, ui: &mut Ui) {
-        let player = self.player.write();
-
-        egui::Grid::new("player_forge")
-            .num_columns(10)
-            .show(ui, |ui| {
-                for i in 0..player.defenders_forge.len() {
-                    let item = &player.defenders_forge[i];
-
-                    if self.render_item(ui, ItemTab::Forge, i, item).clicked() {
-                        self.do_update(Message::SelectItem(SelectedItem(ItemTab::Forge, i)));
-                    }
-
-                    if (i + 1) % 10 == 0 {
-                        ui.end_row();
-                    }
-                }
-            });
+        let mut player = self.player.write();
+        self.render_item_tab(
+            ui,
+            "player_forge",
+            ItemTab::Forge,
+            &mut player.defenders_forge,
+        );
     }
 
     fn render_void_tab(&mut self, ui: &mut Ui) {
-        let player = self.player.write();
-
-        egui::Grid::new("player_void")
-            .num_columns(10)
-            .show(ui, |ui| {
-                for i in 0..player.void_vault.len() {
-                    let item = &player.void_vault[i];
-
-                    if self.render_item(ui, ItemTab::Void, i, item).clicked() {
-                        self.do_update(Message::SelectItem(SelectedItem(ItemTab::Void, i)));
-                    }
-
-                    if (i + 1) % 10 == 0 {
-                        ui.end_row();
-                    }
-                }
-            });
+        let mut player = self.player.write();
+        self.render_item_tab(ui, "player_void", ItemTab::Void, &mut player.void_vault);
     }
 
     fn render_buffs_tab(&mut self, ui: &mut Ui) {
