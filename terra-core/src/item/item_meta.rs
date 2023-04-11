@@ -36,6 +36,7 @@ pub struct ItemMeta {
     pub fishing_bait: Option<i32>,
     pub range_boost: Option<i32>,
     pub tooltip: Option<Vec<String>>,
+    pub forbidden: Option<bool>,
     pub consumable: bool,
     pub expert: bool,
 }

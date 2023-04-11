@@ -21,6 +21,244 @@ const BUFF_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Buff_IDs";
 const PREFIX_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Prefix_IDs";
 const TRAPPED_CHEST_DOT: &str = "trapped_chest_dot.png";
 
+fn get_offsets(path: &Path) -> Result<HashMap<i32, [i32; 4]>> {
+    let offset_regex =
+        Regex::new(r"^.*id='(\d+)'.*ofs: -(\d+)px -(\d+)px; --w: (\d+)px; --h: (\d+)")?;
+
+    let mut text = String::new();
+    File::open(path).unwrap().read_to_string(&mut text)?;
+
+    let mut offsets = HashMap::new();
+
+    text.lines().for_each(|line| {
+        let captures = offset_regex.captures(line).unwrap();
+        let id = i32::from_str(captures.get(1).unwrap().as_str()).unwrap();
+        let x = i32::from_str(captures.get(2).unwrap().as_str()).unwrap();
+        let y = i32::from_str(captures.get(3).unwrap().as_str()).unwrap();
+        let w = i32::from_str(captures.get(4).unwrap().as_str()).unwrap();
+        let h = i32::from_str(captures.get(5).unwrap().as_str()).unwrap();
+
+        offsets.insert(id, [x, y, w, h]);
+    });
+
+    Ok(offsets)
+}
+
+fn animated_items() -> HashMap<i32, [u32; 4]> {
+    let mut map = HashMap::new();
+    // TODO: This kinda sucks, but I just want to get this working, so here's an algo for doing this a little better
+    // iterate through all the rows, taking note of the bounds for each row (first & last pixel)
+    // and the first row where a non-transparent pixel was encountered, let that be miny
+    // stop once all pixels are transparent or at the end, let the index of the final row be maxy
+    // Find minx and maxx using the bounds
+    // w = maxx - minx
+    // h = maxy - miny
+    // x = minx
+    // y = miny
+
+    // These are halved, since Terraria's sprites' pixels are 2x2
+    map.insert(75, [11, 12, 0, 0]);
+    map.insert(353, [9, 9, 0, 0]);
+    map.insert(357, [15, 11, 0, 0]);
+    map.insert(520, [11, 11, 0, 0]);
+    map.insert(521, [11, 11, 0, 0]);
+    map.insert(547, [11, 11, 0, 0]);
+    map.insert(548, [11, 11, 0, 0]);
+    map.insert(549, [11, 11, 0, 0]);
+    map.insert(575, [11, 11, 0, 0]);
+    map.insert(967, [6, 7, 0, 0]);
+    map.insert(969, [6, 7, 0, 0]);
+    map.insert(1787, [19, 12, 0, 0]);
+    map.insert(1911, [14, 15, 0, 0]);
+    map.insert(1912, [14, 16, 0, 0]);
+    map.insert(1919, [13, 13, 0, 0]);
+    map.insert(1920, [14, 16, 0, 0]);
+    map.insert(2266, [9, 15, 0, 0]);
+    map.insert(2267, [15, 11, 0, 0]);
+    map.insert(2268, [15, 14, 0, 0]);
+    map.insert(3195, [14, 12, 0, 0]);
+    map.insert(3453, [8, 11, 0, 16]);
+    map.insert(3454, [8, 11, 0, 16]);
+    map.insert(3455, [8, 11, 0, 16]);
+    map.insert(3532, [16, 15, 0, 0]);
+    map.insert(3580, [11, 11, 0, 1]);
+    map.insert(3581, [10, 10, 0, 2]);
+    map.insert(4009, [12, 13, 0, 0]);
+    map.insert(4010, [14, 10, 1, 0]);
+    map.insert(4011, [17, 11, 0, 0]);
+    map.insert(4012, [18, 14, 0, 0]);
+    map.insert(4013, [15, 13, 0, 0]);
+    map.insert(4014, [14, 12, 0, 0]);
+    map.insert(4015, [14, 12, 0, 0]);
+    map.insert(4016, [11, 12, 0, 0]);
+    map.insert(4017, [15, 14, 0, 0]);
+    map.insert(4018, [8, 14, 0, 0]);
+    map.insert(4019, [15, 9, 0, 0]);
+    map.insert(4020, [14, 8, 0, 0]);
+    map.insert(4021, [12, 14, 0, 0]);
+    map.insert(4022, [15, 14, 0, 0]);
+    map.insert(4023, [11, 14, 0, 0]);
+    map.insert(4024, [13, 12, 0, 0]);
+    map.insert(4025, [16, 8, 0, 0]);
+    map.insert(4026, [14, 17, 0, 0]);
+    map.insert(4027, [12, 20, 0, 0]);
+    map.insert(4028, [14, 14, 0, 0]);
+    map.insert(4029, [14, 13, 0, 0]);
+    map.insert(4030, [16, 16, 0, 0]);
+    map.insert(4031, [15, 9, 0, 0]);
+    map.insert(4032, [14, 11, 0, 0]);
+    map.insert(4033, [15, 8, 0, 0]);
+    map.insert(4034, [17, 10, 0, 0]);
+    map.insert(4035, [17, 13, 0, 0]);
+    map.insert(4036, [15, 9, 0, 0]);
+    map.insert(4037, [17, 11, 0, 0]);
+    map.insert(4068, [7, 9, 1, 2]);
+    map.insert(4069, [9, 9, 1, 1]);
+    map.insert(4070, [7, 9, 1, 1]);
+    map.insert(4282, [11, 13, 0, 0]);
+    map.insert(4283, [13, 15, 0, 0]);
+    map.insert(4284, [10, 14, 0, 0]);
+    map.insert(4285, [11, 12, 0, 0]);
+    map.insert(4286, [11, 16, 0, 0]);
+    map.insert(4287, [12, 12, 0, 0]);
+    map.insert(4288, [13, 13, 0, 0]);
+    map.insert(4289, [14, 15, 0, 0]);
+    map.insert(4290, [13, 12, 0, 0]);
+    map.insert(4291, [9, 14, 0, 0]);
+    map.insert(4292, [14, 12, 0, 0]);
+    map.insert(4293, [11, 12, 0, 0]);
+    map.insert(4294, [10, 16, 0, 0]);
+    map.insert(4295, [12, 14, 0, 0]);
+    map.insert(4296, [15, 16, 0, 0]);
+    map.insert(4297, [12, 12, 0, 0]);
+    map.insert(4403, [15, 10, 0, 1]);
+    map.insert(4411, [16, 11, 0, 0]);
+    map.insert(4614, [7, 13, 0, 3]);
+    map.insert(4615, [7, 13, 0, 3]);
+    map.insert(4616, [8, 14, 0, 2]);
+    map.insert(4617, [10, 16, 0, 1]);
+    map.insert(4618, [10, 14, 0, 2]);
+    map.insert(4619, [7, 15, 0, 1]);
+    map.insert(4620, [5, 15, 0, 1]);
+    map.insert(4621, [9, 16, 0, 0]);
+    map.insert(4622, [9, 15, 0, 1]);
+    map.insert(4623, [10, 18, 0, 2]);
+    map.insert(4624, [9, 13, 0, 3]);
+    map.insert(4625, [9, 13, 0, 1]);
+    map.insert(5009, [17, 11, 0, 1]);
+    map.insert(5041, [12, 19, 0, 1]);
+    map.insert(5042, [16, 17, 0, 0]);
+    map.insert(5092, [18, 16, 0, 0]);
+    map.insert(5093, [18, 14, 0, 0]);
+    map.insert(5275, [8, 14, 0, 0]);
+    map.insert(5277, [10, 12, 0, 0]);
+    map.insert(5278, [10, 11, 1, 1]);
+    map
+}
+
+fn trapped_chests() -> HashMap<i32, i32> {
+    let mut map = HashMap::new();
+    map.insert(3665, 48);
+    map.insert(3666, 306);
+    map.insert(3667, 328);
+    map.insert(3668, 625);
+    map.insert(3669, 626);
+    map.insert(3670, 627);
+    map.insert(3671, 680);
+    map.insert(3672, 681);
+    map.insert(3673, 831);
+    map.insert(3674, 838);
+    map.insert(3675, 914);
+    map.insert(3676, 952);
+    map.insert(3677, 1142);
+    map.insert(3678, 1298);
+    map.insert(3679, 1528);
+    map.insert(3680, 1529);
+    map.insert(3681, 1530);
+    map.insert(3682, 1531);
+    map.insert(3683, 1532);
+    map.insert(3684, 2230);
+    map.insert(3685, 2249);
+    map.insert(3686, 2250);
+    map.insert(3687, 2526);
+    map.insert(3688, 2544);
+    map.insert(3689, 2559);
+    map.insert(3690, 2574);
+    map.insert(3691, 2612);
+    map.insert(3692, 2613);
+    map.insert(3693, 2614);
+    map.insert(3694, 2615);
+    map.insert(3695, 2616);
+    map.insert(3696, 2617);
+    map.insert(3697, 2618);
+    map.insert(3698, 2619);
+    map.insert(3699, 2620);
+    map.insert(3700, 2748);
+    map.insert(3701, 2814);
+    map.insert(3702, 3125);
+    map.insert(3703, 3180);
+    map.insert(3704, 3181);
+    map.insert(3705, 48); // Unobtainable
+    map.insert(3706, 48); // Unobtainable
+    map.insert(3886, 3884);
+    map.insert(3887, 3885);
+    map.insert(3950, 3939);
+    map.insert(3976, 3965);
+    map.insert(4164, 4153);
+    map.insert(4185, 4174);
+    map.insert(4206, 4195);
+    map.insert(4227, 4216);
+    map.insert(4266, 4265);
+    map.insert(4268, 4267);
+    map.insert(4585, 4574);
+    map.insert(4713, 4712);
+    map.insert(5167, 5156);
+    map.insert(5188, 5177);
+    map.insert(5209, 5198);
+    map
+}
+
+fn forbidden_items() -> Vec<i32> {
+    let mut forbidden_items = Vec::new();
+    forbidden_items.push(0);
+    forbidden_items.push(2772);
+    forbidden_items.push(2773);
+    forbidden_items.push(2775);
+    forbidden_items.push(2777);
+    forbidden_items.push(2778);
+    forbidden_items.push(2780);
+    forbidden_items.push(2782);
+    forbidden_items.push(2783);
+    forbidden_items.push(2785);
+    forbidden_items.push(2881);
+    forbidden_items.push(2903);
+    forbidden_items.push(2989);
+    forbidden_items.push(2990);
+    forbidden_items.push(2991);
+    forbidden_items.push(3331);
+    forbidden_items.push(3398);
+    forbidden_items.push(3404);
+    forbidden_items.push(3462);
+    forbidden_items.push(3463);
+    forbidden_items.push(3465);
+    forbidden_items.push(3705);
+    forbidden_items.push(3706);
+    forbidden_items.push(3847);
+    forbidden_items.push(3848);
+    forbidden_items.push(3849);
+    forbidden_items.push(3850);
+    forbidden_items.push(3851);
+    forbidden_items.push(3853);
+    forbidden_items.push(3861);
+    forbidden_items.push(3862);
+    forbidden_items.push(3978);
+    forbidden_items.push(4058);
+    forbidden_items.push(4143);
+    forbidden_items.push(4722);
+    forbidden_items.push(5013);
+    forbidden_items
+}
+
 fn expand_templates(
     s: String,
     template: &Regex,
@@ -64,29 +302,6 @@ fn expand_templates(
             .replace("<right>", "Right Click")
             .replace("<left>", "Left Click")
     }
-}
-
-fn get_offsets(path: &Path) -> Result<HashMap<i32, [i32; 4]>> {
-    let offset_regex =
-        Regex::new(r"^.*id='(\d+)'.*ofs: -(\d+)px -(\d+)px; --w: (\d+)px; --h: (\d+)")?;
-
-    let mut text = String::new();
-    File::open(path).unwrap().read_to_string(&mut text)?;
-
-    let mut offsets = HashMap::new();
-
-    text.lines().for_each(|line| {
-        let captures = offset_regex.captures(line).unwrap();
-        let id = i32::from_str(captures.get(1).unwrap().as_str()).unwrap();
-        let x = i32::from_str(captures.get(2).unwrap().as_str()).unwrap();
-        let y = i32::from_str(captures.get(3).unwrap().as_str()).unwrap();
-        let w = i32::from_str(captures.get(4).unwrap().as_str()).unwrap();
-        let h = i32::from_str(captures.get(5).unwrap().as_str()).unwrap();
-
-        offsets.insert(id, [x, y, w, h]);
-    });
-
-    Ok(offsets)
 }
 
 fn get_item_meta(
@@ -134,6 +349,7 @@ fn get_item_meta(
     let mut item_meta: Vec<ItemMeta> = Vec::new();
 
     let offsets = get_offsets(offset_filepath)?;
+    let forbidden_items = forbidden_items();
 
     let lua = Lua::new();
 
@@ -178,6 +394,11 @@ fn get_item_meta(
                         .collect::<Vec<_>>()
                 });
 
+                let forbidden = if forbidden_items.contains(&id) {
+                    Some(true)
+                } else {
+                    None
+                };
                 let consumable = lua_item.get("consumable").unwrap_or(false);
                 let expert = lua_item.get("expert").unwrap_or(false);
                 let rarity = ItemRarity::from(lua_item.get("rarity").unwrap_or(0));
@@ -216,6 +437,7 @@ fn get_item_meta(
                     range_boost,
                     sacrifices,
                     tooltip,
+                    forbidden,
                     consumable,
                     expert,
                 };
@@ -405,180 +627,6 @@ fn get_prefix_meta(
     prefix_meta.sort_by_key(|p| p.id);
 
     Ok(prefix_meta)
-}
-
-fn animated_items() -> HashMap<i32, [u32; 4]> {
-    let mut map = HashMap::new();
-    // TODO: This kinda sucks, but I just want to get this working, so here's an algo for doing this a little better
-    // iterate through all the rows, taking note of the bounds for each row (first & last pixel)
-    // and the first row where a non-transparent pixel was encountered, let that be miny
-    // stop once all pixels are transparent or at the end, let the index of the final row be maxy
-    // Find minx and maxx using the bounds
-    // w = maxx - minx
-    // h = maxy - miny
-    // x = minx
-    // y = miny
-
-    // These are halved, since Terraria's sprites' pixels are 2x2
-    map.insert(75, [11, 12, 0, 0]);
-    map.insert(353, [9, 9, 0, 0]);
-    map.insert(357, [15, 11, 0, 0]);
-    map.insert(520, [11, 11, 0, 0]);
-    map.insert(521, [11, 11, 0, 0]);
-    map.insert(547, [11, 11, 0, 0]);
-    map.insert(548, [11, 11, 0, 0]);
-    map.insert(549, [11, 11, 0, 0]);
-    map.insert(575, [11, 11, 0, 0]);
-    map.insert(967, [6, 7, 0, 0]);
-    map.insert(969, [6, 7, 0, 0]);
-    map.insert(1787, [19, 12, 0, 0]);
-    map.insert(1911, [14, 15, 0, 0]);
-    map.insert(1912, [14, 16, 0, 0]);
-    map.insert(1919, [13, 13, 0, 0]);
-    map.insert(1920, [14, 16, 0, 0]);
-    map.insert(2266, [9, 15, 0, 0]);
-    map.insert(2267, [15, 11, 0, 0]);
-    map.insert(2268, [15, 14, 0, 0]);
-    map.insert(3195, [14, 12, 0, 0]);
-    map.insert(3453, [8, 11, 0, 16]);
-    map.insert(3454, [8, 11, 0, 16]);
-    map.insert(3455, [8, 11, 0, 16]);
-    map.insert(3532, [16, 15, 0, 0]);
-    map.insert(3580, [11, 11, 0, 1]);
-    map.insert(3581, [10, 10, 0, 2]);
-    map.insert(4009, [12, 13, 0, 0]);
-    map.insert(4010, [14, 10, 1, 0]);
-    map.insert(4011, [17, 11, 0, 0]);
-    map.insert(4012, [18, 14, 0, 0]);
-    map.insert(4013, [15, 13, 0, 0]);
-    map.insert(4014, [14, 12, 0, 0]);
-    map.insert(4015, [14, 12, 0, 0]);
-    map.insert(4016, [11, 12, 0, 0]);
-    map.insert(4017, [15, 14, 0, 0]);
-    map.insert(4018, [8, 14, 0, 0]);
-    map.insert(4019, [15, 9, 0, 0]);
-    map.insert(4020, [14, 8, 0, 0]);
-    map.insert(4021, [12, 14, 0, 0]);
-    map.insert(4022, [15, 14, 0, 0]);
-    map.insert(4023, [11, 14, 0, 0]);
-    map.insert(4024, [13, 12, 0, 0]);
-    map.insert(4025, [16, 8, 0, 0]);
-    map.insert(4026, [14, 17, 0, 0]);
-    map.insert(4027, [12, 20, 0, 0]);
-    map.insert(4028, [14, 14, 0, 0]);
-    map.insert(4029, [14, 13, 0, 0]);
-    map.insert(4030, [16, 16, 0, 0]);
-    map.insert(4031, [15, 9, 0, 0]);
-    map.insert(4032, [14, 11, 0, 0]);
-    map.insert(4033, [15, 8, 0, 0]);
-    map.insert(4034, [17, 10, 0, 0]);
-    map.insert(4035, [17, 13, 0, 0]);
-    map.insert(4036, [15, 9, 0, 0]);
-    map.insert(4037, [17, 11, 0, 0]);
-    map.insert(4068, [7, 9, 1, 2]);
-    map.insert(4069, [9, 9, 1, 1]);
-    map.insert(4070, [7, 9, 1, 1]);
-    map.insert(4282, [11, 13, 0, 0]);
-    map.insert(4283, [13, 15, 0, 0]);
-    map.insert(4284, [10, 14, 0, 0]);
-    map.insert(4285, [11, 12, 0, 0]);
-    map.insert(4286, [11, 16, 0, 0]);
-    map.insert(4287, [12, 12, 0, 0]);
-    map.insert(4288, [13, 13, 0, 0]);
-    map.insert(4289, [14, 15, 0, 0]);
-    map.insert(4290, [13, 12, 0, 0]);
-    map.insert(4291, [9, 14, 0, 0]);
-    map.insert(4292, [14, 12, 0, 0]);
-    map.insert(4293, [11, 12, 0, 0]);
-    map.insert(4294, [10, 16, 0, 0]);
-    map.insert(4295, [12, 14, 0, 0]);
-    map.insert(4296, [15, 16, 0, 0]);
-    map.insert(4297, [12, 12, 0, 0]);
-    map.insert(4403, [15, 10, 0, 1]);
-    map.insert(4411, [16, 11, 0, 0]);
-    map.insert(4614, [7, 13, 0, 3]);
-    map.insert(4615, [7, 13, 0, 3]);
-    map.insert(4616, [8, 14, 0, 2]);
-    map.insert(4617, [10, 16, 0, 1]);
-    map.insert(4618, [10, 14, 0, 2]);
-    map.insert(4619, [7, 15, 0, 1]);
-    map.insert(4620, [5, 15, 0, 1]);
-    map.insert(4621, [9, 16, 0, 0]);
-    map.insert(4622, [9, 15, 0, 1]);
-    map.insert(4623, [10, 18, 0, 2]);
-    map.insert(4624, [9, 13, 0, 3]);
-    map.insert(4625, [9, 13, 0, 1]);
-    map.insert(5009, [17, 11, 0, 1]);
-    map.insert(5041, [12, 19, 0, 1]);
-    map.insert(5042, [16, 17, 0, 0]);
-    map.insert(5092, [18, 16, 0, 0]);
-    map.insert(5093, [18, 14, 0, 0]);
-    map.insert(5275, [8, 14, 0, 0]);
-    map.insert(5277, [10, 12, 0, 0]);
-    map.insert(5278, [10, 11, 1, 1]);
-    map
-}
-
-fn trapped_chests() -> HashMap<i32, i32> {
-    let mut map = HashMap::new();
-    map.insert(3665, 48);
-    map.insert(3666, 306);
-    map.insert(3667, 328);
-    map.insert(3668, 625);
-    map.insert(3669, 626);
-    map.insert(3670, 627);
-    map.insert(3671, 680);
-    map.insert(3672, 681);
-    map.insert(3673, 831);
-    map.insert(3674, 838);
-    map.insert(3675, 914);
-    map.insert(3676, 952);
-    map.insert(3677, 1142);
-    map.insert(3678, 1298);
-    map.insert(3679, 1528);
-    map.insert(3680, 1529);
-    map.insert(3681, 1530);
-    map.insert(3682, 1531);
-    map.insert(3683, 1532);
-    map.insert(3684, 2230);
-    map.insert(3685, 2249);
-    map.insert(3686, 2250);
-    map.insert(3687, 2526);
-    map.insert(3688, 2544);
-    map.insert(3689, 2559);
-    map.insert(3690, 2574);
-    map.insert(3691, 2612);
-    map.insert(3692, 2613);
-    map.insert(3693, 2614);
-    map.insert(3694, 2615);
-    map.insert(3695, 2616);
-    map.insert(3696, 2617);
-    map.insert(3697, 2618);
-    map.insert(3698, 2619);
-    map.insert(3699, 2620);
-    map.insert(3700, 2748);
-    map.insert(3701, 2814);
-    map.insert(3702, 3125);
-    map.insert(3703, 3180);
-    map.insert(3704, 3181);
-    map.insert(3705, 48); // Unobtainable
-    map.insert(3706, 48); // Unobtainable
-    map.insert(3886, 3884);
-    map.insert(3887, 3885);
-    map.insert(3950, 3939);
-    map.insert(3976, 3965);
-    map.insert(4164, 4153);
-    map.insert(4185, 4174);
-    map.insert(4206, 4195);
-    map.insert(4227, 4216);
-    map.insert(4266, 4265);
-    map.insert(4268, 4267);
-    map.insert(4585, 4574);
-    map.insert(4713, 4712);
-    map.insert(5167, 5156);
-    map.insert(5188, 5177);
-    map.insert(5209, 5198);
-    map
 }
 
 fn generate_spritesheet(
