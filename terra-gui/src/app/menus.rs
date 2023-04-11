@@ -42,7 +42,18 @@ impl App {
 
         ui.separator();
 
-        for tab in [Tabs::Stats, Tabs::Bonuses, Tabs::Inventory, Tabs::Buffs] {
+        for tab in [
+            Tabs::Stats,
+            Tabs::Bonuses,
+            Tabs::Selected,
+            Tabs::Inventory,
+            Tabs::Bank,
+            Tabs::Safe,
+            Tabs::Forge,
+            Tabs::Void,
+            Tabs::Buffs,
+            Tabs::Equipment,
+        ] {
             let mut disabled = !self.closed_tabs.contains_key(&tab);
 
             if ui.checkbox(&mut disabled, format!(" {tab}")).changed() {
