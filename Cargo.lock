@@ -3413,7 +3413,6 @@ dependencies = [
  "rfd",
  "rustc-hash",
  "terra-core",
- "thiserror",
 ]
 
 [[package]]
