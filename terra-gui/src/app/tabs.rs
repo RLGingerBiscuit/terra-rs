@@ -1,10 +1,10 @@
 use std::fmt::Display;
 
-use egui::{Ui, WidgetText};
+use egui::{ComboBox, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
 use terra_core::{utils, Difficulty, Item};
 
-use crate::{app::inventory::SelectedItem, enum_radio_value, ui::UiExt};
+use crate::{app::inventory::SelectedItem, enum_selectable_value, ui::UiExt};
 
 use super::{
     inventory::{ItemTab, SelectedBuff},
@@ -91,14 +91,18 @@ impl App {
         });
 
         ui.labelled("Difficulty: ", |ui| {
-            enum_radio_value!(
-                ui,
-                &mut player.difficulty,
-                Difficulty::Journey,
-                Difficulty::Classic,
-                Difficulty::Mediumcore,
-                Difficulty::Hardcore
-            );
+            ComboBox::from_id_source("player_difficulty")
+                .selected_text(player.difficulty.to_string())
+                .show_ui(ui, |ui| {
+                    enum_selectable_value!(
+                        ui,
+                        &mut player.difficulty,
+                        Difficulty::Journey,
+                        Difficulty::Classic,
+                        Difficulty::Mediumcore,
+                        Difficulty::Hardcore
+                    );
+                });
         });
 
         ui.labelled("Version:", |ui| {
