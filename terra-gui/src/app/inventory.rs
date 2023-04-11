@@ -60,7 +60,7 @@ impl App {
 
         let group = if selected {
             let mut frame = ClickableFrame::group(ui.style());
-            frame.fill = ui.visuals().extreme_bg_color;
+            frame.fill = ui.visuals().code_bg_color;
             frame
         } else {
             ClickableFrame::group(ui.style())
