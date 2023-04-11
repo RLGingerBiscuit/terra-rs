@@ -180,7 +180,7 @@ impl App {
         self.render_item_name(ui, item, meta);
 
         egui::Grid::new("selected_item")
-            .num_columns(2)
+            .num_columns(3)
             .show(ui, |ui| {
                 ui.label("Id: ");
                 ui.drag_value_with_buttons(&mut item.id, 1., 0..=largest_item_id);
@@ -188,6 +188,9 @@ impl App {
 
                 ui.label("Stack: ");
                 ui.drag_value_with_buttons(&mut item.stack, 1., 0..=meta.max_stack);
+                if ui.button("Max").clicked() {
+                    item.stack = meta.max_stack;
+                }
                 ui.end_row();
 
                 ui.label("Prefix: ");
@@ -260,7 +263,7 @@ impl App {
         self.render_buff_name(ui, buff, meta);
 
         egui::Grid::new("selected_buff")
-            .num_columns(2)
+            .num_columns(3)
             .show(ui, |ui| {
                 ui.label("Id: ");
                 ui.drag_value_with_buttons(&mut buff.id, 1., 0..=largest_buff_id);
@@ -268,6 +271,9 @@ impl App {
 
                 ui.label("Duration: ");
                 ui.drag_value_with_buttons(&mut buff.time, 1., 0..=i32::MAX);
+                if ui.button("Max").clicked() {
+                    buff.time = i32::MAX;
+                }
                 ui.end_row();
             });
     }
