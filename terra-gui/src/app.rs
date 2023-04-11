@@ -17,7 +17,7 @@ use rustc_hash::FxHashMap;
 use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta};
 
 use self::{
-    inventory::{ItemTab, SelectedBuff, SelectedItem},
+    inventory::{ItemTab, SelectedBuff, SelectedItem, SelectedLoadout},
     tabs::{default_ui, Tabs},
 };
 
@@ -59,6 +59,7 @@ pub struct App {
 
     selected_item: SelectedItem,
     selected_buff: SelectedBuff,
+    selected_loadout: SelectedLoadout,
 
     channel: (Sender<Message>, Receiver<Message>),
 
@@ -91,6 +92,7 @@ impl App {
 
             selected_item: SelectedItem(ItemTab::Inventory, 0),
             selected_buff: SelectedBuff(0),
+            selected_loadout: SelectedLoadout(0),
 
             channel: (tx, rx),
 

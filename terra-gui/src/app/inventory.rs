@@ -30,6 +30,14 @@ pub enum ItemTab {
     Safe,
     Forge,
     Void,
+    Equipment,
+    EquipmentDyes,
+    Armor,
+    VanityArmor,
+    ArmorDyes,
+    Accessories,
+    VanityAccessories,
+    AccessoryDyes,
 }
 
 #[derive(Debug)]
@@ -37,6 +45,9 @@ pub struct SelectedItem(pub ItemTab, pub usize);
 
 #[derive(Debug)]
 pub struct SelectedBuff(pub usize);
+
+#[derive(Debug)]
+pub struct SelectedLoadout(pub usize);
 
 impl App {
     // TODO: split sprite into render_icon (or something)
@@ -161,6 +172,17 @@ impl App {
         };
     }
 
+    pub fn render_item_multiple(&self, ui: &mut Ui, items: &[(&Item, usize, ItemTab)]) {
+        for (item, index, tab) in items {
+            // TODO: Is there a way to avoid cloning these?
+            let index = index.to_owned();
+            let tab = tab.to_owned();
+            if self.render_item(ui, tab, index, item).clicked() {
+                self.do_update(Message::SelectItem(SelectedItem(tab, index)));
+            }
+        }
+    }
+
     pub fn render_selected_item(&mut self, ui: &mut Ui) {
         let mut player = self.player.write();
 
@@ -170,6 +192,28 @@ impl App {
             ItemTab::Safe => &mut player.safe[self.selected_item.1],
             ItemTab::Forge => &mut player.defenders_forge[self.selected_item.1],
             ItemTab::Void => &mut player.void_vault[self.selected_item.1],
+            ItemTab::Equipment => &mut player.equipment[self.selected_item.1],
+            ItemTab::EquipmentDyes => &mut player.equipment_dyes[self.selected_item.1],
+            // TODO: The only case where a change will happen immediately without clicking on another item is changing loadouts, do I want to keep this?
+            ItemTab::VanityArmor => {
+                &mut player.loadouts[self.selected_loadout.0].vanity_armor[self.selected_item.1]
+            }
+            ItemTab::Armor => {
+                &mut player.loadouts[self.selected_loadout.0].armor[self.selected_item.1]
+            }
+            ItemTab::ArmorDyes => {
+                &mut player.loadouts[self.selected_loadout.0].armor_dyes[self.selected_item.1]
+            }
+            ItemTab::VanityAccessories => {
+                &mut player.loadouts[self.selected_loadout.0].vanity_accessories
+                    [self.selected_item.1]
+            }
+            ItemTab::Accessories => {
+                &mut player.loadouts[self.selected_loadout.0].accessories[self.selected_item.1]
+            }
+            ItemTab::AccessoryDyes => {
+                &mut player.loadouts[self.selected_loadout.0].accessory_dyes[self.selected_item.1]
+            }
         };
 
         let meta = meta_or_default!(self.item_meta, item.id);

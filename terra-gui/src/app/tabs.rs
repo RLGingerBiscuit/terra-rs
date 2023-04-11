@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use egui::{ComboBox, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
-use terra_core::{utils, Difficulty, Item};
+use terra_core::{utils, Difficulty, Item, ARMOR_COUNT, LOADOUT_COUNT};
 
 use crate::{app::inventory::SelectedItem, enum_selectable_value, ui::UiExt};
 
@@ -23,6 +23,7 @@ pub enum Tabs {
     Forge,
     Void,
     Buffs,
+    Equipment,
 }
 
 impl Display for Tabs {
@@ -41,6 +42,7 @@ impl Display for Tabs {
                 Tabs::Forge => "Defender's Forge",
                 Tabs::Void => "Void Vault",
                 Tabs::Buffs => "Buffs",
+                Tabs::Equipment => "Equipment",
             }
         )
     }
@@ -58,6 +60,7 @@ pub fn default_ui() -> Tree<Tabs> {
             Tabs::Forge,
             Tabs::Void,
             Tabs::Buffs,
+            Tabs::Equipment,
         ],
     );
     let [load_save, stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Bonuses]);
@@ -255,6 +258,77 @@ impl App {
                 }
             });
     }
+
+    fn render_equipment_tab(&mut self, ui: &mut Ui) {
+        let player = self.player.write();
+
+        ComboBox::from_id_source("player_loadouts").show_index(
+            ui,
+            // TODO: This works but I'd like to change this into a message
+            &mut self.selected_loadout.0,
+            LOADOUT_COUNT,
+            |i| (i + 1).to_string(),
+        );
+
+        egui::Grid::new("player_equipment")
+            .num_columns(8)
+            .show(ui, |ui| {
+                let current_loadout = &player.loadouts[self.selected_loadout.0];
+
+                for i in 0..5 {
+                    self.render_item_multiple(
+                        ui,
+                        &[
+                            (&player.equipment_dyes[i], i, ItemTab::EquipmentDyes),
+                            (&player.equipment[i], i, ItemTab::Equipment),
+                            (
+                                &current_loadout.accessory_dyes[i],
+                                i,
+                                ItemTab::AccessoryDyes,
+                            ),
+                            (
+                                &current_loadout.vanity_accessories[i],
+                                i,
+                                ItemTab::VanityAccessories,
+                            ),
+                            (&current_loadout.accessories[i], i, ItemTab::Accessories),
+                        ],
+                    );
+                    if i < ARMOR_COUNT {
+                        self.render_item_multiple(
+                            ui,
+                            &[
+                                (&current_loadout.armor_dyes[i], i, ItemTab::ArmorDyes),
+                                (&current_loadout.vanity_armor[i], i, ItemTab::VanityArmor),
+                                (&current_loadout.armor[i], i, ItemTab::Armor),
+                            ],
+                        );
+                    } else {
+                        self.render_item_multiple(
+                            ui,
+                            &[
+                                (
+                                    &current_loadout.accessory_dyes[ARMOR_COUNT - 1 + i],
+                                    ARMOR_COUNT - 1 + i,
+                                    ItemTab::AccessoryDyes,
+                                ),
+                                (
+                                    &current_loadout.vanity_accessories[ARMOR_COUNT - 1 + i],
+                                    ARMOR_COUNT - 1 + i,
+                                    ItemTab::VanityAccessories,
+                                ),
+                                (
+                                    &current_loadout.accessories[ARMOR_COUNT - 1 + i],
+                                    ARMOR_COUNT - 1 + i,
+                                    ItemTab::Accessories,
+                                ),
+                            ],
+                        );
+                    }
+                    ui.end_row();
+                }
+            });
+    }
 }
 
 impl TabViewer for App {
@@ -281,6 +355,7 @@ impl TabViewer for App {
             Tabs::Forge => self.render_forge_tab(ui),
             Tabs::Void => self.render_void_tab(ui),
             Tabs::Buffs => self.render_buffs_tab(ui),
+            Tabs::Equipment => self.render_equipment_tab(ui),
         }
     }
 }
