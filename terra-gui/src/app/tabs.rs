@@ -173,7 +173,7 @@ impl App {
                     let item = &player.inventory[i];
 
                     if self.render_item(ui, ItemTab::Inventory, i, item).clicked() {
-                        self.do_update(Message::SelectItem(SelectedItem::Inventory(i)));
+                        self.do_update(Message::SelectItem(SelectedItem(ItemTab::Inventory, i)));
                     }
 
                     if (i + 1) % 10 == 0 {

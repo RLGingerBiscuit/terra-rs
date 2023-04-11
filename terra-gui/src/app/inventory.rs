@@ -23,15 +23,13 @@ macro_rules! meta_or_default {
     };
 }
 
-#[derive(Debug)]
-pub enum SelectedItem {
-    Inventory(usize),
-}
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum ItemTab {
     Inventory,
 }
+
+#[derive(Debug)]
+pub struct SelectedItem(pub ItemTab, pub usize);
 
 #[derive(Debug)]
 pub struct SelectedBuff(pub usize);
@@ -132,9 +130,7 @@ impl App {
         let size = Vec2::new(meta.width as f32, meta.height as f32);
         let rect = Rect::from_min_size(min, size);
 
-        let selected = match self.selected_item {
-            SelectedItem::Inventory(i) => tab == ItemTab::Inventory && i == index,
-        };
+        let selected = self.selected_item.0 == tab && self.selected_item.1 == index;
 
         if spritesheet.is_none() && !self.busy {
             self.do_update(Message::LoadItemSpritesheet);
@@ -164,8 +160,8 @@ impl App {
     pub fn render_selected_item(&mut self, ui: &mut Ui) {
         let mut player = self.player.write();
 
-        let item = match self.selected_item {
-            SelectedItem::Inventory(i) => &mut player.inventory[i],
+        let item = match self.selected_item.0 {
+            ItemTab::Inventory => &mut player.inventory[self.selected_item.1],
         };
 
         let meta = meta_or_default!(self.item_meta, item.id);

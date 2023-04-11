@@ -17,7 +17,7 @@ use rustc_hash::FxHashMap;
 use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta};
 
 use self::{
-    inventory::{SelectedBuff, SelectedItem},
+    inventory::{ItemTab, SelectedBuff, SelectedItem},
     tabs::{default_ui, Tabs},
 };
 
@@ -89,7 +89,7 @@ impl App {
             player: Arc::new(RwLock::new(Player::default())),
             player_path: None,
 
-            selected_item: SelectedItem::Inventory(0),
+            selected_item: SelectedItem(ItemTab::Inventory, 0),
             selected_buff: SelectedBuff(0),
 
             channel: (tx, rx),
