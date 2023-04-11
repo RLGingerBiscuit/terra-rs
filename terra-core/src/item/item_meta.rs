@@ -2,9 +2,11 @@ use std::{fs::File, io::BufReader};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 use crate::ItemRarity;
 
+#[skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ItemMeta {
     pub id: i32,
@@ -18,37 +20,21 @@ pub struct ItemMeta {
     pub sacrifices: i32,
     pub value: i32,
     pub rarity: ItemRarity,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub use_time: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub damage: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub crit: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub knockback: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub defense: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub use_ammo: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub mana_cost: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub heal_life: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub heal_mana: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub pickaxe_power: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub axe_power: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub hammer_power: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub fishing_power: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub fishing_bait: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub range_boost: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub tooltip: Option<Vec<String>>,
     pub consumable: bool,
     pub expert: bool,
@@ -84,6 +70,7 @@ impl Default for ItemMeta {
             fishing_bait: None,
             range_boost: None,
             tooltip: None,
+            forbidden: None,
             consumable: false,
             expert: false,
         }
