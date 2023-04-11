@@ -1,7 +1,9 @@
 #![allow(dead_code)]
 
 use egui::{pos2, vec2, Align2, Image, Rect, Response, TextStyle, TextureHandle, Ui};
-use terra_core::{Buff, BuffMeta, Item, ItemMeta, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE};
+use terra_core::{
+    Buff, BuffMeta, Item, ItemMeta, PrefixMeta, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE,
+};
 
 use crate::ui::{ClickableFrame, UiExt};
 
@@ -160,7 +162,8 @@ impl App {
     ) -> Response {
         let spritesheet = self.item_spritesheet.read();
 
-        let meta = meta_or_default!(self.item_meta, item.id);
+        let item_meta = &*self.item_meta.read();
+        let meta = meta_or_default!(item_meta, item.id);
 
         let min = pos2(meta.x as f32, meta.y as f32);
         let size = vec2(meta.width as f32, meta.height as f32);
@@ -185,16 +188,6 @@ impl App {
         )
     }
 
-    pub fn render_item_name(&self, ui: &mut Ui, item: &Item, meta: &ItemMeta) {
-        let prefix_meta = meta_or_default!(self.prefix_meta, item.prefix.id);
-
-        if prefix_meta.id != 0 {
-            ui.label(format!("{} {}", &prefix_meta.name, &meta.name));
-        } else {
-            ui.label(&meta.name);
-        };
-    }
-
     pub fn render_item_multiple(
         &self,
         ui: &mut Ui,
@@ -212,6 +205,14 @@ impl App {
                 self.do_update(Message::SelectItem(SelectedItem(tab, index)));
             }
         }
+    }
+
+    pub fn render_item_name(&self, ui: &mut Ui, item_meta: &ItemMeta, prefix_meta: &PrefixMeta) {
+        if prefix_meta.id != 0 {
+            ui.label(format!("{} {}", &prefix_meta.name, &item_meta.name));
+        } else {
+            ui.label(&item_meta.name);
+        };
     }
 
     pub fn render_selected_item(&mut self, ui: &mut Ui) {
@@ -247,20 +248,22 @@ impl App {
             }
         };
 
-        let meta = meta_or_default!(self.item_meta, item.id);
+        let item_meta = &*self.item_meta.read();
+        let prefix_meta = &*self.prefix_meta.read();
 
-        let largest_item_id = self
-            .item_meta
+        let current_item_meta = meta_or_default!(item_meta, item.id);
+        let current_prefix_meta = meta_or_default!(prefix_meta, item.prefix.id);
+
+        let largest_item_id = item_meta
             .last()
             .expect("We really should have at least one item")
             .id;
-        let largest_prefix_id = self
-            .prefix_meta
+        let largest_prefix_id = prefix_meta
             .last()
             .expect("We really should have at least one prefix")
             .id;
 
-        self.render_item_name(ui, item, meta);
+        self.render_item_name(ui, current_item_meta, current_prefix_meta);
 
         egui::Grid::new("selected_item")
             .num_columns(3)
@@ -270,9 +273,9 @@ impl App {
                 ui.end_row();
 
                 ui.label("Stack: ");
-                ui.drag_value_with_buttons(&mut item.stack, 1., 0..=meta.max_stack);
+                ui.drag_value_with_buttons(&mut item.stack, 1., 0..=current_item_meta.max_stack);
                 if ui.button("Max").clicked() {
-                    item.stack = meta.max_stack;
+                    item.stack = current_item_meta.max_stack;
                 }
                 ui.end_row();
 
@@ -285,7 +288,8 @@ impl App {
     pub fn render_buff(&self, ui: &mut Ui, index: usize, buff: &Buff) -> Response {
         let spritesheet = self.buff_spritesheet.read();
 
-        let meta = meta_or_default!(self.buff_meta, buff.id);
+        let buff_meta = &*self.buff_meta.read();
+        let meta = meta_or_default!(buff_meta, buff.id);
 
         let min = pos2(meta.x as f32, meta.y as f32);
         let size = vec2(BUFF_SPRITE_SIZE, BUFF_SPRITE_SIZE);
@@ -335,10 +339,10 @@ impl App {
 
         let buff = &mut player.buffs[self.selected_buff.0];
 
-        let meta = meta_or_default!(self.buff_meta, buff.id);
+        let buff_meta = &*self.buff_meta.read();
+        let meta = meta_or_default!(buff_meta, buff.id);
 
-        let largest_buff_id = self
-            .buff_meta
+        let largest_buff_id = buff_meta
             .last()
             .expect("we really should have at least one buff")
             .id;

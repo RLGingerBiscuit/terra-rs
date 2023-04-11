@@ -63,9 +63,9 @@ pub struct App {
 
     channel: (Sender<Message>, Receiver<Message>),
 
-    prefix_meta: Vec<PrefixMeta>,
-    item_meta: Vec<ItemMeta>,
-    buff_meta: Vec<BuffMeta>,
+    prefix_meta: Arc<RwLock<Vec<PrefixMeta>>>,
+    item_meta: Arc<RwLock<Vec<ItemMeta>>>,
+    buff_meta: Arc<RwLock<Vec<BuffMeta>>>,
 
     item_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
     buff_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
@@ -96,9 +96,9 @@ impl App {
 
             channel: (tx, rx),
 
-            prefix_meta,
-            item_meta,
-            buff_meta,
+            prefix_meta: Arc::new(RwLock::new(prefix_meta)),
+            item_meta: Arc::new(RwLock::new(item_meta)),
+            buff_meta: Arc::new(RwLock::new(buff_meta)),
 
             item_spritesheet: Arc::new(RwLock::new(None)),
             buff_spritesheet: Arc::new(RwLock::new(None)),
@@ -197,7 +197,7 @@ impl App {
                         let item_meta = self.item_meta.clone();
 
                         self.do_task(move || {
-                            player.write().load(&item_meta, &path)?;
+                            player.write().load(&*item_meta.read(), &path)?;
                             Ok(Message::Noop)
                         });
                     }
@@ -233,7 +233,7 @@ impl App {
                         .save_file()
                     {
                         self.do_task(move || {
-                            player.read().save(&item_meta, &path)?;
+                            player.read().save(&*item_meta.read(), &path)?;
                             Ok(Message::Noop)
                         });
                     }
