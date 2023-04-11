@@ -193,7 +193,7 @@ impl App {
             for i in 0..items.len() {
                 let item = &items[i];
 
-                if self.render_item(ui, tab, i, item).clicked() {
+                if self.render_item(ui, true, tab, i, item).clicked() {
                     self.do_update(Message::SelectItem(SelectedItem(tab, i)));
                 }
 
@@ -278,6 +278,7 @@ impl App {
                 for i in 0..5 {
                     self.render_item_multiple(
                         ui,
+                        false,
                         &[
                             (&player.equipment_dyes[i], i, ItemTab::EquipmentDyes),
                             (&player.equipment[i], i, ItemTab::Equipment),
@@ -297,6 +298,7 @@ impl App {
                     if i < ARMOR_COUNT {
                         self.render_item_multiple(
                             ui,
+                            false,
                             &[
                                 (&current_loadout.armor_dyes[i], i, ItemTab::ArmorDyes),
                                 (&current_loadout.vanity_armor[i], i, ItemTab::VanityArmor),
@@ -306,6 +308,7 @@ impl App {
                     } else {
                         self.render_item_multiple(
                             ui,
+                            false,
                             &[
                                 (
                                     &current_loadout.accessory_dyes[ARMOR_COUNT - 1 + i],

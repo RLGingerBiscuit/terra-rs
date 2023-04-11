@@ -61,7 +61,7 @@ impl App {
         rect: Rect,
         selected: bool,
         spritesheet: Option<&TextureHandle>,
-        _stack_size: Option<i32>,
+        stack_size: Option<i32>,
     ) -> Response {
         let mut padding_x = slot_size;
         let mut padding_y = slot_size;
@@ -77,7 +77,7 @@ impl App {
             ClickableFrame::group(ui.style())
         };
 
-        group
+        let response = group
             .show(ui, |ui| {
                 ui.spacing_mut().item_spacing = [0., 0.].into();
 
@@ -132,10 +132,32 @@ impl App {
                     });
                 }
             })
-            .response
+            .response;
+
+        if let Some(stack) = stack_size {
+            let max = response.rect.max;
+            let icon_spacing = ui.style().spacing.icon_spacing;
+
+            ui.painter().text(
+                pos2(max.x - icon_spacing, max.y - icon_spacing),
+                Align2::RIGHT_BOTTOM,
+                stack.to_string(),
+                TextStyle::Heading.resolve(ui.style()),
+                ui.style().visuals.text_color(),
+            );
+        }
+
+        response
     }
 
-    pub fn render_item(&self, ui: &mut Ui, tab: ItemTab, index: usize, item: &Item) -> Response {
+    pub fn render_item(
+        &self,
+        ui: &mut Ui,
+        render_stack: bool,
+        tab: ItemTab,
+        index: usize,
+        item: &Item,
+    ) -> Response {
         let spritesheet = self.item_spritesheet.read();
 
         let meta = meta_or_default!(self.item_meta, item.id);
@@ -150,6 +172,8 @@ impl App {
             self.do_update(Message::LoadItemSpritesheet);
         }
 
+        let stack = if render_stack { Some(item.stack) } else { None };
+
         self.render_slot(
             ui,
             ITEM_SLOT_SIZE,
@@ -157,7 +181,7 @@ impl App {
             rect,
             selected,
             spritesheet.as_ref(),
-            None,
+            stack,
         )
     }
 
@@ -171,12 +195,20 @@ impl App {
         };
     }
 
-    pub fn render_item_multiple(&self, ui: &mut Ui, items: &[(&Item, usize, ItemTab)]) {
+    pub fn render_item_multiple(
+        &self,
+        ui: &mut Ui,
+        render_stack: bool,
+        items: &[(&Item, usize, ItemTab)],
+    ) {
         for (item, index, tab) in items {
             // TODO: Is there a way to avoid cloning these?
             let index = index.to_owned();
             let tab = tab.to_owned();
-            if self.render_item(ui, tab, index, item).clicked() {
+            if self
+                .render_item(ui, render_stack, tab, index, item)
+                .clicked()
+            {
                 self.do_update(Message::SelectItem(SelectedItem(tab, index)));
             }
         }
