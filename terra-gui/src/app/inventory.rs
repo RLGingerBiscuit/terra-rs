@@ -26,6 +26,10 @@ macro_rules! meta_or_default {
 #[derive(Debug, PartialEq, Eq)]
 pub enum ItemTab {
     Inventory,
+    Bank,
+    Safe,
+    Forge,
+    Void,
 }
 
 #[derive(Debug)]
@@ -162,6 +166,10 @@ impl App {
 
         let item = match self.selected_item.0 {
             ItemTab::Inventory => &mut player.inventory[self.selected_item.1],
+            ItemTab::Bank => &mut player.piggy_bank[self.selected_item.1],
+            ItemTab::Safe => &mut player.safe[self.selected_item.1],
+            ItemTab::Forge => &mut player.defenders_forge[self.selected_item.1],
+            ItemTab::Void => &mut player.void_vault[self.selected_item.1],
         };
 
         let meta = meta_or_default!(self.item_meta, item.id);

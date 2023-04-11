@@ -18,6 +18,10 @@ pub enum Tabs {
     Bonuses,
     Selected,
     Inventory,
+    Bank,
+    Safe,
+    Forge,
+    Void,
     Buffs,
 }
 
@@ -32,6 +36,10 @@ impl Display for Tabs {
                 Tabs::Bonuses => "Permanent Bonuses",
                 Tabs::Selected => "Selected",
                 Tabs::Inventory => "Inventory",
+                Tabs::Bank => "Piggy Bank",
+                Tabs::Safe => "Safe",
+                Tabs::Forge => "Defender's Forge",
+                Tabs::Void => "Void Vault",
                 Tabs::Buffs => "Buffs",
             }
         )
@@ -40,8 +48,18 @@ impl Display for Tabs {
 
 pub fn default_ui() -> Tree<Tabs> {
     let mut tree = Tree::new(vec![Tabs::LoadSave]);
-    let [load_save, _inventory] =
-        tree.split_below(0.into(), 0.315, vec![Tabs::Inventory, Tabs::Buffs]);
+    let [load_save, _inventory] = tree.split_below(
+        0.into(),
+        0.315,
+        vec![
+            Tabs::Inventory,
+            Tabs::Bank,
+            Tabs::Safe,
+            Tabs::Forge,
+            Tabs::Void,
+            Tabs::Buffs,
+        ],
+    );
     let [load_save, stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Bonuses]);
     let [_stats, _selected] = tree.split_right(stats, 0.65, vec![Tabs::Selected]);
 
@@ -183,6 +201,86 @@ impl App {
             });
     }
 
+    fn render_bank_tab(&mut self, ui: &mut Ui) {
+        let player = self.player.write();
+
+        egui::Grid::new("player_bank")
+            .num_columns(10)
+            .show(ui, |ui| {
+                for i in 0..player.piggy_bank.len() {
+                    let item = &player.piggy_bank[i];
+
+                    if self.render_item(ui, ItemTab::Bank, i, item).clicked() {
+                        self.do_update(Message::SelectItem(SelectedItem(ItemTab::Bank, i)));
+                    }
+
+                    if (i + 1) % 10 == 0 {
+                        ui.end_row();
+                    }
+                }
+            });
+    }
+
+    fn render_safe_tab(&mut self, ui: &mut Ui) {
+        let player = self.player.write();
+
+        egui::Grid::new("player_safe")
+            .num_columns(10)
+            .show(ui, |ui| {
+                for i in 0..player.safe.len() {
+                    let item = &player.safe[i];
+
+                    if self.render_item(ui, ItemTab::Safe, i, item).clicked() {
+                        self.do_update(Message::SelectItem(SelectedItem(ItemTab::Safe, i)));
+                    }
+
+                    if (i + 1) % 10 == 0 {
+                        ui.end_row();
+                    }
+                }
+            });
+    }
+
+    fn render_forge_tab(&mut self, ui: &mut Ui) {
+        let player = self.player.write();
+
+        egui::Grid::new("player_forge")
+            .num_columns(10)
+            .show(ui, |ui| {
+                for i in 0..player.defenders_forge.len() {
+                    let item = &player.defenders_forge[i];
+
+                    if self.render_item(ui, ItemTab::Forge, i, item).clicked() {
+                        self.do_update(Message::SelectItem(SelectedItem(ItemTab::Forge, i)));
+                    }
+
+                    if (i + 1) % 10 == 0 {
+                        ui.end_row();
+                    }
+                }
+            });
+    }
+
+    fn render_void_tab(&mut self, ui: &mut Ui) {
+        let player = self.player.write();
+
+        egui::Grid::new("player_void")
+            .num_columns(10)
+            .show(ui, |ui| {
+                for i in 0..player.void_vault.len() {
+                    let item = &player.void_vault[i];
+
+                    if self.render_item(ui, ItemTab::Void, i, item).clicked() {
+                        self.do_update(Message::SelectItem(SelectedItem(ItemTab::Void, i)));
+                    }
+
+                    if (i + 1) % 10 == 0 {
+                        ui.end_row();
+                    }
+                }
+            });
+    }
+
     fn render_buffs_tab(&mut self, ui: &mut Ui) {
         let player = self.player.write();
 
@@ -223,6 +321,10 @@ impl TabViewer for App {
             Tabs::Bonuses => self.render_bonuses_tab(ui),
             Tabs::Selected => self.render_selected_tab(ui),
             Tabs::Inventory => self.render_inventory_tab(ui),
+            Tabs::Bank => self.render_bank_tab(ui),
+            Tabs::Safe => self.render_safe_tab(ui),
+            Tabs::Forge => self.render_forge_tab(ui),
+            Tabs::Void => self.render_void_tab(ui),
             Tabs::Buffs => self.render_buffs_tab(ui),
         }
     }
