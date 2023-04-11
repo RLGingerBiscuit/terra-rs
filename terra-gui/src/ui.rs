@@ -4,7 +4,7 @@ use std::ops::RangeInclusive;
 
 use eframe::emath;
 use egui::{
-    Align, Button, DragValue, InnerResponse, KeyboardShortcut, Layout, Response, Ui, Vec2,
+    vec2, Align, Button, DragValue, InnerResponse, KeyboardShortcut, Layout, Response, Ui,
     WidgetText,
 };
 
@@ -93,8 +93,7 @@ impl UiExt for Ui {
         &mut self,
         // This suddenly began to throw up errors in my VSCode,
         // but not when compiled, so this is a quick fix
-        #[allow(unused_mut)]
-        mut value: &mut Num,
+        #[allow(unused_mut)] mut value: &mut Num,
         speed: f32,
         range: RangeInclusive<Num>,
     ) -> Response {
@@ -108,7 +107,7 @@ impl UiExt for Ui {
 
             let old_padding = ui.spacing().button_padding;
 
-            ui.spacing_mut().button_padding = Vec2::splat(0.);
+            ui.spacing_mut().button_padding = vec2(0., 0.);
             ui.drag_value(value, speed, range.clone());
             ui.spacing_mut().button_padding = old_padding;
 

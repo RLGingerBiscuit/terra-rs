@@ -1,4 +1,4 @@
-use egui::{Align2, Frame, Grid, RichText, Vec2, Window};
+use egui::{vec2, Align2, Frame, Grid, RichText, Window};
 
 use crate::ui::UiExt;
 
@@ -11,7 +11,7 @@ impl App {
         if self.show_about {
             Window::new("About")
                 .collapsible(false)
-                .anchor(Align2::CENTER_CENTER, Vec2::default())
+                .anchor(Align2::CENTER_CENTER, vec2(0., 0.))
                 .fixed_size([360.0, 240.0])
                 .frame(egui::Frame::window(&ctx.style()).inner_margin(8.))
                 .show(ctx, |ui| {
@@ -50,7 +50,7 @@ impl App {
         if let Some(err) = self.error.as_ref() {
             egui::Window::new("Error")
                 .collapsible(false)
-                .anchor(Align2::CENTER_CENTER, Vec2::default())
+                .anchor(Align2::CENTER_CENTER, vec2(0., 0.))
                 .auto_sized()
                 .frame(Frame::window(&ctx.style()).inner_margin(8.))
                 .show(ctx, |ui| {

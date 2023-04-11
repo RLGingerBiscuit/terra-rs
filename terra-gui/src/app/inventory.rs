@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use egui::{Image, Pos2, Rect, Response, TextureHandle, Ui, Vec2};
+use egui::{pos2, vec2, Align2, Image, Rect, Response, TextStyle, TextureHandle, Ui};
 use terra_core::{Buff, BuffMeta, Item, ItemMeta, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE};
 
 use crate::ui::{ClickableFrame, UiExt};
@@ -112,11 +112,10 @@ impl App {
                         0.
                     };
 
-                    let min = Pos2::new(x / spritesheet_width, y / spritesheet_height);
-                    let sprite_size =
-                        Vec2::new(width / spritesheet_width, height / spritesheet_height);
+                    let min = pos2(x / spritesheet_width, y / spritesheet_height);
+                    let sprite_size = vec2(width / spritesheet_width, height / spritesheet_height);
                     let uv = Rect::from_min_size(min, sprite_size);
-                    let size = Vec2::new(final_width, final_height);
+                    let size = vec2(final_width, final_height);
 
                     // TODO: Display stack size if not None
                     ui.add_space(padding_x);
@@ -141,8 +140,8 @@ impl App {
 
         let meta = meta_or_default!(self.item_meta, item.id);
 
-        let min = Pos2::new(meta.x as f32, meta.y as f32);
-        let size = Vec2::new(meta.width as f32, meta.height as f32);
+        let min = pos2(meta.x as f32, meta.y as f32);
+        let size = vec2(meta.width as f32, meta.height as f32);
         let rect = Rect::from_min_size(min, size);
 
         let selected = self.selected_item.0 == tab && self.selected_item.1 == index;
@@ -256,8 +255,8 @@ impl App {
 
         let meta = meta_or_default!(self.buff_meta, buff.id);
 
-        let min = Pos2::new(meta.x as f32, meta.y as f32);
-        let size = Vec2::splat(BUFF_SPRITE_SIZE);
+        let min = pos2(meta.x as f32, meta.y as f32);
+        let size = vec2(BUFF_SPRITE_SIZE, BUFF_SPRITE_SIZE);
         let rect = Rect::from_min_size(min, size);
 
         let selected = self.selected_buff.0 == index;

@@ -3,13 +3,13 @@
 mod app;
 mod ui;
 
-use egui::Vec2;
+use egui::vec2;
 
 use app::App;
 
 fn main() {
     let options = eframe::NativeOptions {
-        initial_window_size: Some(Vec2::splat(800.)),
+        initial_window_size: Some(vec2(800., 800.)),
         ..Default::default()
     };
 
