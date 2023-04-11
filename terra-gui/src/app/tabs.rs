@@ -6,7 +6,10 @@ use terra_core::{utils, Difficulty};
 
 use crate::{app::inventory::SelectedItem, enum_radio_value, ui::UiExt};
 
-use super::{inventory::SelectedBuff, App, Message};
+use super::{
+    inventory::{ItemTab, SelectedBuff},
+    App, Message,
+};
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Tabs {
@@ -169,7 +172,7 @@ impl App {
                 for i in 0..player.inventory.len() {
                     let item = &player.inventory[i];
 
-                    if self.render_item(ui, item).clicked() {
+                    if self.render_item(ui, ItemTab::Inventory, i, item).clicked() {
                         self.do_update(Message::SelectItem(SelectedItem::Inventory(i)));
                     }
 
@@ -189,7 +192,7 @@ impl App {
                 for i in 0..player.buffs.len() {
                     let buff = &player.buffs[i];
 
-                    if self.render_buff(ui, buff).clicked() {
+                    if self.render_buff(ui, i, buff).clicked() {
                         self.do_update(Message::SelectBuff(SelectedBuff(i)));
                     }
 

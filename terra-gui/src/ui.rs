@@ -81,7 +81,10 @@ impl UiExt for Ui {
     #[inline]
     fn drag_value_with_buttons<Num: emath::Numeric>(
         &mut self,
-        value: &mut Num,
+        // This suddenly began to throw up errors in my VSCode,
+        // but not when compiled, so this is a quick fix
+        #[allow(unused_mut)]
+        mut value: &mut Num,
         speed: f32,
         range: RangeInclusive<Num>,
     ) -> Response {
