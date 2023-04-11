@@ -142,7 +142,7 @@ impl App {
                 pos2(max.x - icon_spacing, max.y - icon_spacing),
                 Align2::RIGHT_BOTTOM,
                 stack.to_string(),
-                TextStyle::Heading.resolve(ui.style()),
+                TextStyle::Body.resolve(ui.style()),
                 ui.style().visuals.text_color(),
             );
         }
