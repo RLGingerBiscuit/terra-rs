@@ -61,7 +61,7 @@ pub fn default_ui() -> Tree<Tabs> {
         ],
     );
     let [load_save, stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Bonuses]);
-    let [_stats, _selected] = tree.split_right(stats, 0.65, vec![Tabs::Selected]);
+    let [_stats, _selected] = tree.split_right(stats, 0.6, vec![Tabs::Selected]);
 
     tree.set_focused_node(load_save);
     tree
