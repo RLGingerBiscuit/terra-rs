@@ -20,6 +20,16 @@ macro_rules! enum_radio_value {
     };
 }
 
+#[macro_export]
+macro_rules! enum_selectable_value {
+    ( $ui:expr, $current:expr, $($enum_item:expr),* ) => {
+        // $($ui.enum_selectable_value($current, $enum_item);)*
+        $(
+            $ui.selectable_value($current, $enum_item, $enum_item.to_string());
+        )*
+    };
+}
+
 pub trait UiExt {
     fn labelled<R>(
         &mut self,
