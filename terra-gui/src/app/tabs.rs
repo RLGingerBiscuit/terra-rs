@@ -267,7 +267,7 @@ impl App {
             // TODO: This works but I'd like to change this into a message
             &mut self.selected_loadout.0,
             LOADOUT_COUNT,
-            |i| (i + 1).to_string(),
+            |i| format!("Loadout {}", i + 1),
         );
 
         egui::Grid::new("player_equipment")
