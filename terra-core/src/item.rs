@@ -1,10 +1,12 @@
 mod item_data;
 mod item_meta;
+mod research_item;
 
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 pub use item_data::{Item, ItemError};
 pub use item_meta::ItemMeta;
+pub use research_item::ResearchItem;
 
 #[repr(i32)]
 #[derive(Default, Clone, Debug, Serialize_repr, Deserialize_repr)]

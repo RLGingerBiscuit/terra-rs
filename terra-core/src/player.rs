@@ -15,10 +15,10 @@ use serde_big_array::BigArray;
 use crate::{
     ext::{TerraReadExt, TerraWriteExt},
     utils, BoolByte, Buff, Color, Difficulty, FileType, Item, ItemMeta, JourneyPowers, Loadout,
-    Spawnpoint, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT, CELLPHONE_INFO_COUNT,
-    COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES, EQUIPMENT_COUNT,
-    FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
-    MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT,
+    ResearchItem, Spawnpoint, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
+    CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES,
+    EQUIPMENT_COUNT, FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK,
+    MAGIC_NUMBER, MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT,
     TICKS_PER_MICROSECOND,
 };
 
@@ -132,7 +132,7 @@ pub struct Player {
 
     pub golfer_score: i32,
 
-    pub research: Vec<Item>,
+    pub research: Vec<ResearchItem>,
 
     pub temporary_slots: [Item; TEMPORARY_SLOT_COUNT],
 
@@ -595,9 +595,7 @@ impl Player {
 
             self.research.clear();
             for _ in 0..research_count {
-                let research_item =
-                    Item::load_new(reader, item_meta, false, true, true, false, false)?;
-
+                let research_item = ResearchItem::load_new(reader)?;
                 self.research.push(research_item);
             }
         }
@@ -970,8 +968,8 @@ impl Player {
         if self.version >= 218 {
             writer.write_i32::<LE>(self.research.len() as i32)?;
 
-            for item in self.research.iter() {
-                item.save(writer, item_meta, false, true, true, false, false)?;
+            for research_item in self.research.iter() {
+                research_item.save(writer)?;
             }
         }
 

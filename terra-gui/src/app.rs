@@ -14,7 +14,7 @@ use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 
-use terra_core::{utils, BuffMeta, Item, ItemMeta, Player, Prefix, PrefixMeta};
+use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem};
 
 use self::{
     inventory::{ItemTab, SelectedBuff, SelectedItem, SelectedLoadout},
@@ -247,28 +247,19 @@ impl App {
                     player.research.clear();
                 }
                 Message::AddAllResearch => {
-                    let player = self.player.clone();
-                    let item_meta = self.item_meta.clone();
+                    let mut player = self.player.write();
+                    let item_meta = self.item_meta.read();
 
-                    self.do_task(move || {
-                        let mut player = player.write();
-                        let item_meta = item_meta.read();
-
-                        // TODO: Maybe remove this at one point?
-                        player.research.clear();
-                        for item in &*item_meta {
-                            if let None = item.forbidden {
-                                player.research.push(Item {
-                                    id: item.id,
-                                    stack: item.sacrifices,
-                                    prefix: Prefix::default(),
-                                    favourited: false,
-                                });
-                            }
+                    // TODO: Maybe remove this at one point?
+                    player.research.clear();
+                    for item in &*item_meta {
+                        if let None = item.forbidden {
+                            player.research.push(ResearchItem {
+                                internal_name: item.internal_name.to_owned(),
+                                stack: item.sacrifices,
+                            });
                         }
-
-                        Ok(Message::Noop)
-                    });
+                    }
                 }
             }
         }
