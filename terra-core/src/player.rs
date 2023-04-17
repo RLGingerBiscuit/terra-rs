@@ -508,6 +508,7 @@ impl Player {
             }
         }
 
+        self.spawnpoints.clear();
         for _ in 0..SPAWNPOINT_LIMIT {
             let x = reader.read_i32::<LE>()?;
             if x == -1 {
@@ -592,6 +593,7 @@ impl Player {
         if self.version >= 218 {
             let research_count = reader.read_i32::<LE>()?;
 
+            self.research.clear();
             for _ in 0..research_count {
                 let research_item =
                     Item::load_new(reader, item_meta, false, true, true, false, false)?;
