@@ -24,6 +24,7 @@ pub enum Tabs {
     Void,
     Buffs,
     Equipment,
+    Research,
 }
 
 impl Display for Tabs {
@@ -43,6 +44,7 @@ impl Display for Tabs {
                 Tabs::Void => "Void Vault",
                 Tabs::Buffs => "Buffs",
                 Tabs::Equipment => "Equipment",
+                Tabs::Research => "Research",
             }
         )
     }
@@ -61,6 +63,7 @@ pub fn default_ui() -> Tree<Tabs> {
             Tabs::Void,
             Tabs::Buffs,
             Tabs::Equipment,
+            Tabs::Research,
         ],
     );
     let [load_save, stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Bonuses]);
@@ -332,6 +335,25 @@ impl App {
                 }
             });
     }
+
+    fn render_research_tab(&mut self, ui: &mut Ui) {
+        let player = self.player.write();
+        let entry_text = if player.research.len() == 1 {
+            "entry"
+        } else {
+            "entries"
+        };
+
+        ui.label(format!("{} research {}", player.research.len(), entry_text));
+        ui.horizontal(|ui| {
+            if ui.button("Clear all").clicked() {
+                self.do_update(Message::RemoveAllResearch);
+            }
+            if ui.button("Unlock all").clicked() {
+                self.do_update(Message::AddAllResearch);
+            }
+        });
+    }
 }
 
 impl TabViewer for App {
@@ -359,6 +381,7 @@ impl TabViewer for App {
             Tabs::Void => self.render_void_tab(ui),
             Tabs::Buffs => self.render_buffs_tab(ui),
             Tabs::Equipment => self.render_equipment_tab(ui),
+            Tabs::Research => self.render_research_tab(ui),
         }
     }
 }

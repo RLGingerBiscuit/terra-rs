@@ -14,7 +14,7 @@ use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 
-use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta};
+use terra_core::{utils, BuffMeta, Item, ItemMeta, Player, Prefix, PrefixMeta};
 
 use self::{
     inventory::{ItemTab, SelectedBuff, SelectedItem, SelectedLoadout},
@@ -50,6 +50,8 @@ pub enum Message {
     SavePlayer,
     SelectItem(SelectedItem),
     SelectBuff(SelectedBuff),
+    RemoveAllResearch,
+    AddAllResearch,
 }
 
 #[allow(dead_code)]
@@ -240,6 +242,34 @@ impl App {
                 }
                 Message::SelectItem(selection) => self.selected_item = selection,
                 Message::SelectBuff(selection) => self.selected_buff = selection,
+                Message::RemoveAllResearch => {
+                    let mut player = self.player.write();
+                    player.research.clear();
+                }
+                Message::AddAllResearch => {
+                    let player = self.player.clone();
+                    let item_meta = self.item_meta.clone();
+
+                    self.do_task(move || {
+                        let mut player = player.write();
+                        let item_meta = item_meta.read();
+
+                        // TODO: Maybe remove this at one point?
+                        player.research.clear();
+                        for item in &*item_meta {
+                            if let None = item.forbidden {
+                                player.research.push(Item {
+                                    id: item.id,
+                                    stack: item.sacrifices,
+                                    prefix: Prefix::default(),
+                                    favourited: false,
+                                });
+                            }
+                        }
+
+                        Ok(Message::Noop)
+                    });
+                }
             }
         }
     }
