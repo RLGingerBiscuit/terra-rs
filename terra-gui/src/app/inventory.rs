@@ -25,6 +25,41 @@ macro_rules! meta_or_default {
     };
 }
 
+#[macro_export]
+macro_rules! selected_item {
+    ($selected_item:expr,$selected_loadout:expr, $player:expr) => {
+        match $selected_item.0 {
+            ItemTab::Inventory => &mut $player.inventory[$selected_item.1],
+            ItemTab::Bank => &mut $player.piggy_bank[$selected_item.1],
+            ItemTab::Safe => &mut $player.safe[$selected_item.1],
+            ItemTab::Forge => &mut $player.defenders_forge[$selected_item.1],
+            ItemTab::Void => &mut $player.void_vault[$selected_item.1],
+            ItemTab::Equipment => &mut $player.equipment[$selected_item.1],
+            ItemTab::EquipmentDyes => &mut $player.equipment_dyes[$selected_item.1],
+            // TODO: The only case where a change will happen immediately without clicking on another item is changing loadouts, do I want to keep this?
+            ItemTab::VanityArmor => {
+                &mut $player.loadouts[$selected_loadout.0].vanity_armor[$selected_item.1]
+            }
+            ItemTab::Armor => {
+                &mut $player.loadouts[$selected_loadout.0].armor[$selected_item.1]
+            }
+            ItemTab::ArmorDyes => {
+                &mut $player.loadouts[$selected_loadout.0].armor_dyes[$selected_item.1]
+            }
+            ItemTab::VanityAccessories => {
+                &mut $player.loadouts[$selected_loadout.0].vanity_accessories
+                    [$selected_item.1]
+            }
+            ItemTab::Accessories => {
+                &mut $player.loadouts[$selected_loadout.0].accessories[$selected_item.1]
+            }
+            ItemTab::AccessoryDyes => {
+                &mut $player.loadouts[$selected_loadout.0].accessory_dyes[$selected_item.1]
+            }
+        }
+    };
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ItemTab {
     Inventory,
@@ -218,35 +253,7 @@ impl App {
     pub fn render_selected_item(&mut self, ui: &mut Ui) {
         let mut player = self.player.write();
 
-        let item = match self.selected_item.0 {
-            ItemTab::Inventory => &mut player.inventory[self.selected_item.1],
-            ItemTab::Bank => &mut player.piggy_bank[self.selected_item.1],
-            ItemTab::Safe => &mut player.safe[self.selected_item.1],
-            ItemTab::Forge => &mut player.defenders_forge[self.selected_item.1],
-            ItemTab::Void => &mut player.void_vault[self.selected_item.1],
-            ItemTab::Equipment => &mut player.equipment[self.selected_item.1],
-            ItemTab::EquipmentDyes => &mut player.equipment_dyes[self.selected_item.1],
-            // TODO: The only case where a change will happen immediately without clicking on another item is changing loadouts, do I want to keep this?
-            ItemTab::VanityArmor => {
-                &mut player.loadouts[self.selected_loadout.0].vanity_armor[self.selected_item.1]
-            }
-            ItemTab::Armor => {
-                &mut player.loadouts[self.selected_loadout.0].armor[self.selected_item.1]
-            }
-            ItemTab::ArmorDyes => {
-                &mut player.loadouts[self.selected_loadout.0].armor_dyes[self.selected_item.1]
-            }
-            ItemTab::VanityAccessories => {
-                &mut player.loadouts[self.selected_loadout.0].vanity_accessories
-                    [self.selected_item.1]
-            }
-            ItemTab::Accessories => {
-                &mut player.loadouts[self.selected_loadout.0].accessories[self.selected_item.1]
-            }
-            ItemTab::AccessoryDyes => {
-                &mut player.loadouts[self.selected_loadout.0].accessory_dyes[self.selected_item.1]
-            }
-        };
+        let item = selected_item!(self.selected_item, self.selected_loadout, player);
 
         let item_meta = &*self.item_meta.read();
         let prefix_meta = &*self.prefix_meta.read();
