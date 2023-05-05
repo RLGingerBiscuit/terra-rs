@@ -2,14 +2,14 @@ use std::fmt::Display;
 
 use egui::{ComboBox, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
-use terra_core::{utils, Difficulty, Item, ARMOR_COUNT, LOADOUT_COUNT};
-
-use crate::{app::inventory::SelectedItem, enum_selectable_value, ui::UiExt};
-
-use super::{
-    inventory::{ItemTab, SelectedBuff},
-    App, Message,
+use terra_core::{
+    utils, Difficulty, Item, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, INVENTORY_COUNT,
+    INVENTORY_STRIDE, LOADOUT_COUNT,
 };
+
+use crate::{enum_selectable_value, ui::UiExt};
+
+use super::{inventory::ItemTab, App, Message};
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Tabs {
@@ -191,79 +191,97 @@ impl App {
         self.render_selected_buff(ui);
     }
 
-    fn render_item_tab(&self, ui: &mut Ui, id: &str, tab: ItemTab, items: &mut [Item]) {
-        egui::Grid::new(id).num_columns(10).show(ui, |ui| {
-            for i in 0..items.len() {
-                let item = &items[i];
+    fn render_item_tab(&self, ui: &mut Ui, id: &str, tab: ItemTab, items: &[Item], stride: usize) {
+        egui::Grid::new(id).num_columns(stride).show(ui, |ui| {
+            for i in 0..stride {
+                let slice = items
+                    .iter()
+                    .enumerate()
+                    .skip(i * stride)
+                    .take(stride)
+                    .map(|(i, item)| (i, item, tab))
+                    .collect::<Vec<_>>();
 
-                if self.render_item(ui, true, tab, i, item).clicked() {
-                    self.do_update(Message::SelectItem(SelectedItem(tab, i)));
-                }
+                self.render_item_multiple(ui, true, &slice);
 
-                if (i + 1) % 10 == 0 {
-                    ui.end_row();
-                }
+                ui.end_row();
             }
         });
     }
 
     fn render_inventory_tab(&mut self, ui: &mut Ui) {
-        let mut player = self.player.write();
+        let player = self.player.read();
         self.render_item_tab(
             ui,
             "player_inventory",
             ItemTab::Inventory,
-            &mut player.inventory,
+            &player.inventory,
+            INVENTORY_STRIDE,
         );
     }
 
     fn render_bank_tab(&mut self, ui: &mut Ui) {
-        let mut player = self.player.write();
-        self.render_item_tab(ui, "player_bank", ItemTab::Bank, &mut player.piggy_bank);
+        let player = self.player.read();
+        self.render_item_tab(
+            ui,
+            "player_bank",
+            ItemTab::Bank,
+            &player.piggy_bank,
+            BANK_STRIDE,
+        );
     }
 
     fn render_safe_tab(&mut self, ui: &mut Ui) {
-        let mut player = self.player.write();
-        self.render_item_tab(ui, "player_safe", ItemTab::Safe, &mut player.safe);
+        let player = self.player.read();
+        self.render_item_tab(ui, "player_safe", ItemTab::Safe, &player.safe, BANK_STRIDE);
     }
 
     fn render_forge_tab(&mut self, ui: &mut Ui) {
-        let mut player = self.player.write();
+        let player = self.player.read();
         self.render_item_tab(
             ui,
             "player_forge",
             ItemTab::Forge,
-            &mut player.defenders_forge,
+            &player.defenders_forge,
+            BANK_STRIDE,
         );
     }
 
     fn render_void_tab(&mut self, ui: &mut Ui) {
-        let mut player = self.player.write();
-        self.render_item_tab(ui, "player_void", ItemTab::Void, &mut player.void_vault);
+        let player = self.player.read();
+        self.render_item_tab(
+            ui,
+            "player_void",
+            ItemTab::Void,
+            &player.void_vault,
+            BANK_STRIDE,
+        );
     }
 
     fn render_buffs_tab(&mut self, ui: &mut Ui) {
-        let player = self.player.write();
+        let player = self.player.read();
 
         egui::Grid::new("player_buffs")
             .num_columns(10)
             .show(ui, |ui| {
-                for i in 0..player.buffs.len() {
-                    let buff = &player.buffs[i];
+                for i in 0..BUFF_STRIDE {
+                    let slice = player
+                        .buffs
+                        .iter()
+                        .enumerate()
+                        .skip(i * BUFF_STRIDE)
+                        .take(BUFF_STRIDE)
+                        .collect::<Vec<_>>();
 
-                    if self.render_buff(ui, i, buff).clicked() {
-                        self.do_update(Message::SelectBuff(SelectedBuff(i)));
-                    }
+                    self.render_buff_multiple(ui, &slice);
 
-                    if (i + 1) % 11 == 0 {
-                        ui.end_row();
-                    }
+                    ui.end_row();
                 }
             });
     }
 
     fn render_equipment_tab(&mut self, ui: &mut Ui) {
-        let player = self.player.write();
+        let player = self.player.read();
 
         ComboBox::from_id_source("player_loadouts").show_index(
             ui,
@@ -283,29 +301,30 @@ impl App {
                         ui,
                         false,
                         &[
-                            (&player.equipment_dyes[i], i, ItemTab::EquipmentDyes),
-                            (&player.equipment[i], i, ItemTab::Equipment),
+                            (i, &player.equipment_dyes[i], ItemTab::EquipmentDyes),
+                            (i, &player.equipment[i], ItemTab::Equipment),
                             (
-                                &current_loadout.accessory_dyes[i],
                                 i,
+                                &current_loadout.accessory_dyes[i],
                                 ItemTab::AccessoryDyes,
                             ),
                             (
-                                &current_loadout.vanity_accessories[i],
                                 i,
+                                &current_loadout.vanity_accessories[i],
                                 ItemTab::VanityAccessories,
                             ),
-                            (&current_loadout.accessories[i], i, ItemTab::Accessories),
+                            (i, &current_loadout.accessories[i], ItemTab::Accessories),
                         ],
                     );
+
                     if i < ARMOR_COUNT {
                         self.render_item_multiple(
                             ui,
                             false,
                             &[
-                                (&current_loadout.armor_dyes[i], i, ItemTab::ArmorDyes),
-                                (&current_loadout.vanity_armor[i], i, ItemTab::VanityArmor),
-                                (&current_loadout.armor[i], i, ItemTab::Armor),
+                                (i, &current_loadout.armor_dyes[i], ItemTab::ArmorDyes),
+                                (i, &current_loadout.vanity_armor[i], ItemTab::VanityArmor),
+                                (i, &current_loadout.armor[i], ItemTab::Armor),
                             ],
                         );
                     } else {
@@ -314,23 +333,24 @@ impl App {
                             false,
                             &[
                                 (
-                                    &current_loadout.accessory_dyes[ARMOR_COUNT - 1 + i],
                                     ARMOR_COUNT - 1 + i,
+                                    &current_loadout.accessory_dyes[ARMOR_COUNT - 1 + i],
                                     ItemTab::AccessoryDyes,
                                 ),
                                 (
-                                    &current_loadout.vanity_accessories[ARMOR_COUNT - 1 + i],
                                     ARMOR_COUNT - 1 + i,
+                                    &current_loadout.vanity_accessories[ARMOR_COUNT - 1 + i],
                                     ItemTab::VanityAccessories,
                                 ),
                                 (
-                                    &current_loadout.accessories[ARMOR_COUNT - 1 + i],
                                     ARMOR_COUNT - 1 + i,
+                                    &current_loadout.accessories[ARMOR_COUNT - 1 + i],
                                     ItemTab::Accessories,
                                 ),
                             ],
                         );
                     }
+
                     ui.end_row();
                 }
             });

@@ -28,11 +28,14 @@ pub const ACCESSORY_COUNT: usize = 7;
 /// My best guess is something to do with the Familiar set?
 pub const HIDDEN_VISUAL_COUNT: usize = ARMOR_COUNT + ACCESSORY_COUNT;
 pub const INVENTORY_COUNT: usize = 50;
+pub const INVENTORY_STRIDE: usize = 10;
 pub const COINS_COUNT: usize = 4;
 pub const AMMO_COUNT: usize = 4;
 pub const EQUIPMENT_COUNT: usize = 5;
 pub const BANK_COUNT: usize = 40;
+pub const BANK_STRIDE: usize = 10;
 pub const BUFF_COUNT: usize = 44;
+pub const BUFF_STRIDE: usize = 11;
 pub const SPAWNPOINT_LIMIT: usize = 200;
 pub const CELLPHONE_INFO_COUNT: usize = 13;
 pub const DPAD_BINDINGS_COUNT: usize = 4;

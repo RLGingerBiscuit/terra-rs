@@ -154,7 +154,6 @@ impl App {
                     let uv = Rect::from_min_size(min, sprite_size);
                     let size = vec2(final_width, final_height);
 
-                    // TODO: Display stack size if not None
                     ui.add_space(padding_x);
                     ui.vertical(|ui| {
                         ui.add_space(padding_y);
@@ -227,10 +226,9 @@ impl App {
         &self,
         ui: &mut Ui,
         render_stack: bool,
-        items: &[(&Item, usize, ItemTab)],
+        items: &[(usize, &Item, ItemTab)],
     ) {
-        for (item, index, tab) in items {
-            // TODO: Is there a way to avoid cloning these?
+        for (index, item, tab) in items {
             let index = index.to_owned();
             let tab = tab.to_owned();
             if self
@@ -317,6 +315,15 @@ impl App {
             spritesheet.as_ref(),
             None,
         )
+    }
+
+    pub fn render_buff_multiple(&self, ui: &mut Ui, buffs: &[(usize, &Buff)]) {
+        for (index, item) in buffs {
+            let index = index.to_owned();
+            if self.render_buff(ui, index, item).clicked() {
+                self.do_update(Message::SelectBuff(SelectedBuff(index)));
+            }
+        }
     }
 
     pub fn render_buff_name(&self, ui: &mut Ui, buff: &Buff, meta: &BuffMeta) {
