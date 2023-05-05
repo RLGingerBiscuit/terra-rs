@@ -30,6 +30,8 @@ macro_rules! selected_item {
     ($selected_item:expr,$selected_loadout:expr, $player:expr) => {
         match $selected_item.0 {
             ItemTab::Inventory => &mut $player.inventory[$selected_item.1],
+            ItemTab::Coins => &mut $player.coins[$selected_item.1],
+            ItemTab::Ammo => &mut $player.ammo[$selected_item.1],
             ItemTab::Bank => &mut $player.piggy_bank[$selected_item.1],
             ItemTab::Safe => &mut $player.safe[$selected_item.1],
             ItemTab::Forge => &mut $player.defenders_forge[$selected_item.1],
@@ -63,6 +65,8 @@ macro_rules! selected_item {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ItemTab {
     Inventory,
+    Coins,
+    Ammo,
     Bank,
     Safe,
     Forge,

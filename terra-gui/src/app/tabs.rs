@@ -3,8 +3,7 @@ use std::fmt::Display;
 use egui::{ComboBox, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
 use terra_core::{
-    utils, Difficulty, Item, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, INVENTORY_COUNT,
-    INVENTORY_STRIDE, LOADOUT_COUNT,
+    utils, Difficulty, Item, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, INVENTORY_STRIDE, LOADOUT_COUNT,
 };
 
 use crate::{enum_selectable_value, ui::UiExt};
@@ -191,8 +190,19 @@ impl App {
         self.render_selected_buff(ui);
     }
 
-    fn render_item_tab(&self, ui: &mut Ui, id: &str, tab: ItemTab, items: &[Item], stride: usize) {
-        egui::Grid::new(id).num_columns(stride).show(ui, |ui| {
+    fn render_item_tab<F>(
+        &self,
+        ui: &mut Ui,
+        id: &str,
+        tab: ItemTab,
+        items: &[Item],
+        num_columns: usize,
+        stride: usize,
+        extra_cols: F,
+    ) where
+        F: Fn(&mut Ui, usize),
+    {
+        egui::Grid::new(id).num_columns(num_columns).show(ui, |ui| {
             for i in 0..stride {
                 let slice = items
                     .iter()
@@ -204,6 +214,8 @@ impl App {
 
                 self.render_item_multiple(ui, true, &slice);
 
+                extra_cols(ui, i);
+
                 ui.end_row();
             }
         });
@@ -211,12 +223,28 @@ impl App {
 
     fn render_inventory_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
+
+        const EXTRA_STRIDE: usize = 2;
+
         self.render_item_tab(
             ui,
             "player_inventory",
             ItemTab::Inventory,
             &player.inventory,
+            INVENTORY_STRIDE + EXTRA_STRIDE,
             INVENTORY_STRIDE,
+            |ui, row| {
+                if row < 4 {
+                    self.render_item_multiple(
+                        ui,
+                        true,
+                        &[
+                            (row, &player.coins[row], ItemTab::Coins),
+                            (row, &player.ammo[row], ItemTab::Ammo),
+                        ],
+                    )
+                }
+            },
         );
     }
 
@@ -228,12 +256,22 @@ impl App {
             ItemTab::Bank,
             &player.piggy_bank,
             BANK_STRIDE,
+            BANK_STRIDE,
+            |_, _| {},
         );
     }
 
     fn render_safe_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
-        self.render_item_tab(ui, "player_safe", ItemTab::Safe, &player.safe, BANK_STRIDE);
+        self.render_item_tab(
+            ui,
+            "player_safe",
+            ItemTab::Safe,
+            &player.safe,
+            BANK_STRIDE,
+            BANK_STRIDE,
+            |_, _| {},
+        );
     }
 
     fn render_forge_tab(&mut self, ui: &mut Ui) {
@@ -244,6 +282,8 @@ impl App {
             ItemTab::Forge,
             &player.defenders_forge,
             BANK_STRIDE,
+            BANK_STRIDE,
+            |_, _| {},
         );
     }
 
@@ -255,6 +295,8 @@ impl App {
             ItemTab::Void,
             &player.void_vault,
             BANK_STRIDE,
+            BANK_STRIDE,
+            |_, _| {},
         );
     }
 
