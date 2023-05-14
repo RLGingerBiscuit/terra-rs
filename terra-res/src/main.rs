@@ -25,7 +25,7 @@ fn get_offsets(path: &Path) -> Result<HashMap<i32, [i32; 4]>> {
     let offset_regex =
         Regex::new(r"^.*id='(\d+)'.*ofs: -(\d+)px -(\d+)px; --w: (\d+)px; --h: (\d+)")?;
 
-    let mut text = String::new();
+    let mut text: String = String::new();
     File::open(path).unwrap().read_to_string(&mut text)?;
 
     let mut offsets = HashMap::new();
@@ -673,6 +673,8 @@ fn generate_spritesheet(
         .last()
         .unwrap();
 
+    let dot_sprite = image::open(res_fol.join(TRAPPED_CHEST_DOT))?;
+
     for i in -1..=last_sprite_id {
         let prefix = if text == "slot" { "Item" } else { "Buff" }.to_owned();
 
@@ -693,9 +695,6 @@ fn generate_spritesheet(
         let mut sprite = image::open(sprite_path)?;
 
         if trapped_chests.contains_key(&id) {
-            // TODO: Only load this once (once_cell?)
-            let dot_sprite = image::open(res_fol.join(TRAPPED_CHEST_DOT))?;
-
             let mut new_sprite = DynamicImage::new_rgba8(sprite.width() + 2, sprite.height() + 4);
             new_sprite.copy_from(&sprite, 0, 0)?;
             let start_x = new_sprite.width() - dot_sprite.width();
