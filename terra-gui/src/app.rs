@@ -199,7 +199,7 @@ impl App {
                         let item_meta = self.item_meta.clone();
 
                         self.do_task(move || {
-                            player.write().load(&*item_meta.read(), &path)?;
+                            player.write().load(&item_meta.read(), &path)?;
                             Ok(Message::Noop)
                         });
                     }
@@ -235,7 +235,7 @@ impl App {
                         .save_file()
                     {
                         self.do_task(move || {
-                            player.read().save(&*item_meta.read(), &path)?;
+                            player.read().save(&item_meta.read(), &path)?;
                             Ok(Message::Noop)
                         });
                     }
@@ -253,7 +253,7 @@ impl App {
                     // TODO: Maybe remove this at one point?
                     player.research.clear();
                     for item in &*item_meta {
-                        if let None = item.forbidden {
+                        if item.forbidden.is_none() {
                             player.research.push(ResearchItem {
                                 internal_name: item.internal_name.to_owned(),
                                 stack: item.sacrifices,
