@@ -9,7 +9,7 @@ use app::App;
 
 fn main() {
     let options = eframe::NativeOptions {
-        initial_window_size: Some(vec2(800., 800.)),
+        initial_window_size: Some(vec2(800., 600.)),
         ..Default::default()
     };
 
