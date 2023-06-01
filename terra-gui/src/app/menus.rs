@@ -1,4 +1,5 @@
 use egui::Ui;
+use egui_dock::{Node, NodeIndex};
 
 use crate::ui::UiExt;
 
@@ -53,6 +54,7 @@ impl App {
             Tabs::Void,
             Tabs::Buffs,
             Tabs::Equipment,
+            Tabs::Research,
         ] {
             let mut disabled = !self.closed_tabs.contains_key(&tab);
 
@@ -67,7 +69,18 @@ impl App {
                     let parent = tree.iter_mut().nth(parent_index.0).unwrap();
                     parent.remove_tab(node_index);
                     self.closed_tabs.insert(tab, parent_index);
-                    tree.remove_empty_leaf();
+
+                    // NOTE: Below is just inlined remove_empty_leaf (which was removed in egui_dock v0.5.0)
+                    let mut nodes = tree.iter().enumerate();
+                    let node = nodes.find_map(|(index, node)| match node {
+                        Node::Leaf { tabs, .. } if tabs.is_empty() => Some(index),
+                        _ => None,
+                    });
+
+                    if let Some(node) = node {
+                        let node = NodeIndex(node);
+                        (*tree).remove_leaf(node);
+                    }
                 }
             }
         }

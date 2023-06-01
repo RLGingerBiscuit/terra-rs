@@ -25,6 +25,24 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug executable 'terra-tests'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=terra-tests",
+                    "--package=terra-tests"
+                ],
+                "filter": {
+                    "name": "terra-tests",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug executable 'terra-tui'",
             "cargo": {
                 "args": [
@@ -39,6 +57,24 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}"
-        }
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'terra-gui'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=terra-gui",
+                    "--package=terra-gui"
+                ],
+                "filter": {
+                    "name": "terra-gui",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
     ]
 }

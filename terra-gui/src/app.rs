@@ -8,7 +8,7 @@ use std::{ops::DerefMut, path::PathBuf, sync::Arc, thread};
 
 use eframe::CreationContext;
 use egui::{self, Id, Key, KeyboardShortcut, LayerId, Modifiers, TextureHandle, Ui};
-use egui_dock::{DockArea, NodeIndex, StyleBuilder, Tree};
+use egui_dock::{DockArea, NodeIndex, Tree};
 use flume::{Receiver, Sender};
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
@@ -301,11 +301,8 @@ impl eframe::App for App {
         ui.set_enabled(!self.modal_open());
 
         DockArea::new(self.tree.clone().write().deref_mut())
-            .style(
-                StyleBuilder::from_egui(&ctx.style())
-                    .show_close_buttons(false)
-                    .build(),
-            )
+            .style(egui_dock::Style::from_egui(&ctx.style()))
+            .show_close_buttons(false)
             .show_inside(&mut ui, self);
     }
 }

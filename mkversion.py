@@ -23,9 +23,9 @@ def main():
     versions: list[tuple[str, int]] = []
 
     for line in lines:
-        split = line.split(" = ")
-        name = split[0]
-        version = int(split[1])
+        split = line.split("=")
+        name = split[0].strip()
+        version = int(split[1].strip())
         versions.append((name, version))
 
     func = f"""    match version {{
