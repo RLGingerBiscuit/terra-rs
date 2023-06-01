@@ -37,7 +37,7 @@ impl ResearchItem {
     pub fn save(&self, writer: &mut dyn Write) -> Result<()> {
         writer.write_lpstring(&self.internal_name)?;
         writer.write_i32::<LE>(self.stack)?;
-        
+
         Ok(())
     }
 }

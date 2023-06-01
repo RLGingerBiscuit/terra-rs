@@ -9,7 +9,6 @@ use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 use crypto::aessafe::{AesSafe128Decryptor, AesSafe128Encryptor};
 use serde::{Deserialize, Serialize};
-
 use serde_big_array::BigArray;
 
 use crate::{
