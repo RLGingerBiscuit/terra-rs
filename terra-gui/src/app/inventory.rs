@@ -62,6 +62,13 @@ macro_rules! selected_item {
     };
 }
 
+#[macro_export]
+macro_rules! selected_buff {
+    ($selected_buff:expr,$player:expr) => {
+        &mut $player.buffs[$selected_buff.0]
+    };
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ItemTab {
     Inventory,
@@ -190,30 +197,25 @@ impl App {
         response
     }
 
-    pub fn render_item(
+    pub fn render_item_slot(
         &self,
         ui: &mut Ui,
-        render_stack: bool,
-        tab: ItemTab,
-        index: usize,
-        item: &Item,
+        item_id: i32,
+        selected: bool,
+        stack_size: Option<i32>,
     ) -> Response {
         let spritesheet = self.item_spritesheet.read();
-
-        let item_meta = &*self.item_meta.read();
-        let meta = meta_or_default!(item_meta, item.id);
-
-        let min = pos2(meta.x as f32, meta.y as f32);
-        let size = vec2(meta.width as f32, meta.height as f32);
-        let rect = Rect::from_min_size(min, size);
-
-        let selected = self.selected_item.0 == tab && self.selected_item.1 == index;
 
         if spritesheet.is_none() && !self.busy {
             self.do_update(Message::LoadItemSpritesheet);
         }
 
-        let stack = if render_stack { Some(item.stack) } else { None };
+        let item_meta = &*self.item_meta.read();
+        let meta = meta_or_default!(item_meta, item_id);
+
+        let min = pos2(meta.x as f32, meta.y as f32);
+        let size = vec2(meta.width as f32, meta.height as f32);
+        let rect = Rect::from_min_size(min, size);
 
         self.render_slot(
             ui,
@@ -222,24 +224,29 @@ impl App {
             rect,
             selected,
             spritesheet.as_ref(),
-            stack,
+            stack_size,
         )
     }
 
-    pub fn render_item_multiple(
+    pub fn render_item_slots(&self, ui: &mut Ui, items: &[(i32, Option<i32>)]) {
+        for (item_id, stack_size) in items {
+            self.render_item_slot(ui, *item_id, false, *stack_size);
+        }
+    }
+
+    pub fn render_item_slots_special(
         &self,
         ui: &mut Ui,
-        render_stack: bool,
-        items: &[(usize, &Item, ItemTab)],
+        items: &[(i32, Option<i32>, ItemTab, usize)],
     ) {
-        for (index, item, tab) in items {
-            let index = index.to_owned();
-            let tab = tab.to_owned();
+        for (item_id, stack_size, tab, index) in items {
+            let selected = &self.selected_item.0 == tab && &self.selected_item.1 == index;
+
             if self
-                .render_item(ui, render_stack, tab, index, item)
+                .render_item_slot(ui, *item_id, selected, *stack_size)
                 .clicked()
             {
-                self.do_update(Message::SelectItem(SelectedItem(tab, index)));
+                self.do_update(Message::SelectItem(SelectedItem(*tab, *index)));
             }
         }
     }
@@ -279,6 +286,9 @@ impl App {
             .show(ui, |ui| {
                 ui.label("Id: ");
                 ui.drag_value_with_buttons(&mut item.id, 1., 0..=largest_item_id);
+                if ui.button("\u{1f50e}").clicked() {
+                    self.do_update(Message::OpenItemBrowser);
+                }
                 ui.end_row();
 
                 ui.label("Stack: ");
@@ -294,21 +304,19 @@ impl App {
             });
     }
 
-    pub fn render_buff(&self, ui: &mut Ui, index: usize, buff: &Buff) -> Response {
+    pub fn render_buff_slot(&self, ui: &mut Ui, buff_id: i32, selected: bool) -> Response {
         let spritesheet = self.buff_spritesheet.read();
-
-        let buff_meta = &*self.buff_meta.read();
-        let meta = meta_or_default!(buff_meta, buff.id);
-
-        let min = pos2(meta.x as f32, meta.y as f32);
-        let size = vec2(BUFF_SPRITE_SIZE, BUFF_SPRITE_SIZE);
-        let rect = Rect::from_min_size(min, size);
-
-        let selected = self.selected_buff.0 == index;
 
         if spritesheet.is_none() && !self.busy {
             self.do_update(Message::LoadBuffSpritesheet);
         }
+
+        let buff_meta = &*self.buff_meta.read();
+        let meta = meta_or_default!(buff_meta, buff_id);
+
+        let min = pos2(meta.x as f32, meta.y as f32);
+        let size = vec2(BUFF_SPRITE_SIZE, BUFF_SPRITE_SIZE);
+        let rect = Rect::from_min_size(min, size);
 
         self.render_slot(
             ui,
@@ -321,11 +329,17 @@ impl App {
         )
     }
 
-    pub fn render_buff_multiple(&self, ui: &mut Ui, buffs: &[(usize, &Buff)]) {
-        for (index, item) in buffs {
-            let index = index.to_owned();
-            if self.render_buff(ui, index, item).clicked() {
-                self.do_update(Message::SelectBuff(SelectedBuff(index)));
+    pub fn render_buff_slots(&self, ui: &mut Ui, buffs: &[i32]) {
+        for buff_id in buffs {
+            self.render_buff_slot(ui, *buff_id, false);
+        }
+    }
+
+    pub fn render_buff_slots_special(&self, ui: &mut Ui, buffs: &[(i32, usize)]) {
+        for (buff_id, index) in buffs {
+            let selected = &self.selected_buff.0 == index;
+            if self.render_buff_slot(ui, *buff_id, selected).clicked() {
+                self.do_update(Message::SelectBuff(SelectedBuff(*index)));
             }
         }
     }
@@ -355,7 +369,7 @@ impl App {
     pub fn render_selected_buff(&mut self, ui: &mut Ui) {
         let mut player = self.player.write();
 
-        let buff = &mut player.buffs[self.selected_buff.0];
+        let buff = selected_buff!(self.selected_buff, player);
 
         let buff_meta = &*self.buff_meta.read();
         let meta = meta_or_default!(buff_meta, buff.id);
@@ -372,6 +386,9 @@ impl App {
             .show(ui, |ui| {
                 ui.label("Id: ");
                 ui.drag_value_with_buttons(&mut buff.id, 1., 0..=largest_buff_id);
+                if ui.button("\u{1f50e}").clicked() {
+                    self.do_update(Message::OpenBuffBrowser);
+                }
                 ui.end_row();
 
                 ui.label("Duration: ");

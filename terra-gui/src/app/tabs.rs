@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use egui::{ComboBox, Ui, WidgetText};
+use egui::{ComboBox, Grid, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
 use terra_core::{
     utils, Difficulty, Item, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, INVENTORY_STRIDE, LOADOUT_COUNT,
@@ -209,10 +209,10 @@ impl App {
                     .enumerate()
                     .skip(i * stride)
                     .take(stride)
-                    .map(|(i, item)| (i, item, tab))
+                    .map(|(index, item)| (item.id, Some(item.stack), tab, index))
                     .collect::<Vec<_>>();
 
-                self.render_item_multiple(ui, true, &slice);
+                self.render_item_slots_special(ui, &slice);
 
                 extra_cols(ui, i);
 
@@ -235,14 +235,16 @@ impl App {
             INVENTORY_STRIDE,
             |ui, row| {
                 if row < 4 {
-                    self.render_item_multiple(
+                    let coins_item = &player.coins[row];
+                    let ammo_item = &player.ammo[row];
+
+                    self.render_item_slots_special(
                         ui,
-                        true,
                         &[
-                            (row, &player.coins[row], ItemTab::Coins),
-                            (row, &player.ammo[row], ItemTab::Ammo),
+                            (coins_item.id, Some(coins_item.stack), ItemTab::Coins, row),
+                            (ammo_item.id, Some(ammo_item.stack), ItemTab::Ammo, row),
                         ],
-                    )
+                    );
                 }
             },
         );
@@ -303,23 +305,22 @@ impl App {
     fn render_buffs_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
 
-        egui::Grid::new("player_buffs")
-            .num_columns(10)
-            .show(ui, |ui| {
-                for i in 0..BUFF_STRIDE {
-                    let slice = player
-                        .buffs
-                        .iter()
-                        .enumerate()
-                        .skip(i * BUFF_STRIDE)
-                        .take(BUFF_STRIDE)
-                        .collect::<Vec<_>>();
+        Grid::new("player_buffs").num_columns(10).show(ui, |ui| {
+            for i in 0..BUFF_STRIDE {
+                let slice = player
+                    .buffs
+                    .iter()
+                    .enumerate()
+                    .skip(i * BUFF_STRIDE)
+                    .take(BUFF_STRIDE)
+                    .map(|(index, buff)| (buff.id, index))
+                    .collect::<Vec<_>>();
 
-                    self.render_buff_multiple(ui, &slice);
+                self.render_buff_slots_special(ui, &slice);
 
-                    ui.end_row();
-                }
-            });
+                ui.end_row();
+            }
+        });
     }
 
     fn render_equipment_tab(&mut self, ui: &mut Ui) {
@@ -339,55 +340,67 @@ impl App {
                 let current_loadout = &player.loadouts[self.selected_loadout.0];
 
                 for i in 0..5 {
-                    self.render_item_multiple(
+                    let equipment_dye = &player.equipment_dyes[i];
+                    let equipment_item = &player.equipment[i];
+                    let accessory_dye = &current_loadout.accessory_dyes[i];
+                    let vanity_accessory_item = &current_loadout.vanity_accessories[i];
+                    let accessory_item = &current_loadout.accessories[i];
+
+                    self.render_item_slots_special(
                         ui,
-                        false,
                         &[
-                            (i, &player.equipment_dyes[i], ItemTab::EquipmentDyes),
-                            (i, &player.equipment[i], ItemTab::Equipment),
+                            (equipment_dye.id, None, ItemTab::EquipmentDyes, i),
+                            (equipment_item.id, None, ItemTab::Equipment, i),
+                            (accessory_dye.id, None, ItemTab::AccessoryDyes, i),
                             (
-                                i,
-                                &current_loadout.accessory_dyes[i],
-                                ItemTab::AccessoryDyes,
-                            ),
-                            (
-                                i,
-                                &current_loadout.vanity_accessories[i],
+                                vanity_accessory_item.id,
+                                None,
                                 ItemTab::VanityAccessories,
+                                i,
                             ),
-                            (i, &current_loadout.accessories[i], ItemTab::Accessories),
+                            (accessory_item.id, None, ItemTab::Accessories, i),
                         ],
                     );
 
                     if i < ARMOR_COUNT {
-                        self.render_item_multiple(
+                        let armor_dye = &current_loadout.armor_dyes[i];
+                        let vanity_armor = &current_loadout.vanity_armor[i];
+                        let armor = &current_loadout.armor[i];
+
+                        self.render_item_slots_special(
                             ui,
-                            false,
                             &[
-                                (i, &current_loadout.armor_dyes[i], ItemTab::ArmorDyes),
-                                (i, &current_loadout.vanity_armor[i], ItemTab::VanityArmor),
-                                (i, &current_loadout.armor[i], ItemTab::Armor),
+                                (armor_dye.id, None, ItemTab::ArmorDyes, i),
+                                (vanity_armor.id, None, ItemTab::VanityArmor, i),
+                                (armor.id, None, ItemTab::Armor, i),
                             ],
                         );
                     } else {
-                        self.render_item_multiple(
+                        let accessory_dye = &current_loadout.accessory_dyes[ARMOR_COUNT - 1 + i];
+                        let vanity_accessory =
+                            &current_loadout.vanity_accessories[ARMOR_COUNT - 1 + i];
+                        let accessory = &current_loadout.accessories[ARMOR_COUNT - 1 + i];
+
+                        self.render_item_slots_special(
                             ui,
-                            false,
                             &[
                                 (
-                                    ARMOR_COUNT - 1 + i,
-                                    &current_loadout.accessory_dyes[ARMOR_COUNT - 1 + i],
+                                    accessory_dye.id,
+                                    None,
                                     ItemTab::AccessoryDyes,
+                                    ARMOR_COUNT - 1 + i,
                                 ),
                                 (
-                                    ARMOR_COUNT - 1 + i,
-                                    &current_loadout.vanity_accessories[ARMOR_COUNT - 1 + i],
+                                    vanity_accessory.id,
+                                    None,
                                     ItemTab::VanityAccessories,
+                                    ARMOR_COUNT - 1 + i,
                                 ),
                                 (
-                                    ARMOR_COUNT - 1 + i,
-                                    &current_loadout.accessories[ARMOR_COUNT - 1 + i],
+                                    accessory.id,
+                                    None,
                                     ItemTab::Accessories,
+                                    ARMOR_COUNT - 1 + i,
                                 ),
                             ],
                         );

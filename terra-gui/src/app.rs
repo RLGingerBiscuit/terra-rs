@@ -7,7 +7,7 @@ mod tasks;
 use std::{ops::DerefMut, path::PathBuf, sync::Arc, thread};
 
 use eframe::CreationContext;
-use egui::{self, Id, Key, KeyboardShortcut, LayerId, Modifiers, TextureHandle, Ui};
+use egui::{self, Id, Key, KeyboardShortcut, LayerId, Modifiers, TextureHandle, Ui, Vec2};
 use egui_dock::{DockArea, NodeIndex, Tree};
 use flume::{Receiver, Sender};
 use once_cell::sync::Lazy;
@@ -15,6 +15,8 @@ use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 
 use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem};
+
+use crate::{selected_buff, selected_item};
 
 use self::{
     inventory::{ItemTab, SelectedBuff, SelectedItem, SelectedLoadout},
@@ -52,6 +54,12 @@ pub enum Message {
     SelectBuff(SelectedBuff),
     RemoveAllResearch,
     AddAllResearch,
+    OpenItemBrowser,
+    CloseItemBrowser,
+    OpenBuffBrowser,
+    CloseBuffBrowser,
+    SetCurrentItemId(i32),
+    SetCurrentBuffId(i32),
 }
 
 #[allow(dead_code)]
@@ -75,9 +83,13 @@ pub struct App {
     tree: Arc<RwLock<Tree<Tabs>>>,
     closed_tabs: FxHashMap<Tabs, NodeIndex>,
 
+    search_term: String,
+
     error: Option<anyhow::Error>,
     busy: bool,
     show_about: bool,
+    show_item_browser: bool,
+    show_buff_browser: bool,
 }
 
 impl App {
@@ -108,14 +120,22 @@ impl App {
             tree: Arc::new(RwLock::new(default_ui())),
             closed_tabs: FxHashMap::default(),
 
+            search_term: String::new(),
+
             error: None,
             busy: false,
             show_about: false,
+            show_item_browser: false,
+            show_buff_browser: false,
         }
     }
 
     fn modal_open(&self) -> bool {
-        self.busy || self.error.is_some() || self.show_about
+        self.busy
+            || self.error.is_some()
+            || self.show_about
+            || self.show_item_browser
+            || self.show_buff_browser
     }
 
     fn do_task(&mut self, task: impl 'static + Send + Sync + FnOnce() -> anyhow::Result<Message>) {
@@ -261,6 +281,24 @@ impl App {
                         }
                     }
                 }
+                Message::OpenItemBrowser => self.show_item_browser = true,
+                Message::CloseItemBrowser => {
+                    self.search_term.clear();
+                    self.show_item_browser = false
+                }
+                Message::OpenBuffBrowser => self.show_buff_browser = true,
+                Message::CloseBuffBrowser => {
+                    self.search_term.clear();
+                    self.show_buff_browser = false
+                }
+                Message::SetCurrentItemId(id) => {
+                    let mut player = self.player.write();
+                    selected_item!(self.selected_item, self.selected_loadout, player).id = id;
+                }
+                Message::SetCurrentBuffId(id) => {
+                    let mut player = self.player.write();
+                    selected_buff!(self.selected_buff, player).id = id;
+                }
             }
         }
     }
@@ -288,21 +326,26 @@ impl eframe::App for App {
         self.handle_keyboard(ctx);
 
         self.render_menu(ctx);
+
         self.render_about(ctx);
         self.render_error(ctx);
+        self.render_item_browser(ctx);
+        self.render_buff_browser(ctx);
 
         let layer_id = LayerId::background();
         let max_rect = ctx.available_rect();
         let clip_rect = ctx.available_rect();
         let id = Id::new("dock_area");
+
         let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
 
-        ui.spacing_mut().item_spacing = [8.0, 8.0].into();
-        ui.set_enabled(!self.modal_open());
+        ui.spacing_mut().item_spacing = Vec2::splat(8.);
 
-        DockArea::new(self.tree.clone().write().deref_mut())
-            .style(egui_dock::Style::from_egui(&ctx.style()))
-            .show_close_buttons(false)
-            .show_inside(&mut ui, self);
+        // TODO: This isn't working for some reason
+        ui.add_enabled_ui(!self.modal_open(), |ui| {
+            DockArea::new(self.tree.clone().write().deref_mut())
+                .style(egui_dock::Style::from_egui(&ctx.style()))
+                .show_inside(ui, self);
+        });
     }
 }
