@@ -86,10 +86,12 @@ pub trait TerraReadExt: io::Read {
             read += 1;
         }
 
-        // TODO: Don't unwrap here
-        let string = String::from_utf8(buf).unwrap();
+        let result = String::from_utf8(buf);
 
-        Ok(string)
+        match result {
+            Ok(string) => Ok(string),
+            Err(_) => Err(IOError::from(IOErrorKind::InvalidData)),
+        }
     }
 
     #[inline]
