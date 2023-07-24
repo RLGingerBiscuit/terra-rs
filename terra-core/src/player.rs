@@ -53,7 +53,7 @@ pub struct Player {
     pub hair_style: i32,
     pub hair_dye: u8,
 
-    pub hide_equipment: [bool; 5],
+    pub hide_equipment: [bool; EQUIPMENT_COUNT],
 
     pub male: bool,
     pub skin_variant: u8,
@@ -691,7 +691,7 @@ impl Player {
         writer.write_i32::<LE>(self.version)?;
 
         if self.version >= 135 {
-            writer.write_u64::<LE>(MAGIC_NUMBER | (3 << 56))?;
+            writer.write_u64::<LE>(MAGIC_NUMBER | (u64::from(FileType::Player) << 56u64))?;
             writer.write_u32::<LE>(self.revision)?;
             writer.write_u64::<LE>(self.favourited)?;
         }

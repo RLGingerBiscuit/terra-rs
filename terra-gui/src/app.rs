@@ -254,6 +254,8 @@ impl App {
                         .add_filter("All Files", &["*"])
                         .save_file()
                     {
+                        self.player_path = Some(path.clone());
+
                         self.do_task(move || {
                             player.read().save(&item_meta.read(), &path)?;
                             Ok(Message::Noop)
@@ -270,7 +272,7 @@ impl App {
                     let mut player = self.player.write();
                     let item_meta = self.item_meta.read();
 
-                    // TODO: Maybe remove this at one point?
+                    // TODO: Maybe remove this at some point?
                     player.research.clear();
                     for item in &*item_meta {
                         if item.forbidden.is_none() {

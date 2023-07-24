@@ -1,3 +1,8 @@
+// NOTE: This is for serde_repr
+#![allow(non_camel_case_types)]
+
+use std::ops::Shl;
+
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[repr(u8)]
@@ -33,12 +38,26 @@ impl From<FileType> for u8 {
 
 impl PartialEq<u8> for FileType {
     fn eq(&self, other: &u8) -> bool {
-        &u8::from(self.clone()) == other
+        u8::from(self.clone()) == *other
     }
 }
 
 impl PartialEq<FileType> for u8 {
     fn eq(&self, other: &FileType) -> bool {
-        self == &u8::from(other.clone())
+        *self == u8::from(other.clone())
+    }
+}
+
+impl From<FileType> for u64 {
+    fn from(d: FileType) -> Self {
+        u64::from(u8::from(d))
+    }
+}
+
+impl Shl<u64> for FileType {
+    type Output = u64;
+
+    fn shl(self, rhs: u64) -> Self::Output {
+        u64::from(self) << rhs
     }
 }
