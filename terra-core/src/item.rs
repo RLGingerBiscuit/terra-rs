@@ -1,3 +1,5 @@
+// NOTE: This is for serde_repr
+#![allow(non_camel_case_types)]
 mod item_data;
 mod item_meta;
 mod research_item;
@@ -5,7 +7,7 @@ mod research_item;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 pub use item_data::{Item, ItemError};
-pub use item_meta::ItemMeta;
+pub use item_meta::{ItemMeta, ItemType};
 pub use research_item::ResearchItem;
 
 #[repr(i32)]

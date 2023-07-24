@@ -60,7 +60,7 @@ pub use bool_byte::{BoolByte, BoolByteError};
 pub use buff::{Buff, BuffMeta, BuffType};
 pub use difficulty::Difficulty;
 pub use file_type::FileType;
-pub use item::{Item, ItemError, ItemMeta, ItemRarity, ResearchItem};
+pub use item::{Item, ItemError, ItemMeta, ItemRarity, ItemType, ResearchItem};
 pub use journey_powers::{JourneyPowerId, JourneyPowers};
 pub use loadout::Loadout;
 pub use player::{Player, PlayerError};

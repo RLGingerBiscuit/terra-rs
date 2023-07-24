@@ -1,10 +1,36 @@
+// NOTE: This is for serde_repr
+#![allow(non_camel_case_types)]
+
 use std::{fs::File, io::BufReader};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 
 use crate::ItemRarity;
+
+#[repr(u8)]
+#[derive(
+    Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize_repr, Deserialize_repr,
+)]
+// NOTE: Will there be any conflicts here?
+pub enum ItemType {
+    Tile,
+    Wall,
+    Ammo,
+    Melee,
+    Ranged,
+    Magic,
+    Summon,
+    HeadArmor,
+    BodyArmor,
+    LegArmor,
+    Accessory,
+    Vanity,
+    #[default]
+    Other,
+}
 
 #[skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -22,7 +48,7 @@ pub struct ItemMeta {
     pub rarity: ItemRarity,
     pub use_time: Option<i32>,
     pub damage: Option<i32>,
-    pub crit: Option<i32>,
+    pub crit_chance: Option<i32>,
     pub knockback: Option<f32>,
     pub defense: Option<i32>,
     pub use_ammo: Option<i32>,
@@ -37,8 +63,12 @@ pub struct ItemMeta {
     pub range_boost: Option<i32>,
     pub tooltip: Option<Vec<String>>,
     pub forbidden: Option<bool>,
-    pub consumable: bool,
-    pub expert: bool,
+    pub consumes_tile: Option<i32>,
+    pub item_type: Option<ItemType>,
+    pub is_material: Option<bool>,
+    pub is_consumable: Option<bool>,
+    pub is_quest_item: Option<bool>,
+    pub is_expert: Option<bool>,
 }
 
 impl Default for ItemMeta {
@@ -57,7 +87,7 @@ impl Default for ItemMeta {
             rarity: ItemRarity::White,
             use_time: None,
             damage: None,
-            crit: None,
+            crit_chance: None,
             knockback: None,
             defense: None,
             use_ammo: None,
@@ -72,8 +102,12 @@ impl Default for ItemMeta {
             range_boost: None,
             tooltip: None,
             forbidden: None,
-            consumable: false,
-            expert: false,
+            consumes_tile: None,
+            item_type: None,
+            is_material: None,
+            is_consumable: None,
+            is_quest_item: None,
+            is_expert: None,
         }
     }
 }

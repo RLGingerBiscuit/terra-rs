@@ -6,15 +6,15 @@ use std::{
     str::FromStr,
 };
 
+use fs_extra::dir::{copy as copy_dir, create as create_dir, CopyOptions as DirCopyOptions};
+
 use anyhow::Result;
 use image::{DynamicImage, GenericImage, GenericImageView};
 use itertools::Itertools;
 use regex::{Captures, Regex};
-
-use fs_extra::dir::{copy as copy_dir, create as create_dir, CopyOptions as DirCopyOptions};
-
 use rlua::{Lua, Table};
-use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, PrefixMeta};
+
+use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, ItemType, PrefixMeta};
 
 const ITEM_DATA_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/data";
 const BUFF_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Buff_IDs";
@@ -304,6 +304,41 @@ fn expand_templates(
     }
 }
 
+fn get_item_type(lua_item: &Table<'_>) -> Option<ItemType> {
+    for (name, item_type) in [
+        ("ammo", ItemType::Ammo),
+        ("melee", ItemType::Melee),
+        ("ranged", ItemType::Ranged),
+        ("magic", ItemType::Magic),
+        ("summon", ItemType::Summon),
+        ("accessory", ItemType::Accessory),
+        ("vanity", ItemType::Vanity),
+        ("vanity", ItemType::Vanity),
+    ] {
+        if let Some(b) = lua_item.get(name).ok() {
+            if b {
+                return Some(item_type);
+            }
+        }
+    }
+
+    for (name, item_type) in [
+        ("createTile", ItemType::Tile),
+        ("createWall", ItemType::Wall),
+        ("headSlot", ItemType::HeadArmor),
+        ("bodySlot", ItemType::BodyArmor),
+        ("legsSlot", ItemType::LegArmor),
+    ] {
+        if let Some(n) = lua_item.get::<_, i32>(name).ok() {
+            if n >= 0 {
+                return Some(item_type);
+            }
+        }
+    }
+
+    None
+}
+
 fn get_item_meta(
     template: &Regex,
     game: &serde_json::Value,
@@ -371,21 +406,21 @@ fn get_item_meta(
                 let value = lua_item.get("value").unwrap_or(0);
                 #[allow(unused)] // but it's not unused tho
                 let rarity = ItemRarity::from(lua_item.get("rare").unwrap_or(0));
-                let use_time: Option<i32> = lua_item.get("useTime").ok();
-                let damage: Option<i32> = lua_item.get("damage").ok();
-                let crit: Option<i32> = lua_item.get("crit").ok();
-                let knockback: Option<f32> = lua_item.get("knockBack").ok();
-                let defense: Option<i32> = lua_item.get("defense").ok();
-                let use_ammo: Option<i32> = lua_item.get("useAmmo").ok();
-                let mana_cost: Option<i32> = lua_item.get("mana").ok();
-                let heal_life: Option<i32> = lua_item.get("healLife").ok();
-                let heal_mana: Option<i32> = lua_item.get("healMana").ok();
-                let pickaxe_power: Option<i32> = lua_item.get("pick").ok();
-                let axe_power: Option<i32> = lua_item.get("axe").ok();
-                let hammer_power: Option<i32> = lua_item.get("hammer").ok();
-                let fishing_power: Option<i32> = lua_item.get("fishingPole").ok();
-                let fishing_bait: Option<i32> = lua_item.get("bait").ok();
-                let range_boost: Option<i32> = lua_item.get("tileBoost").ok();
+                let use_time = lua_item.get("useTime").ok();
+                let damage = lua_item.get("damage").ok();
+                let crit_chance = lua_item.get("crit").ok();
+                let knockback = lua_item.get("knockBack").ok();
+                let defense = lua_item.get("defense").ok();
+                let use_ammo = lua_item.get("useAmmo").ok();
+                let mana_cost = lua_item.get("mana").ok();
+                let heal_life = lua_item.get("healLife").ok();
+                let heal_mana = lua_item.get("healMana").ok();
+                let pickaxe_power = lua_item.get("pick").ok();
+                let axe_power = lua_item.get("axe").ok();
+                let hammer_power = lua_item.get("hammer").ok();
+                let fishing_power = lua_item.get("fishingPole").ok();
+                let fishing_bait = lua_item.get("bait").ok();
+                let range_boost = lua_item.get("tileBoost").ok();
                 let sacrifices = lua_item.get("sacrifices").unwrap_or(1);
 
                 let tooltip = items["ItemTooltip"][&internal_name].as_str().map(|tt| {
@@ -399,9 +434,16 @@ fn get_item_meta(
                 } else {
                     None
                 };
-                let consumable = lua_item.get("consumable").unwrap_or(false);
-                let expert = lua_item.get("expert").unwrap_or(false);
                 let rarity = ItemRarity::from(lua_item.get("rarity").unwrap_or(0));
+
+                let consumes_tile = lua_item.get("tileWand").ok();
+
+                let item_type = get_item_type(&lua_item);
+
+                let is_material = lua_item.get("material").ok();
+                let is_consumable = lua_item.get("consumable").ok();
+                let is_quest_item = lua_item.get("questItem").ok();
+                let is_expert = lua_item.get("expert").ok();
 
                 let [x, y, width, height] = offsets.get(&id).unwrap_or(&[-1, -1, 0, 0]);
                 let x = x.to_owned();
@@ -422,7 +464,7 @@ fn get_item_meta(
                     rarity,
                     use_time,
                     damage,
-                    crit,
+                    crit_chance,
                     knockback,
                     defense,
                     use_ammo,
@@ -438,8 +480,12 @@ fn get_item_meta(
                     sacrifices,
                     tooltip,
                     forbidden,
-                    consumable,
-                    expert,
+                    consumes_tile,
+                    is_material,
+                    item_type,
+                    is_consumable,
+                    is_quest_item,
+                    is_expert,
                 };
 
                 item_meta.push(item);
