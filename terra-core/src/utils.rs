@@ -125,6 +125,82 @@ pub fn version_lookup(version: i32) -> &'static str {
     }
 }
 
+pub fn use_time_lookup(use_time: i32) -> &'static str {
+    match use_time {
+        i32::MIN..=8 => "insanely fast",
+        9..=20 => "very fast",
+        21..=25 => "fast",
+        26..=30 => "average",
+        31..=35 => "slow",
+        36..=45 => "very slow",
+        46..=55 => "extremely slow",
+        _ => "insanely slow",
+    }
+}
+
+pub fn knockback_lookup(knockback: f32) -> &'static str {
+    // NOTE: This is the only way this'll work, floating-point is weird
+    if knockback <= 1.5 {
+        "extremely weak"
+    } else if knockback <= 3. {
+        "very weak"
+    } else if knockback <= 4. {
+        "weak"
+    } else if knockback <= 6. {
+        "average"
+    } else if knockback <= 7. {
+        "strong"
+    } else if knockback <= 9. {
+        "very strong"
+    } else if knockback <= 11. {
+        "extremely strong"
+    } else {
+        "insane"
+    }
+}
+
+pub fn coins_lookup(value: i32) -> String {
+    if value <= 0 {
+        return "Nothing".to_owned();
+    }
+
+    let mut parts = Vec::with_capacity(4);
+
+    let value = (value / 5) as f32;
+
+    let platinum = (value / 100. / 100. / 100.).floor() as i32;
+    let gold = (value / 100. / 100.).floor() as i32 % 100;
+    let silver = (value / 100.).floor() as i32 % 100;
+    let copper = value as i32 % 100;
+
+    if platinum > 0 {
+        parts.push(format!("{} Platinum", platinum));
+    }
+    if gold > 0 {
+        parts.push(format!("{} Gold", gold));
+    }
+    if silver > 0 {
+        parts.push(format!("{} Silver", silver));
+    }
+    if copper > 0 {
+        parts.push(format!("{} Copper", copper));
+    }
+
+    let mut string = String::new();
+
+    let mut iter = parts.into_iter().peekable();
+
+    while let Some(next) = iter.next() {
+        string += &next;
+
+        if iter.peek().is_some() {
+            string += ", ";
+        }
+    }
+
+    string
+}
+
 pub fn from_hex(hex: &str) -> Result<Color, ParseIntError> {
     let start = if hex.starts_with('#') { 1 } else { 0 };
     let r = u8::from_str_radix(&hex[start..2], 16)?;

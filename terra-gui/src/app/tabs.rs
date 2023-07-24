@@ -2,11 +2,13 @@ use std::fmt::Display;
 
 use egui::{ComboBox, Grid, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
+use parking_lot::RwLockReadGuard;
 use terra_core::{
-    utils, Difficulty, Item, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, INVENTORY_STRIDE, LOADOUT_COUNT,
+    utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, INVENTORY_STRIDE,
+    LOADOUT_COUNT,
 };
 
-use crate::{enum_selectable_value, ui::UiExt};
+use crate::{enum_selectable_value, meta_or_default, ui::UiExt};
 
 use super::{inventory::ItemTab, App, Message};
 
@@ -195,6 +197,7 @@ impl App {
         ui: &mut Ui,
         id: &str,
         tab: ItemTab,
+        prefix_meta: &RwLockReadGuard<'_, Vec<PrefixMeta>>,
         items: &[Item],
         num_columns: usize,
         stride: usize,
@@ -209,10 +212,18 @@ impl App {
                     .enumerate()
                     .skip(i * stride)
                     .take(stride)
-                    .map(|(index, item)| (item.id, Some(item.stack), tab, index))
+                    .map(|(index, item)| {
+                        (
+                            item.id,
+                            Some(meta_or_default!(prefix_meta, item.prefix.id)),
+                            Some(item.stack),
+                            tab,
+                            index,
+                        )
+                    })
                     .collect::<Vec<_>>();
 
-                self.render_item_slots_special(ui, &slice);
+                self.render_item_slots_special(ui, true, &slice);
 
                 extra_cols(ui, i);
 
@@ -223,6 +234,7 @@ impl App {
 
     fn render_inventory_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
+        let prefix_meta = self.prefix_meta.read();
 
         const EXTRA_STRIDE: usize = 2;
 
@@ -230,6 +242,7 @@ impl App {
             ui,
             "player_inventory",
             ItemTab::Inventory,
+            &prefix_meta,
             &player.inventory,
             INVENTORY_STRIDE + EXTRA_STRIDE,
             INVENTORY_STRIDE,
@@ -240,9 +253,22 @@ impl App {
 
                     self.render_item_slots_special(
                         ui,
+                        true,
                         &[
-                            (coins_item.id, Some(coins_item.stack), ItemTab::Coins, row),
-                            (ammo_item.id, Some(ammo_item.stack), ItemTab::Ammo, row),
+                            (
+                                coins_item.id,
+                                Some(meta_or_default!(prefix_meta, coins_item.prefix.id)),
+                                Some(coins_item.stack),
+                                ItemTab::Coins,
+                                row,
+                            ),
+                            (
+                                ammo_item.id,
+                                Some(meta_or_default!(prefix_meta, ammo_item.prefix.id)),
+                                Some(ammo_item.stack),
+                                ItemTab::Ammo,
+                                row,
+                            ),
                         ],
                     );
                 }
@@ -252,10 +278,13 @@ impl App {
 
     fn render_bank_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
+        let prefix_meta = self.prefix_meta.read();
+
         self.render_item_tab(
             ui,
             "player_bank",
             ItemTab::Bank,
+            &prefix_meta,
             &player.piggy_bank,
             BANK_STRIDE,
             BANK_STRIDE,
@@ -265,10 +294,13 @@ impl App {
 
     fn render_safe_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
+        let prefix_meta = self.prefix_meta.read();
+
         self.render_item_tab(
             ui,
             "player_safe",
             ItemTab::Safe,
+            &prefix_meta,
             &player.safe,
             BANK_STRIDE,
             BANK_STRIDE,
@@ -278,10 +310,13 @@ impl App {
 
     fn render_forge_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
+        let prefix_meta = self.prefix_meta.read();
+
         self.render_item_tab(
             ui,
             "player_forge",
             ItemTab::Forge,
+            &prefix_meta,
             &player.defenders_forge,
             BANK_STRIDE,
             BANK_STRIDE,
@@ -291,10 +326,13 @@ impl App {
 
     fn render_void_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
+        let prefix_meta = self.prefix_meta.read();
+
         self.render_item_tab(
             ui,
             "player_void",
             ItemTab::Void,
+            &prefix_meta,
             &player.void_vault,
             BANK_STRIDE,
             BANK_STRIDE,
@@ -313,10 +351,10 @@ impl App {
                     .enumerate()
                     .skip(i * BUFF_STRIDE)
                     .take(BUFF_STRIDE)
-                    .map(|(index, buff)| (buff.id, index))
+                    .map(|(index, buff)| (buff.id, Some(buff.time), index))
                     .collect::<Vec<_>>();
 
-                self.render_buff_slots_special(ui, &slice);
+                self.render_buff_slots_special(ui, true, &slice);
 
                 ui.end_row();
             }
@@ -325,6 +363,7 @@ impl App {
 
     fn render_equipment_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
+        let prefix_meta = self.prefix_meta.read();
 
         ComboBox::from_id_source("player_loadouts").show_index(
             ui,
@@ -348,17 +387,43 @@ impl App {
 
                     self.render_item_slots_special(
                         ui,
+                        true,
                         &[
-                            (equipment_dye.id, None, ItemTab::EquipmentDyes, i),
-                            (equipment_item.id, None, ItemTab::Equipment, i),
-                            (accessory_dye.id, None, ItemTab::AccessoryDyes, i),
+                            (
+                                equipment_dye.id,
+                                Some(meta_or_default!(prefix_meta, equipment_dye.id)),
+                                None,
+                                ItemTab::EquipmentDyes,
+                                i,
+                            ),
+                            (
+                                equipment_item.id,
+                                Some(meta_or_default!(prefix_meta, equipment_item.id)),
+                                None,
+                                ItemTab::Equipment,
+                                i,
+                            ),
+                            (
+                                accessory_dye.id,
+                                Some(meta_or_default!(prefix_meta, accessory_dye.id)),
+                                None,
+                                ItemTab::AccessoryDyes,
+                                i,
+                            ),
                             (
                                 vanity_accessory_item.id,
+                                Some(meta_or_default!(prefix_meta, vanity_accessory_item.id)),
                                 None,
                                 ItemTab::VanityAccessories,
                                 i,
                             ),
-                            (accessory_item.id, None, ItemTab::Accessories, i),
+                            (
+                                accessory_item.id,
+                                Some(meta_or_default!(prefix_meta, accessory_item.id)),
+                                None,
+                                ItemTab::Accessories,
+                                i,
+                            ),
                         ],
                     );
 
@@ -369,10 +434,29 @@ impl App {
 
                         self.render_item_slots_special(
                             ui,
+                            true,
                             &[
-                                (armor_dye.id, None, ItemTab::ArmorDyes, i),
-                                (vanity_armor.id, None, ItemTab::VanityArmor, i),
-                                (armor.id, None, ItemTab::Armor, i),
+                                (
+                                    armor_dye.id,
+                                    Some(meta_or_default!(prefix_meta, armor_dye.id)),
+                                    None,
+                                    ItemTab::ArmorDyes,
+                                    i,
+                                ),
+                                (
+                                    vanity_armor.id,
+                                    Some(meta_or_default!(prefix_meta, vanity_armor.id)),
+                                    None,
+                                    ItemTab::VanityArmor,
+                                    i,
+                                ),
+                                (
+                                    armor.id,
+                                    Some(meta_or_default!(prefix_meta, armor.id)),
+                                    None,
+                                    ItemTab::Armor,
+                                    i,
+                                ),
                             ],
                         );
                     } else {
@@ -383,21 +467,25 @@ impl App {
 
                         self.render_item_slots_special(
                             ui,
+                            true,
                             &[
                                 (
                                     accessory_dye.id,
+                                    Some(meta_or_default!(prefix_meta, accessory_dye.id)),
                                     None,
                                     ItemTab::AccessoryDyes,
                                     ARMOR_COUNT - 1 + i,
                                 ),
                                 (
                                     vanity_accessory.id,
+                                    Some(meta_or_default!(prefix_meta, vanity_accessory.id)),
                                     None,
                                     ItemTab::VanityAccessories,
                                     ARMOR_COUNT - 1 + i,
                                 ),
                                 (
                                     accessory.id,
+                                    Some(meta_or_default!(prefix_meta, accessory.id)),
                                     None,
                                     ItemTab::Accessories,
                                     ARMOR_COUNT - 1 + i,

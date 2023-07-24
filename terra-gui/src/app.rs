@@ -58,8 +58,11 @@ pub enum Message {
     CloseItemBrowser,
     OpenBuffBrowser,
     CloseBuffBrowser,
+    OpenPrefixBrowser,
+    ClosePrefixBrowser,
     SetCurrentItemId(i32),
     SetCurrentBuffId(i32),
+    SetCurrentPrefixId(u8),
 }
 
 #[allow(dead_code)]
@@ -90,6 +93,7 @@ pub struct App {
     show_about: bool,
     show_item_browser: bool,
     show_buff_browser: bool,
+    show_prefix_browser: bool,
 }
 
 impl App {
@@ -127,6 +131,7 @@ impl App {
             show_about: false,
             show_item_browser: false,
             show_buff_browser: false,
+            show_prefix_browser: false,
         }
     }
 
@@ -286,20 +291,62 @@ impl App {
                 Message::OpenItemBrowser => self.show_item_browser = true,
                 Message::CloseItemBrowser => {
                     self.search_term.clear();
-                    self.show_item_browser = false
+                    self.show_item_browser = false;
                 }
                 Message::OpenBuffBrowser => self.show_buff_browser = true,
                 Message::CloseBuffBrowser => {
                     self.search_term.clear();
-                    self.show_buff_browser = false
+                    self.show_buff_browser = false;
+                }
+                Message::OpenPrefixBrowser => self.show_prefix_browser = true,
+                Message::ClosePrefixBrowser => {
+                    self.search_term.clear();
+                    self.show_prefix_browser = false;
                 }
                 Message::SetCurrentItemId(id) => {
                     let mut player = self.player.write();
-                    selected_item!(self.selected_item, self.selected_loadout, player).id = id;
+                    let mut selected_item =
+                        selected_item!(self.selected_item, self.selected_loadout, player);
+
+                    selected_item.id = id;
+
+                    if selected_item.stack == 0 {
+                        selected_item.stack = 1;
+                    }
+
+                    if self.show_item_browser {
+                        self.search_term.clear();
+                        self.show_item_browser = false;
+                    }
                 }
                 Message::SetCurrentBuffId(id) => {
                     let mut player = self.player.write();
-                    selected_buff!(self.selected_buff, player).id = id;
+                    let mut selected_buff = selected_buff!(self.selected_buff, player);
+
+                    selected_buff.id = id;
+
+                    if selected_buff.time == 0 {
+                        // TODO: utils::duration_to_ticks() ?
+                        // 15 minutes
+                        selected_buff.time = 54000;
+                    }
+
+                    if self.show_buff_browser {
+                        self.search_term.clear();
+                        self.show_buff_browser = false;
+                    }
+                }
+                Message::SetCurrentPrefixId(id) => {
+                    let mut player = self.player.write();
+                    let mut selected_item =
+                        selected_item!(self.selected_item, self.selected_loadout, player);
+
+                    selected_item.prefix.id = id;
+
+                    if self.show_prefix_browser {
+                        self.search_term.clear();
+                        self.show_prefix_browser = false;
+                    }
                 }
             }
         }
@@ -331,8 +378,10 @@ impl eframe::App for App {
 
         self.render_about(ctx);
         self.render_error(ctx);
+
         self.render_item_browser(ctx);
         self.render_buff_browser(ctx);
+        self.render_prefix_browser(ctx);
 
         let layer_id = LayerId::background();
         let max_rect = ctx.available_rect();
@@ -347,6 +396,8 @@ impl eframe::App for App {
         ui.add_enabled_ui(!self.modal_open(), |ui| {
             DockArea::new(self.tree.clone().write().deref_mut())
                 .style(egui_dock::Style::from_egui(&ctx.style()))
+                .show_tab_name_on_hover(true)
+                .show_add_popup(true)
                 .show_inside(ui, self);
         });
     }

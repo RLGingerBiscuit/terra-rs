@@ -1,9 +1,12 @@
-use egui::{vec2, Align2, CollapsingHeader, Grid, RichText, ScrollArea, Ui, Vec2, WidgetText};
+use egui::{
+    vec2, Align2, CollapsingHeader, Grid, RichText, ScrollArea, TextStyle, Ui, Vec2, WidgetText,
+};
 
-use crate::ui::UiExt;
+use crate::{app::inventory::ITEM_SLOT_SIZE, ui::UiExt};
 
 use super::{
-    App, Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,
+    inventory::BUFF_SLOT_SIZE, App, Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL,
+    GITHUB_REPO_NAME, GITHUB_REPO_URL,
 };
 
 #[allow(unused)]
@@ -15,6 +18,10 @@ enum Sizing {
 
 const DEFAULT_MODAL_WIDTH: f32 = 360.;
 const DEFAULT_MODAL_HEIGHT: f32 = 240.;
+
+const ITEM_BROWSER_COLS: usize = 6;
+const BUFF_BROWSER_COLS: usize = 6;
+const PREFIX_BROWSER_COLS: usize = 4;
 
 impl App {
     fn render_modal<R>(
@@ -105,10 +112,7 @@ impl App {
         }
     }
 
-    // TODO: Item tooltip once I've gotten that working
     pub fn render_item_browser(&mut self, ctx: &egui::Context) {
-        // TODO: This seems kinda wasteful (clone *every frame*)
-        // Can't do directly cause borrow checker says no
         let mut search_term = self.search_term.clone();
         let mut term_changed = false;
 
@@ -130,34 +134,44 @@ impl App {
                         term_changed = ui.text_edit_singleline(&mut search_term).changed();
                     });
 
-                    // TODO: Maybe make search not case-sensitive?
-                    if search_term != "" {
-                        let meta: &Vec<terra_core::ItemMeta> = &*self.item_meta.read();
+                    if !search_term.is_empty() {
+                        let search_term_lower = search_term.to_lowercase();
+                        let meta = &self.item_meta.read();
                         let filtered = meta
-                            .as_slice()
                             .iter()
-                            .filter(|meta| meta.name.contains(&search_term))
-                            .enumerate();
+                            .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower));
 
-                        const BROWSER_COLS: usize = 6;
+                        let total_rows = ((filtered.clone().count() as f32)
+                            / (ITEM_BROWSER_COLS as f32))
+                            .ceil() as usize;
 
                         ScrollArea::new([false, true])
                             .id_source("item_browser_scrollarea")
-                            .show(ui, |ui| {
+                            .show_rows(ui, ITEM_SLOT_SIZE, total_rows, |ui, row_range| {
                                 Grid::new("item_browser_grid")
-                                    .num_columns(BROWSER_COLS)
+                                    .num_columns(ITEM_BROWSER_COLS)
                                     .striped(true)
                                     .show(ui, |ui| {
-                                        for (i, meta) in filtered {
-                                            if self
-                                                .render_item_slot(ui, meta.id, false, None)
-                                                .clicked()
-                                            {
+                                        let mut filtered =
+                                            filtered.skip(row_range.start * ITEM_BROWSER_COLS);
+
+                                        for i in (row_range.start * ITEM_BROWSER_COLS)
+                                            ..(row_range.end * ITEM_BROWSER_COLS)
+                                        {
+                                            let meta = filtered.next();
+                                            if meta.is_none() {
+                                                break;
+                                            }
+                                            let meta = unsafe { meta.unwrap_unchecked() };
+
+                                            let response = self
+                                                .render_item_slot(ui, meta.id,None, false, None, true);
+
+                                            if response.clicked() {
                                                 self.do_update(Message::SetCurrentItemId(meta.id));
-                                                self.do_update(Message::CloseItemBrowser);
                                             }
 
-                                            if i % BROWSER_COLS == BROWSER_COLS - 1 {
+                                            if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
                                                 ui.end_row();
                                             }
                                         }
@@ -179,22 +193,17 @@ impl App {
         }
     }
 
-    // TODO: Buff tooltip once I've gotten that working
     pub fn render_buff_browser(&mut self, ctx: &egui::Context) {
-        // TODO: This seems kinda wasteful (clone *every frame*)
-        // Can't do directly cause borrow checker says no
         let mut search_term = self.search_term.clone();
         let mut term_changed = false;
 
         if self.show_buff_browser {
-            let style = &*ctx.style();
-
             self.render_modal(
                 ctx,
                 "Buff Browser",
                 false,
                 Sizing::Fixed(vec2(
-                    DEFAULT_MODAL_WIDTH + style.spacing.item_spacing.x,
+                    DEFAULT_MODAL_WIDTH + ctx.style().spacing.item_spacing.x,
                     DEFAULT_MODAL_HEIGHT * 2.,
                 )),
                 |ui| {
@@ -204,31 +213,44 @@ impl App {
                         term_changed = ui.text_edit_singleline(&mut search_term).changed();
                     });
 
-                    // TODO: Maybe make search case-sensitive?
-                    if search_term != "" {
-                        let meta: &Vec<terra_core::BuffMeta> = &*self.buff_meta.read();
+                    if !search_term.is_empty() {
+                        let search_term_lower = search_term.to_lowercase();
+                        let meta = &self.buff_meta.read();
                         let filtered = meta
-                            .as_slice()
                             .iter()
-                            .filter(|meta| meta.name.contains(&search_term))
-                            .enumerate();
+                            .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower));
 
-                        const BROWSER_COLS: usize = 6;
+                        let total_rows = ((filtered.clone().count() as f32)
+                            / (BUFF_BROWSER_COLS as f32))
+                            .ceil() as usize;
 
                         ScrollArea::new([false, true])
                             .id_source("buff_browser_scrollarea")
-                            .show(ui, |ui| {
+                            .show_rows(ui, BUFF_SLOT_SIZE, total_rows, |ui, row_range| {
                                 Grid::new("buff_browser_grid")
-                                    .num_columns(BROWSER_COLS)
+                                    .num_columns(BUFF_BROWSER_COLS)
                                     .striped(true)
                                     .show(ui, |ui| {
-                                        for (i, meta) in filtered {
-                                            if self.render_buff_slot(ui, meta.id, false).clicked() {
+                                        let mut filtered =
+                                            filtered.skip(row_range.start * BUFF_BROWSER_COLS);
+
+                                        for i in (row_range.start * BUFF_BROWSER_COLS)
+                                            ..(row_range.end * BUFF_BROWSER_COLS)
+                                        {
+                                            let meta = filtered.next();
+                                            if meta.is_none() {
+                                                break;
+                                            }
+                                            let meta = unsafe { meta.unwrap_unchecked() };
+
+                                            let response = self
+                                                .render_buff_slot(ui, meta.id, None, false, true);
+
+                                            if response.clicked() {
                                                 self.do_update(Message::SetCurrentBuffId(meta.id));
-                                                self.do_update(Message::CloseBuffBrowser);
                                             }
 
-                                            if i % BROWSER_COLS == BROWSER_COLS - 1 {
+                                            if i % BUFF_BROWSER_COLS == BUFF_BROWSER_COLS - 1 {
                                                 ui.end_row();
                                             }
                                         }
@@ -239,6 +261,99 @@ impl App {
                     ui.vertical_right_justified(|ui| {
                         if ui.button("Close").clicked() {
                             self.do_update(Message::CloseBuffBrowser);
+                        }
+                    });
+                },
+            );
+        }
+
+        if term_changed {
+            self.search_term = search_term;
+        }
+    }
+
+    // TODO: Add a toggle to show only class-specific prefixes
+    //       (and the Terrarian variant of Legendary)
+    pub fn render_prefix_browser(&mut self, ctx: &egui::Context) {
+        let mut search_term = self.search_term.clone();
+        let mut term_changed = false;
+
+        if self.show_prefix_browser {
+            self.render_modal(
+                ctx,
+                "Prefix Browser",
+                false,
+                Sizing::Fixed(vec2(
+                    DEFAULT_MODAL_WIDTH + ctx.style().spacing.item_spacing.x,
+                    DEFAULT_MODAL_HEIGHT * 2.,
+                )),
+                |ui| {
+                    ui.spacing_mut().item_spacing.y = 8.;
+
+                    ui.vertical_centered_justified(|ui| {
+                        term_changed = ui.text_edit_singleline(&mut search_term).changed();
+                    });
+
+                    if !search_term.is_empty() {
+                        let search_term_lower = search_term.to_lowercase();
+                        let meta = &self.prefix_meta.read();
+                        let filtered = meta
+                            .iter()
+                            .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower));
+
+                        let total_rows = ((filtered.clone().count() as f32)
+                            / (PREFIX_BROWSER_COLS as f32))
+                            .ceil() as usize;
+
+                        ScrollArea::new([false, true])
+                            .id_source("prefix_browser_scrollarea")
+                            .show_rows(
+                                ui,
+                                ui.text_style_height(&TextStyle::Body),
+                                total_rows,
+                                |ui, row_range| {
+                                    Grid::new("prefix_browser_grid")
+                                        .num_columns(PREFIX_BROWSER_COLS)
+                                        .striped(true)
+                                        .show(ui, |ui| {
+                                            let mut filtered = filtered
+                                                .skip(row_range.start * PREFIX_BROWSER_COLS);
+
+                                            for i in (row_range.start * PREFIX_BROWSER_COLS)
+                                                ..(row_range.end * PREFIX_BROWSER_COLS)
+                                            {
+                                                let meta = filtered.next();
+                                                if meta.is_none() {
+                                                    break;
+                                                }
+                                                let meta = unsafe { meta.unwrap_unchecked() };
+
+                                                let response = ui.button(&meta.name);
+
+                                                if response.clicked() {
+                                                    self.do_update(Message::SetCurrentPrefixId(
+                                                        meta.id,
+                                                    ));
+                                                }
+
+                                                response.on_hover_ui(|ui| {
+                                                    self.render_prefix_tooltip(ui, meta);
+                                                });
+
+                                                if i % PREFIX_BROWSER_COLS
+                                                    == PREFIX_BROWSER_COLS - 1
+                                                {
+                                                    ui.end_row();
+                                                }
+                                            }
+                                        });
+                                },
+                            );
+                    }
+
+                    ui.vertical_right_justified(|ui| {
+                        if ui.button("Close").clicked() {
+                            self.do_update(Message::ClosePrefixBrowser);
                         }
                     });
                 },
