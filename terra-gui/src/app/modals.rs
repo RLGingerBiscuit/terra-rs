@@ -164,8 +164,9 @@ impl App {
                                             }
                                             let meta = unsafe { meta.unwrap_unchecked() };
 
-                                            let response = self
-                                                .render_item_slot(ui, meta.id,None, false, None, true);
+                                            let response = self.render_item_slot(
+                                                ui, meta.id, None, false, None, true,
+                                            );
 
                                             if response.clicked() {
                                                 self.do_update(Message::SetCurrentItemId(meta.id));

@@ -60,12 +60,12 @@ fn animated_items() -> HashMap<i32, [u32; 4]> {
     map.insert(75, [11, 12, 0, 0]);
     map.insert(353, [9, 9, 0, 0]);
     map.insert(357, [15, 11, 0, 0]);
-    map.insert(520, [11, 11, 0, 0]);
-    map.insert(521, [11, 11, 0, 0]);
-    map.insert(547, [11, 11, 0, 0]);
-    map.insert(548, [11, 11, 0, 0]);
-    map.insert(549, [11, 11, 0, 0]);
-    map.insert(575, [11, 11, 0, 0]);
+    map.insert(520, [11, 11, 0, 1]);
+    map.insert(521, [11, 11, 0, 1]);
+    map.insert(547, [11, 11, 0, 1]);
+    map.insert(548, [11, 11, 0, 1]);
+    map.insert(549, [11, 11, 0, 1]);
+    map.insert(575, [11, 11, 0, 1]);
     map.insert(967, [6, 7, 0, 0]);
     map.insert(969, [6, 7, 0, 0]);
     map.insert(1787, [19, 12, 0, 0]);
@@ -77,9 +77,9 @@ fn animated_items() -> HashMap<i32, [u32; 4]> {
     map.insert(2267, [15, 11, 0, 0]);
     map.insert(2268, [15, 14, 0, 0]);
     map.insert(3195, [14, 12, 0, 0]);
-    map.insert(3453, [8, 11, 0, 16]);
-    map.insert(3454, [8, 11, 0, 16]);
-    map.insert(3455, [8, 11, 0, 16]);
+    map.insert(3453, [7, 10, 1, 3]);
+    map.insert(3454, [7, 10, 1, 3]);
+    map.insert(3455, [7, 10, 1, 3]);
     map.insert(3532, [16, 15, 0, 0]);
     map.insert(3580, [11, 11, 0, 1]);
     map.insert(3581, [10, 10, 0, 2]);
@@ -110,9 +110,9 @@ fn animated_items() -> HashMap<i32, [u32; 4]> {
     map.insert(4033, [15, 8, 0, 0]);
     map.insert(4034, [17, 10, 0, 0]);
     map.insert(4035, [17, 13, 0, 0]);
-    map.insert(4036, [15, 9, 0, 0]);
+    map.insert(4036, [15, 8, 0, 1]);
     map.insert(4037, [17, 11, 0, 0]);
-    map.insert(4068, [7, 9, 1, 2]);
+    map.insert(4068, [7, 9, 2, 1]);
     map.insert(4069, [9, 9, 1, 1]);
     map.insert(4070, [7, 9, 1, 1]);
     map.insert(4282, [11, 13, 0, 0]);
@@ -136,23 +136,24 @@ fn animated_items() -> HashMap<i32, [u32; 4]> {
     map.insert(4614, [7, 13, 0, 3]);
     map.insert(4615, [7, 13, 0, 3]);
     map.insert(4616, [8, 14, 0, 2]);
-    map.insert(4617, [10, 16, 0, 1]);
+    map.insert(4617, [10, 15, 0, 1]);
     map.insert(4618, [10, 14, 0, 2]);
     map.insert(4619, [7, 15, 0, 1]);
-    map.insert(4620, [5, 15, 0, 1]);
+    map.insert(4620, [9, 15, 0, 1]);
     map.insert(4621, [9, 16, 0, 0]);
     map.insert(4622, [9, 15, 0, 1]);
     map.insert(4623, [10, 18, 0, 2]);
     map.insert(4624, [9, 13, 0, 3]);
-    map.insert(4625, [9, 13, 0, 1]);
+    map.insert(4625, [14, 13, 0, 1]);
     map.insert(5009, [17, 11, 0, 1]);
     map.insert(5041, [12, 19, 0, 1]);
-    map.insert(5042, [16, 17, 0, 0]);
+    map.insert(5042, [16, 12, 0, 0]);
     map.insert(5092, [18, 16, 0, 0]);
     map.insert(5093, [18, 14, 0, 0]);
     map.insert(5275, [8, 14, 0, 0]);
     map.insert(5277, [10, 12, 0, 0]);
     map.insert(5278, [10, 11, 1, 1]);
+
     map
 }
 
@@ -843,14 +844,13 @@ fn generate_spritesheet(
 
     sprite_iter
         .for_each(|(i, image)| {
-            let (width, height) = if text == "slot" {
-                if let Some([width, height, _, _]) = animated_items.get(i) {
-                    (width.to_owned(), height.to_owned())
-                } else {
-                    (image.width(), image.height())
+            let (width, height, x, y) = if text == "slot" {
+                match animated_items.get(i) {
+                    Some([w,h,x,y]) => (w.to_owned(), h.to_owned(), x.to_owned(), y.to_owned()),
+                    None => (image.width(), image.height(), 0, 0)
                 }
             } else {
-                (image.width(), image.height())
+                (image.width(), image.height(), 0, 0)
             };
 
             if running_x + width > max_width {
@@ -867,7 +867,9 @@ fn generate_spritesheet(
 
             writeln!(writer, ".{text}[data-id='{i}'] {{ --ofs: -{running_x}px -{running_y}px; --w: {width}px; --h: {height}px; }}").expect("Wut");
 
-            new_image.copy_from(image, running_x, running_y).expect("Wut");
+            let view = image.view(x, y, width, height);
+
+            new_image.copy_from(&*view, running_x, running_y).expect("Wut");
 
             running_x += SPRITE_SPACING + width + SPRITE_SPACING;
 
