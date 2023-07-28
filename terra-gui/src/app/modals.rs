@@ -165,7 +165,7 @@ impl App {
                                             let meta = unsafe { meta.unwrap_unchecked() };
 
                                             let response = self.render_item_slot(
-                                                ui, meta.id, None, false, None, true,
+                                                ui, meta.id, None, false, false, None, true,
                                             );
 
                                             if response.clicked() {

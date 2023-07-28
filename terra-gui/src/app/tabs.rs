@@ -216,6 +216,7 @@ impl App {
                         (
                             item.id,
                             Some(meta_or_default!(prefix_meta, item.prefix.id)),
+                            item.favourited,
                             Some(item.stack),
                             tab,
                             index,
@@ -258,6 +259,7 @@ impl App {
                             (
                                 coins_item.id,
                                 Some(meta_or_default!(prefix_meta, coins_item.prefix.id)),
+                                coins_item.favourited,
                                 Some(coins_item.stack),
                                 ItemTab::Coins,
                                 row,
@@ -265,6 +267,7 @@ impl App {
                             (
                                 ammo_item.id,
                                 Some(meta_or_default!(prefix_meta, ammo_item.prefix.id)),
+                                ammo_item.favourited,
                                 Some(ammo_item.stack),
                                 ItemTab::Ammo,
                                 row,
@@ -392,6 +395,7 @@ impl App {
                             (
                                 equipment_dye.id,
                                 Some(meta_or_default!(prefix_meta, equipment_dye.id)),
+                                equipment_dye.favourited,
                                 None,
                                 ItemTab::EquipmentDyes,
                                 i,
@@ -399,6 +403,7 @@ impl App {
                             (
                                 equipment_item.id,
                                 Some(meta_or_default!(prefix_meta, equipment_item.id)),
+                                equipment_item.favourited,
                                 None,
                                 ItemTab::Equipment,
                                 i,
@@ -406,6 +411,7 @@ impl App {
                             (
                                 accessory_dye.id,
                                 Some(meta_or_default!(prefix_meta, accessory_dye.id)),
+                                accessory_dye.favourited,
                                 None,
                                 ItemTab::AccessoryDyes,
                                 i,
@@ -413,6 +419,7 @@ impl App {
                             (
                                 vanity_accessory_item.id,
                                 Some(meta_or_default!(prefix_meta, vanity_accessory_item.id)),
+                                vanity_accessory_item.favourited,
                                 None,
                                 ItemTab::VanityAccessories,
                                 i,
@@ -420,6 +427,7 @@ impl App {
                             (
                                 accessory_item.id,
                                 Some(meta_or_default!(prefix_meta, accessory_item.id)),
+                                accessory_item.favourited,
                                 None,
                                 ItemTab::Accessories,
                                 i,
@@ -439,6 +447,7 @@ impl App {
                                 (
                                     armor_dye.id,
                                     Some(meta_or_default!(prefix_meta, armor_dye.id)),
+                                    armor_dye.favourited,
                                     None,
                                     ItemTab::ArmorDyes,
                                     i,
@@ -446,6 +455,7 @@ impl App {
                                 (
                                     vanity_armor.id,
                                     Some(meta_or_default!(prefix_meta, vanity_armor.id)),
+                                    vanity_armor.favourited,
                                     None,
                                     ItemTab::VanityArmor,
                                     i,
@@ -453,6 +463,7 @@ impl App {
                                 (
                                     armor.id,
                                     Some(meta_or_default!(prefix_meta, armor.id)),
+                                    armor.favourited,
                                     None,
                                     ItemTab::Armor,
                                     i,
@@ -472,6 +483,7 @@ impl App {
                                 (
                                     accessory_dye.id,
                                     Some(meta_or_default!(prefix_meta, accessory_dye.id)),
+                                    accessory_dye.favourited,
                                     None,
                                     ItemTab::AccessoryDyes,
                                     ARMOR_COUNT - 1 + i,
@@ -479,6 +491,7 @@ impl App {
                                 (
                                     vanity_accessory.id,
                                     Some(meta_or_default!(prefix_meta, vanity_accessory.id)),
+                                    vanity_accessory.favourited,
                                     None,
                                     ItemTab::VanityAccessories,
                                     ARMOR_COUNT - 1 + i,
@@ -486,6 +499,7 @@ impl App {
                                 (
                                     accessory.id,
                                     Some(meta_or_default!(prefix_meta, accessory.id)),
+                                    accessory.favourited,
                                     None,
                                     ItemTab::Accessories,
                                     ARMOR_COUNT - 1 + i,

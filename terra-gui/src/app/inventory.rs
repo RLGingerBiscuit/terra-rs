@@ -1,7 +1,7 @@
 use egui::{pos2, vec2, Align2, Image, Rect, Response, RichText, TextStyle, TextureHandle, Ui};
 use terra_core::{
-    utils, BuffMeta, Item, ItemMeta, ItemType, PrefixMeta,
-    BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE, STRANGE_BREW_ID, STRANGE_BREW_MAX_HEAL,
+    utils, BuffMeta, ItemMeta, ItemType, PrefixMeta, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE,
+    STRANGE_BREW_ID, STRANGE_BREW_MAX_HEAL,
 };
 
 use crate::ui::{ClickableFrame, UiExt};
@@ -17,7 +17,7 @@ pub const BUFF_SPRITE_SCALE: f32 = 2.;
 
 #[macro_export]
 macro_rules! meta_or_default {
-    ($meta:expr, $id:expr) => {
+    ($meta:expr,$id:expr) => {
         $meta
             .get($id as usize)
             // .iter().filter(|m| m.id == id).next()
@@ -27,7 +27,7 @@ macro_rules! meta_or_default {
 
 #[macro_export]
 macro_rules! selected_item {
-    ($selected_item:expr,$selected_loadout:expr, $player:expr) => {
+    ($selected_item:expr,$selected_loadout:expr,$player:expr) => {
         match $selected_item.0 {
             ItemTab::Inventory => &mut $player.inventory[$selected_item.1],
             ItemTab::Coins => &mut $player.coins[$selected_item.1],
@@ -202,6 +202,7 @@ impl App {
         ui: &mut Ui,
         item_id: i32,
         prefix_meta: Option<&PrefixMeta>,
+        favourited: bool,
         selected: bool,
         stack_size: Option<i32>,
         tooltip_on_hover: bool,
@@ -231,7 +232,7 @@ impl App {
 
         if meta.id != 0 && tooltip_on_hover {
             response.on_hover_ui(|ui| {
-                self.render_item_tooltip(ui, None, meta, prefix_meta);
+                self.render_item_tooltip(ui, meta, prefix_meta, favourited);
             })
         } else {
             response
@@ -243,9 +244,9 @@ impl App {
         &self,
         ui: &mut Ui,
         tooltip_on_hover: bool,
-        items: &[(i32, Option<&PrefixMeta>, Option<i32>, ItemTab, usize)],
+        items: &[(i32, Option<&PrefixMeta>, bool, Option<i32>, ItemTab, usize)],
     ) {
-        for (item_id, prefix_meta, stack_size, tab, index) in items {
+        for (item_id, prefix_meta, favourited, stack_size, tab, index) in items {
             let selected = &self.selected_item.0 == tab && &self.selected_item.1 == index;
 
             if self
@@ -253,6 +254,7 @@ impl App {
                     ui,
                     *item_id,
                     *prefix_meta,
+                    *favourited,
                     selected,
                     *stack_size,
                     tooltip_on_hover,
@@ -338,9 +340,9 @@ impl App {
     pub fn render_item_tooltip(
         &self,
         ui: &mut Ui,
-        item: Option<&Item>,
         item_meta: &ItemMeta,
         prefix_meta: Option<&PrefixMeta>,
+        favourited: bool,
     ) {
         if item_meta.id == 0 {
             return;
@@ -354,9 +356,15 @@ impl App {
                     .color(ui.style().visuals.error_fg_color),
             );
         }
-        ui.small(format!("Id: {}", item_meta.id));
 
-        if item.is_some_and(|item| item.favourited) {
+        ui.small(format!("Id: {}", item_meta.id));
+        if let Some(prefix_meta) = prefix_meta {
+            if prefix_meta.id != 0 {
+                ui.small(format!("Prefix Id: {}", prefix_meta.id));
+            }
+        }
+
+        if favourited {
             ui.label("Marked as favorite");
             ui.label("Quick trash, stacking, and selling will be blocked");
         }
@@ -377,7 +385,7 @@ impl App {
             string += " damage";
 
             if let Some(use_time) = item_meta.use_time {
-                string += &format!("(~{:.0} DPS)", (damage as f32) * (60. / (use_time) as f32));
+                string += &format!(" (~{:.0} DPS)", (damage as f32) * (60. / (use_time) as f32));
             }
 
             ui.label(string);
@@ -669,14 +677,13 @@ impl App {
 
         ui.heading(self.buff_name(&buff_meta.name, buff_time));
 
+        ui.small(format!("ID: {}", buff_meta.id));
+
         if let Some(tooltip) = &buff_meta.tooltip {
             for line in tooltip {
                 ui.label(line);
             }
         }
-
-        ui.small(format!("ID: {}", buff_meta.id));
-        ui.small(format!("Type: {}", buff_meta.buff_type));
     }
 
     pub fn render_prefix_tooltip(&self, ui: &mut Ui, prefix_meta: &PrefixMeta) {
