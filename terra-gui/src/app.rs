@@ -3,6 +3,7 @@ mod menus;
 mod modals;
 mod tabs;
 mod tasks;
+mod visuals;
 
 use std::{ops::DerefMut, path::PathBuf, sync::Arc, thread};
 
@@ -47,6 +48,7 @@ pub enum Message {
     CloseAbout,
     ShowError(anyhow::Error),
     CloseError,
+    SetTheme(visuals::Theme),
     ResetPlayer,
     LoadPlayer,
     SavePlayer,
@@ -82,6 +84,8 @@ pub struct App {
 
     item_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
     buff_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
+
+    theme: visuals::Theme,
 
     tree: Arc<RwLock<Tree<Tabs>>>,
     closed_tabs: FxHashMap<Tabs, NodeIndex>,
@@ -120,6 +124,8 @@ impl App {
 
             item_spritesheet: Arc::new(RwLock::new(None)),
             buff_spritesheet: Arc::new(RwLock::new(None)),
+
+            theme: visuals::Theme::default(),
 
             tree: Arc::new(RwLock::new(default_ui())),
             closed_tabs: FxHashMap::default(),
@@ -197,6 +203,10 @@ impl App {
                     self.error = Some(err)
                 }
                 Message::CloseError => self.error = None,
+                Message::SetTheme(theme) => {
+                    theme.set_theme(ctx);
+                    self.theme = theme;
+                }
                 Message::ResetPlayer => self.player.write().clone_from(&DEFAULT_PLAYER),
                 Message::LoadPlayer => {
                     let player_path = self

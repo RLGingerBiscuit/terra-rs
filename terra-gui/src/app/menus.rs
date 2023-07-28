@@ -5,7 +5,7 @@ use crate::ui::UiExt;
 
 use super::{
     tabs::{self, Tabs},
-    App, Message, SHORTCUT_EXIT, SHORTCUT_LOAD, SHORTCUT_SAVE,
+    visuals, App, Message, SHORTCUT_EXIT, SHORTCUT_LOAD, SHORTCUT_SAVE,
 };
 
 impl App {
@@ -36,31 +36,43 @@ impl App {
     }
 
     fn render_window_menu(&mut self, ui: &mut Ui) {
-        if ui.button("Reset").clicked() {
+        let mut theme_change = None;
+
+        ui.labelled("Theme: ", |ui| {
+            egui::ComboBox::new("window_theme", "")
+                .selected_text(self.theme.to_string())
+                .show_ui(ui, |ui| {
+                    let mut current_theme = self.theme;
+
+                    for theme in visuals::Theme::iter() {
+                        if ui
+                            .selectable_value(&mut current_theme, theme, theme.to_string())
+                            .clicked()
+                        {
+                            theme_change = Some(theme);
+                        }
+                    }
+                });
+        });
+
+        if let Some(theme) = theme_change {
+            self.do_update(Message::SetTheme(theme));
+            ui.close_menu();
+        }
+
+        ui.separator();
+
+        if ui.button("Reset Tabs").clicked() {
             ui.close_menu();
             *self.tree.write() = tabs::default_ui();
         }
 
         ui.separator();
 
-        for tab in [
-            Tabs::Stats,
-            Tabs::Bonuses,
-            Tabs::Selected,
-            Tabs::Inventory,
-            Tabs::Bank,
-            Tabs::Safe,
-            Tabs::Forge,
-            Tabs::Void,
-            Tabs::Buffs,
-            Tabs::Equipment,
-            Tabs::Research,
-        ] {
+        for tab in Tabs::iter() {
             let mut disabled = !self.closed_tabs.contains_key(&tab);
 
             if ui.checkbox(&mut disabled, format!(" {tab}")).changed() {
-                ui.close_menu();
-
                 let mut tree = self.tree.write();
 
                 if self.closed_tabs.remove(&tab).is_some() {

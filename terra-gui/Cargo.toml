@@ -16,6 +16,7 @@ rustc-hash = "1.1.0"
 
 eframe = "0.22.0"
 egui = { version = "0.22.0", features = ["color-hex"] }
+catppuccin-egui = "3.0.0"
 egui_dock = "0.6.3"
 
 image = { version = "0.24.6", features = ["png"] }

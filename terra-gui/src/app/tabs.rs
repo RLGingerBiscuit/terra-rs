@@ -51,6 +51,27 @@ impl Display for Tabs {
     }
 }
 
+impl Tabs {
+    #[inline]
+    pub fn iter() -> impl Iterator<Item = Self> {
+        [
+            Tabs::LoadSave,
+            Tabs::Stats,
+            Tabs::Bonuses,
+            Tabs::Selected,
+            Tabs::Inventory,
+            Tabs::Bank,
+            Tabs::Safe,
+            Tabs::Forge,
+            Tabs::Void,
+            Tabs::Buffs,
+            Tabs::Equipment,
+            Tabs::Research,
+        ]
+        .into_iter()
+    }
+}
+
 pub fn default_ui() -> Tree<Tabs> {
     let mut tree = Tree::new(vec![Tabs::LoadSave]);
     let [load_save, _inventory] = tree.split_below(
