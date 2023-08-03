@@ -12,7 +12,7 @@ use crate::{enum_selectable_value, meta_or_default, ui::UiExt};
 
 use super::{inventory::ItemTab, App, Message};
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum Tabs {
     Stats,
     LoadSave,

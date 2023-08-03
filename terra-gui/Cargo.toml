@@ -14,12 +14,14 @@ flume = "0.10.14"
 
 rustc-hash = "1.1.0"
 
-eframe = "0.22.0"
+eframe = { version = "0.22.0", features = ["persistence", "ron"] }
 egui = { version = "0.22.0", features = ["color-hex"] }
 catppuccin-egui = "3.0.0"
-egui_dock = "0.6.3"
+egui_dock = { version = "0.6.3", features = ["serde"] }
 
 image = { version = "0.24.6", features = ["png"] }
 
 rfd = "0.11.4"
 open = "5.0.0"
+
+serde = { version = "1.0.177", features = ["derive"] }

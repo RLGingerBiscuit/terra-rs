@@ -21,13 +21,16 @@ use crate::{selected_buff, selected_item};
 
 use self::{
     inventory::{ItemTab, SelectedBuff, SelectedItem, SelectedLoadout},
-    tabs::{default_ui, Tabs},
+    tabs::Tabs,
 };
 
 pub const GITHUB_REPO_NAME: &str = "Hub-of-Cringe-Nerds/RLGingerBiscuit-terra-rs";
 pub const GITHUB_REPO_URL: &str = "https://github.com/Hub-of-Cringe-Nerds/RLGingerBiscuit-terra-rs";
 pub const EGUI_GITHUB_REPO_NAME: &str = "emilk/egui";
 pub const EGUI_GITHUB_REPO_URL: &str = "https://github.com/emilk/egui";
+
+pub const THEME_KEY: &str = "theme";
+pub const TREE_KEY: &str = "tree";
 
 static SHORTCUT_LOAD: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::O);
 static SHORTCUT_SAVE: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::S);
@@ -86,7 +89,6 @@ pub struct App {
     buff_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
 
     theme: visuals::Theme,
-
     tree: Arc<RwLock<Tree<Tabs>>>,
     closed_tabs: FxHashMap<Tabs, NodeIndex>,
 
@@ -101,12 +103,21 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(_cc: &CreationContext) -> Self {
+    pub fn new(cc: &CreationContext) -> Self {
         let (tx, rx) = flume::unbounded();
 
         let prefix_meta = PrefixMeta::load().expect("Could not load prefixes");
         let item_meta = ItemMeta::load().expect("Could not load items");
         let buff_meta = BuffMeta::load().expect("Could not load buffs");
+
+        let (theme, tree) = match cc.storage {
+            Some(s) => (
+                eframe::get_value::<visuals::Theme>(s, THEME_KEY).unwrap_or_default(),
+                eframe::get_value(s, TREE_KEY).unwrap_or_else(|| tabs::default_ui()),
+            ),
+            None => (Default::default(), Default::default()),
+        };
+        theme.set_theme(&cc.egui_ctx);
 
         Self {
             player: Arc::new(RwLock::new(Player::default())),
@@ -125,9 +136,8 @@ impl App {
             item_spritesheet: Arc::new(RwLock::new(None)),
             buff_spritesheet: Arc::new(RwLock::new(None)),
 
-            theme: visuals::Theme::default(),
-
-            tree: Arc::new(RwLock::new(default_ui())),
+            theme,
+            tree: Arc::new(RwLock::new(tree)),
             closed_tabs: FxHashMap::default(),
 
             search_term: String::new(),
@@ -380,6 +390,11 @@ impl App {
 }
 
 impl eframe::App for App {
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        eframe::set_value(storage, THEME_KEY, &self.theme);
+        eframe::set_value(storage, TREE_KEY, &*self.tree.read());
+    }
+
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         self.handle_update(ctx, frame);
         self.handle_keyboard(ctx);
