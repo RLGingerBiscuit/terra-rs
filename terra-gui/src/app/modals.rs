@@ -150,7 +150,6 @@ impl App {
                             .show_rows(ui, ITEM_SLOT_SIZE, total_rows, |ui, row_range| {
                                 Grid::new("item_browser_grid")
                                     .num_columns(ITEM_BROWSER_COLS)
-                                    .striped(true)
                                     .show(ui, |ui| {
                                         let mut filtered =
                                             filtered.skip(row_range.start * ITEM_BROWSER_COLS);
@@ -162,7 +161,7 @@ impl App {
                                             if meta.is_none() {
                                                 break;
                                             }
-                                            let meta = unsafe { meta.unwrap_unchecked() };
+                                            let meta = meta.unwrap();
 
                                             let response = self.render_item_slot(
                                                 ui, meta.id, None, false, false, None, true,
@@ -230,7 +229,6 @@ impl App {
                             .show_rows(ui, BUFF_SLOT_SIZE, total_rows, |ui, row_range| {
                                 Grid::new("buff_browser_grid")
                                     .num_columns(BUFF_BROWSER_COLS)
-                                    .striped(true)
                                     .show(ui, |ui| {
                                         let mut filtered =
                                             filtered.skip(row_range.start * BUFF_BROWSER_COLS);
@@ -242,7 +240,7 @@ impl App {
                                             if meta.is_none() {
                                                 break;
                                             }
-                                            let meta = unsafe { meta.unwrap_unchecked() };
+                                            let meta = meta.unwrap();
 
                                             let response = self
                                                 .render_buff_slot(ui, meta.id, None, false, true);
@@ -315,7 +313,6 @@ impl App {
                                 |ui, row_range| {
                                     Grid::new("prefix_browser_grid")
                                         .num_columns(PREFIX_BROWSER_COLS)
-                                        .striped(true)
                                         .show(ui, |ui| {
                                             let mut filtered = filtered
                                                 .skip(row_range.start * PREFIX_BROWSER_COLS);
@@ -327,7 +324,7 @@ impl App {
                                                 if meta.is_none() {
                                                     break;
                                                 }
-                                                let meta = unsafe { meta.unwrap_unchecked() };
+                                                let meta = meta.unwrap();
 
                                                 let response = ui.button(&meta.name);
 
