@@ -323,7 +323,7 @@ impl App {
                 }
                 Message::SetCurrentItemId(id) => {
                     let mut player = self.player.write();
-                    let mut selected_item =
+                    let selected_item =
                         selected_item!(self.selected_item, self.selected_loadout, player);
 
                     selected_item.id = id;
@@ -339,7 +339,7 @@ impl App {
                 }
                 Message::SetCurrentBuffId(id) => {
                     let mut player = self.player.write();
-                    let mut selected_buff = selected_buff!(self.selected_buff, player);
+                    let selected_buff = selected_buff!(self.selected_buff, player);
 
                     selected_buff.id = id;
 
@@ -356,7 +356,7 @@ impl App {
                 }
                 Message::SetCurrentPrefixId(id) => {
                     let mut player = self.player.write();
-                    let mut selected_item =
+                    let selected_item =
                         selected_item!(self.selected_item, self.selected_loadout, player);
 
                     selected_item.prefix.id = id;
