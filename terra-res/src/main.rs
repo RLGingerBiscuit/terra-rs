@@ -405,8 +405,7 @@ fn get_item_meta(
                 let internal_name = lua_item.get("internalName").unwrap_or(String::new());
                 let max_stack = lua_item.get("maxStack").unwrap_or(1);
                 let value = lua_item.get("value").unwrap_or(0);
-                #[allow(unused)] // but it's not unused tho
-                let rarity = ItemRarity::from(lua_item.get("rare").unwrap_or(0));
+                let rarity = ItemRarity::from(lua_item.get("rarity").unwrap_or(0));
                 let use_time = lua_item.get("useTime").ok();
                 let damage = lua_item.get("damage").ok();
                 let crit_chance = lua_item.get("crit").ok();
@@ -435,7 +434,6 @@ fn get_item_meta(
                 } else {
                     None
                 };
-                let rarity = ItemRarity::from(lua_item.get("rarity").unwrap_or(0));
 
                 let consumes_tile = lua_item.get("tileWand").ok();
 

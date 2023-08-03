@@ -12,8 +12,7 @@ pub use clickable_frame::ClickableFrame;
 
 #[macro_export]
 macro_rules! enum_radio_value {
-    ( $ui:expr, $current:expr, $($enum_item:expr),* ) => {
-        // $($ui.enum_radio_value($current, $enum_item);)*
+    ( $ui:expr,$current:expr,$($enum_item:expr),* ) => {
         $(
             $ui.radio_value($current, $enum_item, $enum_item.to_string());
         )*
@@ -22,8 +21,7 @@ macro_rules! enum_radio_value {
 
 #[macro_export]
 macro_rules! enum_selectable_value {
-    ( $ui:expr, $current:expr, $($enum_item:expr),* ) => {
-        // $($ui.enum_selectable_value($current, $enum_item);)*
+    ( $ui:expr,$current:expr,$($enum_item:expr),* ) => {
         $(
             $ui.selectable_value($current, $enum_item, $enum_item.to_string());
         )*
@@ -91,9 +89,7 @@ impl UiExt for Ui {
     #[inline]
     fn drag_value_with_buttons<Num: emath::Numeric>(
         &mut self,
-        // This suddenly began to throw up errors in my VSCode,
-        // but not when compiled, so this is a quick fix
-        #[allow(unused_mut)] mut value: &mut Num,
+        value: &mut Num,
         speed: f32,
         range: RangeInclusive<Num>,
     ) -> Response {

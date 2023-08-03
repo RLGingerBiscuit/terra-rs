@@ -9,7 +9,7 @@ use super::{
     App, Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,
 };
 
-#[allow(unused)]
+#[allow(dead_code)]
 #[derive(Debug)]
 enum Sizing {
     Auto,

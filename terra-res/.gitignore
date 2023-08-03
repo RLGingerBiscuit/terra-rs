@@ -5,3 +5,5 @@ json-fixer/
 build_type.txt
 
 generated/
+
+lua_item.lua

@@ -40,7 +40,6 @@ static DEFAULT_PLAYER_DIR: Lazy<PathBuf> = Lazy::new(utils::get_player_dir);
 
 static DEFAULT_PLAYER: Lazy<Player> = Lazy::new(Player::default);
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub enum Message {
     Noop,
@@ -70,7 +69,6 @@ pub enum Message {
     SetCurrentPrefixId(u8),
 }
 
-#[allow(dead_code)]
 pub struct App {
     player: Arc<RwLock<Player>>,
     player_path: Option<PathBuf>,
