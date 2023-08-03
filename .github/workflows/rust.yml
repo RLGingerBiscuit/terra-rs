@@ -1,0 +1,101 @@
+name: Rust
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check_changes:
+    name: Check changes
+    runs-on: ubuntu-latest
+
+    outputs:
+      code: ${{ steps.get_changes.outputs.code }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: get_changes
+        with:
+          filters: |
+            code:
+              - 'aes-stream/**'
+              - 'terra-*/**'
+              - 'Cargo.*'
+
+  build:
+    strategy:
+      matrix:
+        platform:
+          - name: linux
+            os: ubuntu-latest
+            ext: ""
+          - name: windows
+            os: windows-latest
+            ext: .exe
+
+    needs: check_changes
+    if: ${{ needs.check_changes.outputs.code == 'true' }}
+    runs-on: ${{ matrix.platform.os }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install build-essential pkg-config libgtk-3-dev unzip
+        if: matrix.platform.os != 'windows-latest'
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+
+      - name: Restore cache
+        id: restore-cache
+        uses: actions/cache/restore@v3
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+
+      - name: Build
+        run: cargo build --release
+        env:
+          UPDATE_PLATFORM: ${{ matrix.platform.name }}
+
+      - name: Save cache
+        uses: actions/cache/save@v3
+        with:
+          key: ${{ steps.restore-cache.outputs.cache-primary-key }}
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+
+      - name: Extract resources
+        run: 7z x -otarget/release/resources ./data/resources.zip
+
+      - name: Rename executable
+        run: mv target/release/terra-gui${{ matrix.platform.ext }} target/release/terra-rs${{ matrix.platform.ext }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.platform.name }}
+          path: |
+            target/release/terra-rs${{ matrix.platform.ext }}
+            target/release/resources/
