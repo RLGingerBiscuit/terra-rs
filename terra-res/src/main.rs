@@ -919,6 +919,7 @@ fn main() -> Result<()> {
 
     let template = Regex::new(r"\{\$([A-z\d]+)\.([A-z\d]+)\}")?;
 
+    // We output to css so that they can also be used with Terrasavr (which as of August 3rd 2023 doesn't have correct sprites)
     let item_offset_filepath = gen_fol.join("items.css");
     let buff_offset_filepath = gen_fol.join("buffs.css");
 
