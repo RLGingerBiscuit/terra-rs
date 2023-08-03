@@ -18,7 +18,7 @@ def concat_versions(versions: list[tuple[str, int]], i: int) -> tuple[str, int]:
 
 
 def main():
-    lines = Path("versions.txt").read_text().splitlines()
+    lines = Path("data/versions.txt").read_text().splitlines()
 
     versions: list[tuple[str, int]] = []
 
