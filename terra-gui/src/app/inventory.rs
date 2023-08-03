@@ -107,6 +107,7 @@ impl App {
         ui: &mut Ui,
         slot_size: f32,
         scale: f32,
+        with_margin: bool,
         rect: Rect,
         selected: bool,
         spritesheet: Option<&TextureHandle>,
@@ -124,6 +125,12 @@ impl App {
             frame
         } else {
             ClickableFrame::group(ui.style())
+        };
+
+        let group = if with_margin {
+            group
+        } else {
+            group.inner_margin(0.)
         };
 
         let response = group
@@ -225,6 +232,7 @@ impl App {
             ui,
             ITEM_SLOT_SIZE,
             ITEM_SPRITE_SCALE,
+            true,
             rect,
             selected,
             spritesheet.as_ref(),
@@ -575,6 +583,7 @@ impl App {
             ui,
             BUFF_SLOT_SIZE,
             BUFF_SPRITE_SCALE,
+            false,
             rect,
             selected,
             spritesheet.as_ref(),
