@@ -5,8 +5,8 @@ use egui::{
 use crate::{app::inventory::ITEM_SLOT_SIZE, ui::UiExt};
 
 use super::{
-    inventory::BUFF_SLOT_SIZE, App, Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL,
-    GITHUB_REPO_NAME, GITHUB_REPO_URL,
+    inventory::{BuffSlot, ItemSlot, BUFF_SLOT_SIZE},
+    App, Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,
 };
 
 #[allow(unused)]
@@ -164,7 +164,10 @@ impl App {
                                             let meta = meta.unwrap();
 
                                             let response = self.render_item_slot(
-                                                ui, meta.id, None, false, false, None, true,
+                                                ui,
+                                                ItemSlot::with_id_only(meta.id),
+                                                false,
+                                                true,
                                             );
 
                                             if response.clicked() {
@@ -242,8 +245,12 @@ impl App {
                                             }
                                             let meta = meta.unwrap();
 
-                                            let response = self
-                                                .render_buff_slot(ui, meta.id, None, false, true);
+                                            let response = self.render_buff_slot(
+                                                ui,
+                                                BuffSlot::with_id_only(meta.id),
+                                                false,
+                                                true,
+                                            );
 
                                             if response.clicked() {
                                                 self.do_update(Message::SetCurrentBuffId(meta.id));

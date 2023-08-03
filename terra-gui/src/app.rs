@@ -113,7 +113,7 @@ impl App {
         let (theme, tree) = match cc.storage {
             Some(s) => (
                 eframe::get_value::<visuals::Theme>(s, THEME_KEY).unwrap_or_default(),
-                eframe::get_value(s, TREE_KEY).unwrap_or_else(|| tabs::default_ui()),
+                eframe::get_value(s, TREE_KEY).unwrap_or_else(tabs::default_ui),
             ),
             None => (Default::default(), Default::default()),
         };

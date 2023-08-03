@@ -1,4 +1,7 @@
-use egui::{pos2, vec2, Align2, Image, Rect, Response, RichText, TextStyle, TextureHandle, Ui};
+use egui::{
+    pos2, vec2, Align2, Image, Margin, Rect, Response, RichText, Sense, TextStyle, TextureHandle,
+    Ui,
+};
 
 use terra_core::{
     utils, BuffMeta, ItemMeta, ItemType, PrefixMeta, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE,
@@ -10,9 +13,21 @@ use crate::ui::{ClickableFrame, UiExt};
 use super::{App, Message};
 
 pub const ITEM_SLOT_SIZE: f32 = 40.;
+pub const ITEM_SLOT_MARGIN: Margin = Margin {
+    left: 6.,
+    right: 6.,
+    top: 6.,
+    bottom: 6.,
+};
 pub const ITEM_SPRITE_SCALE: f32 = 2.;
 
 pub const BUFF_SLOT_SIZE: f32 = 32.;
+pub const BUFF_SLOT_MARGIN: Margin = Margin {
+    left: 0.,
+    right: 0.,
+    top: 0.,
+    bottom: 0.,
+};
 pub const BUFF_SPRITE_SIZE: f32 = CORE_BUFF_SPRITE_SIZE as f32;
 pub const BUFF_SPRITE_SCALE: f32 = 2.;
 
@@ -92,104 +107,159 @@ pub enum ItemTab {
 #[derive(Debug)]
 pub struct SelectedItem(pub ItemTab, pub usize);
 
+impl SelectedItem {
+    pub fn equals(&self, tab: ItemTab, index: usize) -> bool {
+        self.0 == tab && self.1 == index
+    }
+}
+
 #[derive(Debug)]
 pub struct SelectedBuff(pub usize);
 
+impl SelectedBuff {
+    pub fn equals(&self, index: usize) -> bool {
+        self.0 == index
+    }
+}
+
 #[derive(Debug)]
 pub struct SelectedLoadout(pub usize);
+
+#[derive(Debug)]
+struct Slot {
+    rect: Rect,
+    size: f32,
+    scale: f32,
+    margin: Margin,
+    selected: bool,
+    stack: Option<i32>,
+}
+
+#[derive(Default, Debug)]
+pub struct ItemSlot<'a> {
+    id: i32,
+    prefix_meta: Option<&'a PrefixMeta>,
+    favourited: bool,
+    stack: Option<i32>,
+}
+
+impl<'a> ItemSlot<'a> {
+    pub fn new(
+        id: i32,
+        prefix_meta: Option<&'a PrefixMeta>,
+        favourited: bool,
+        stack: Option<i32>,
+    ) -> Self {
+        Self {
+            id,
+            prefix_meta,
+            favourited,
+            stack,
+        }
+    }
+
+    pub fn with_id_only(id: i32) -> Self {
+        Self {
+            id,
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Default, Debug)]
+pub struct BuffSlot {
+    id: i32,
+    time: Option<i32>,
+}
+
+impl BuffSlot {
+    pub fn new(id: i32, time: Option<i32>) -> Self {
+        Self { id, time }
+    }
+
+    pub fn with_id_only(id: i32) -> Self {
+        Self {
+            id,
+            ..Default::default()
+        }
+    }
+}
 
 impl App {
     // TODO: split sprite into render_icon (or something)
     // TODO: render slot icons
     // TODO: render coloured slots
-    pub fn render_slot(
+    fn render_slot(
         &self,
         ui: &mut Ui,
-        slot_size: f32,
-        scale: f32,
-        with_margin: bool,
-        rect: Rect,
-        selected: bool,
         spritesheet: Option<&TextureHandle>,
-        stack_size: Option<i32>,
+        slot: Slot,
     ) -> Response {
-        let mut padding_x = slot_size;
-        let mut padding_y = slot_size;
-
-        let [width, height]: [f32; 2] = rect.size().into();
-        let [x, y]: [f32; 2] = rect.left_top().into();
-
-        let group = if selected {
+        let group = if slot.selected {
             let mut frame = ClickableFrame::group(ui.style());
             frame.fill = ui.visuals().code_bg_color;
             frame
         } else {
             ClickableFrame::group(ui.style())
-        };
-
-        let group = if with_margin {
-            group
-        } else {
-            group.inner_margin(0.)
-        };
+        }
+        .inner_margin(slot.margin);
 
         let response = group
             .show(ui, |ui| {
-                ui.spacing_mut().item_spacing = [0., 0.].into();
+                ui.spacing_mut().item_spacing = vec2(0., 0.);
 
-                if let Some(spritesheet) = spritesheet {
-                    let [spritesheet_width, spritesheet_height] =
-                        spritesheet.size().map(|s| s as f32);
+                match spritesheet {
+                    None => {
+                        let _ = ui.allocate_exact_size(vec2(slot.size, slot.size), Sense::hover());
+                    }
+                    Some(sheet) => {
+                        let sheet_size = sheet.size_vec2();
 
-                    let mut final_width = width * scale;
-                    let mut final_height = height * scale;
+                        let pos = slot.rect.left_top();
+                        let mut size = slot.rect.size();
 
-                    let scale = if final_width > slot_size || final_height > slot_size {
-                        if final_width <= final_height {
-                            slot_size / final_height
-                        } else {
-                            slot_size / final_width
+                        let min = pos2(pos.x / sheet_size.x, pos.y / sheet_size.y);
+                        let max = vec2(size.x / sheet_size.x, size.y / sheet_size.y);
+                        let uv = Rect::from_min_size(min, max);
+
+                        size *= slot.scale;
+
+                        if size.x > slot.size || size.y > slot.size {
+                            if size.x >= size.y {
+                                // Landscape
+                                size *= slot.size / size.x;
+                            } else {
+                                // Portrait
+                                size *= slot.size / size.y;
+                            }
                         }
-                    } else {
-                        1.
-                    };
 
-                    final_width *= scale;
-                    final_height *= scale;
+                        let padding = vec2(
+                            if size.x < slot.size {
+                                (slot.size - size.x) / 2.
+                            } else {
+                                0.
+                            },
+                            if size.y < slot.size {
+                                (slot.size - size.y) / 2.
+                            } else {
+                                0.
+                            },
+                        );
 
-                    padding_x = if final_width < slot_size {
-                        (slot_size - final_width) / 2.
-                    } else {
-                        0.
-                    };
-                    padding_y = if final_height < slot_size {
-                        (slot_size - final_height) / 2.
-                    } else {
-                        0.
-                    };
-
-                    let min = pos2(x / spritesheet_width, y / spritesheet_height);
-                    let sprite_size = vec2(width / spritesheet_width, height / spritesheet_height);
-                    let uv = Rect::from_min_size(min, sprite_size);
-                    let size = vec2(final_width, final_height);
-
-                    ui.add_space(padding_x);
-                    ui.vertical(|ui| {
-                        ui.add_space(padding_y);
-                        ui.add(Image::new(spritesheet, size).uv(uv));
-                        ui.add_space(padding_y);
-                    });
-                    ui.add_space(padding_x);
-                } else {
-                    ui.add_space(padding_x);
-                    ui.vertical(|ui| {
-                        ui.add_space(padding_y);
-                    });
+                        ui.add_space(padding.x);
+                        ui.vertical(|ui| {
+                            ui.add_space(padding.y);
+                            ui.add(Image::new(sheet, size).uv(uv));
+                            ui.add_space(padding.y);
+                        });
+                        ui.add_space(padding.x);
+                    }
                 }
             })
             .response;
 
-        if let Some(stack) = stack_size {
+        if let Some(stack) = slot.stack {
             let max = response.rect.max;
             let icon_spacing = ui.style().spacing.icon_spacing;
 
@@ -208,11 +278,8 @@ impl App {
     pub fn render_item_slot(
         &self,
         ui: &mut Ui,
-        item_id: i32,
-        prefix_meta: Option<&PrefixMeta>,
-        favourited: bool,
+        slot: ItemSlot,
         selected: bool,
-        stack_size: Option<i32>,
         tooltip_on_hover: bool,
     ) -> Response {
         let spritesheet = self.item_spritesheet.read();
@@ -222,7 +289,7 @@ impl App {
         }
 
         let item_meta = &*self.item_meta.read();
-        let meta = meta_or_default!(item_meta, item_id);
+        let meta = meta_or_default!(item_meta, slot.id);
 
         let min = pos2(meta.x as f32, meta.y as f32);
         let size = vec2(meta.width as f32, meta.height as f32);
@@ -230,47 +297,38 @@ impl App {
 
         let response = self.render_slot(
             ui,
-            ITEM_SLOT_SIZE,
-            ITEM_SPRITE_SCALE,
-            true,
-            rect,
-            selected,
             spritesheet.as_ref(),
-            stack_size,
+            Slot {
+                rect,
+                size: ITEM_SLOT_SIZE,
+                scale: ITEM_SPRITE_SCALE,
+                margin: ITEM_SLOT_MARGIN,
+                selected,
+                stack: slot.stack,
+            },
         );
 
         if meta.id != 0 && tooltip_on_hover {
             response.on_hover_ui(|ui| {
-                self.render_item_tooltip(ui, meta, prefix_meta, favourited);
+                self.render_item_tooltip(ui, meta, slot.prefix_meta, slot.favourited);
             })
         } else {
             response
         }
     }
 
-    // TODO: Take in an Iterator?
-    pub fn render_item_slots_special(
-        &self,
-        ui: &mut Ui,
-        tooltip_on_hover: bool,
-        items: &[(i32, Option<&PrefixMeta>, bool, Option<i32>, ItemTab, usize)],
-    ) {
-        for (item_id, prefix_meta, favourited, stack_size, tab, index) in items {
-            let selected = &self.selected_item.0 == tab && &self.selected_item.1 == index;
+    pub fn render_item_slots<'a, I>(&self, ui: &mut Ui, tooltip_on_hover: bool, items: I)
+    where
+        I: Iterator<Item = (ItemSlot<'a>, ItemTab, usize)>,
+    {
+        for (slot, tab, index) in items {
+            let selected = self.selected_item.equals(tab, index);
 
             if self
-                .render_item_slot(
-                    ui,
-                    *item_id,
-                    *prefix_meta,
-                    *favourited,
-                    selected,
-                    *stack_size,
-                    tooltip_on_hover,
-                )
+                .render_item_slot(ui, slot, selected, tooltip_on_hover)
                 .clicked()
             {
-                self.do_update(Message::SelectItem(SelectedItem(*tab, *index)));
+                self.do_update(Message::SelectItem(SelectedItem(tab, index)));
             }
         }
     }
@@ -561,8 +619,7 @@ impl App {
     pub fn render_buff_slot(
         &self,
         ui: &mut Ui,
-        buff_id: i32,
-        buff_time: Option<i32>,
+        slot: BuffSlot,
         selected: bool,
         tooltip_on_hover: bool,
     ) -> Response {
@@ -573,7 +630,7 @@ impl App {
         }
 
         let buff_meta = &*self.buff_meta.read();
-        let meta = meta_or_default!(buff_meta, buff_id);
+        let meta = meta_or_default!(buff_meta, slot.id);
 
         let min = pos2(meta.x as f32, meta.y as f32);
         let size = vec2(BUFF_SPRITE_SIZE, BUFF_SPRITE_SIZE);
@@ -581,51 +638,51 @@ impl App {
 
         let response = self.render_slot(
             ui,
-            BUFF_SLOT_SIZE,
-            BUFF_SPRITE_SCALE,
-            false,
-            rect,
-            selected,
             spritesheet.as_ref(),
-            None,
+            Slot {
+                rect,
+                size: BUFF_SLOT_SIZE,
+                scale: BUFF_SPRITE_SCALE,
+                margin: BUFF_SLOT_MARGIN,
+                selected,
+                stack: None,
+            },
         );
 
         if meta.id != 0 && tooltip_on_hover {
             response.on_hover_ui(|ui| {
-                self.render_buff_tooltip(ui, meta, buff_time);
+                self.render_buff_tooltip(ui, meta, slot.time);
             })
         } else {
             response
         }
     }
 
-    // TODO: Take in an Iterator?
-    pub fn render_buff_slots_special(
-        &self,
-        ui: &mut Ui,
-        tooltip_on_hover: bool,
-        buffs: &[(i32, Option<i32>, usize)],
-    ) {
-        for (buff_id, buff_time, index) in buffs {
-            let selected = &self.selected_buff.0 == index;
+    pub fn render_buff_slots<I>(&self, ui: &mut Ui, tooltip_on_hover: bool, slots: I)
+    where
+        I: Iterator<Item = (BuffSlot, usize)>,
+    {
+        for (slot, index) in slots {
+            let selected = self.selected_buff.equals(index);
+
             if self
-                .render_buff_slot(ui, *buff_id, *buff_time, selected, tooltip_on_hover)
+                .render_buff_slot(ui, slot, selected, tooltip_on_hover)
                 .clicked()
             {
-                self.do_update(Message::SelectBuff(SelectedBuff(*index)));
+                self.do_update(Message::SelectBuff(SelectedBuff(index)));
             }
         }
     }
 
-    pub fn buff_name(&self, buff_name: &str, buff_time: Option<i32>) -> String {
+    pub fn buff_name(&self, name: &str, time: Option<i32>) -> String {
         const FRAMES_PER_SECOND: i32 = 60;
         const FRAMES_PER_MINUTE: i32 = FRAMES_PER_SECOND * 60;
         const FRAMES_PER_HOUR: i32 = FRAMES_PER_MINUTE * 60;
         const FRAMES_PER_THOUSAND_HOURS: i32 = FRAMES_PER_HOUR * 1000;
 
-        if let Some(time) = buff_time {
+        if let Some(time) = time {
             if time == 0 {
-                buff_name.to_owned()
+                name.to_owned()
             } else {
                 let time = if time < FRAMES_PER_SECOND {
                     format!("({}f)", time)
@@ -639,10 +696,10 @@ impl App {
                     "(∞)".to_owned()
                 };
 
-                format!("{} {}", buff_name, time)
+                format!("{} {}", name, time)
             }
         } else {
-            buff_name.to_owned()
+            name.to_owned()
         }
     }
 
@@ -680,28 +737,28 @@ impl App {
             });
     }
 
-    pub fn render_buff_tooltip(&self, ui: &mut Ui, buff_meta: &BuffMeta, buff_time: Option<i32>) {
-        if buff_meta.id == 0 {
+    pub fn render_buff_tooltip(&self, ui: &mut Ui, meta: &BuffMeta, time: Option<i32>) {
+        if meta.id == 0 {
             return;
         }
 
-        ui.heading(self.buff_name(&buff_meta.name, buff_time));
+        ui.heading(self.buff_name(&meta.name, time));
 
-        ui.small(format!("ID: {}", buff_meta.id));
+        ui.small(format!("ID: {}", meta.id));
 
-        if let Some(tooltip) = &buff_meta.tooltip {
+        if let Some(tooltip) = &meta.tooltip {
             for line in tooltip {
                 ui.label(line);
             }
         }
     }
 
-    pub fn render_prefix_tooltip(&self, ui: &mut Ui, prefix_meta: &PrefixMeta) {
-        if prefix_meta.id == 0 {
+    pub fn render_prefix_tooltip(&self, ui: &mut Ui, meta: &PrefixMeta) {
+        if meta.id == 0 {
             return;
         }
 
-        ui.heading(&prefix_meta.name);
-        ui.small(format!("Id: {}", prefix_meta.id));
+        ui.heading(&meta.name);
+        ui.small(format!("Id: {}", meta.id));
     }
 }

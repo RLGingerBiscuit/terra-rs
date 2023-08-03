@@ -2,7 +2,6 @@ use std::fmt::Display;
 
 use egui::{ComboBox, Grid, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
-use parking_lot::RwLockReadGuard;
 
 use terra_core::{
     utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, INVENTORY_STRIDE,
@@ -11,7 +10,10 @@ use terra_core::{
 
 use crate::{enum_selectable_value, meta_or_default, ui::UiExt};
 
-use super::{inventory::ItemTab, App, Message};
+use super::{
+    inventory::{BuffSlot, ItemSlot, ItemTab},
+    App, Message,
+};
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum Tabs {
@@ -94,6 +96,25 @@ pub fn default_ui() -> Tree<Tabs> {
 
     tree.set_focused_node(load_save);
     tree
+}
+
+#[derive(Debug)]
+struct ItemTabOptions {
+    id: &'static str,
+    tab: ItemTab,
+    columns: usize,
+    stride: usize,
+}
+
+impl ItemTabOptions {
+    fn new(id: &'static str, tab: ItemTab, columns: usize, stride: usize) -> Self {
+        Self {
+            id,
+            tab,
+            columns,
+            stride,
+        }
+    }
 }
 
 impl App {
@@ -217,42 +238,42 @@ impl App {
     fn render_item_tab<F>(
         &self,
         ui: &mut Ui,
-        id: &str,
-        tab: ItemTab,
-        prefix_meta: &RwLockReadGuard<'_, Vec<PrefixMeta>>,
+        opts: ItemTabOptions,
+        prefix_meta: &[PrefixMeta],
         items: &[Item],
-        num_columns: usize,
-        stride: usize,
         extra_cols: F,
     ) where
         F: Fn(&mut Ui, usize),
     {
-        egui::Grid::new(id).num_columns(num_columns).show(ui, |ui| {
-            for i in 0..stride {
-                let slice = items
-                    .iter()
-                    .enumerate()
-                    .skip(i * stride)
-                    .take(stride)
-                    .map(|(index, item)| {
-                        (
-                            item.id,
-                            Some(meta_or_default!(prefix_meta, item.prefix.id)),
-                            item.favourited,
-                            Some(item.stack),
-                            tab,
-                            index,
-                        )
-                    })
-                    .collect::<Vec<_>>();
+        egui::Grid::new(opts.id)
+            .num_columns(opts.columns)
+            .show(ui, |ui| {
+                for i in 0..opts.stride {
+                    let slots = items
+                        .iter()
+                        .enumerate()
+                        .skip(i * opts.stride)
+                        .take(opts.stride)
+                        .map(|(index, item)| {
+                            (
+                                ItemSlot::new(
+                                    item.id,
+                                    Some(meta_or_default!(prefix_meta, item.prefix.id)),
+                                    item.favourited,
+                                    Some(item.stack),
+                                ),
+                                opts.tab,
+                                index,
+                            )
+                        });
 
-                self.render_item_slots_special(ui, true, &slice);
+                    self.render_item_slots(ui, true, slots);
 
-                extra_cols(ui, i);
+                    extra_cols(ui, i);
 
-                ui.end_row();
-            }
-        });
+                    ui.end_row();
+                }
+            });
     }
 
     fn render_inventory_tab(&mut self, ui: &mut Ui) {
@@ -263,39 +284,44 @@ impl App {
 
         self.render_item_tab(
             ui,
-            "player_inventory",
-            ItemTab::Inventory,
+            ItemTabOptions::new(
+                "player_inventory",
+                ItemTab::Inventory,
+                INVENTORY_STRIDE + EXTRA_STRIDE,
+                INVENTORY_STRIDE,
+            ),
             &prefix_meta,
             &player.inventory,
-            INVENTORY_STRIDE + EXTRA_STRIDE,
-            INVENTORY_STRIDE,
             |ui, row| {
                 if row < 4 {
                     let coins_item = &player.coins[row];
                     let ammo_item = &player.ammo[row];
 
-                    self.render_item_slots_special(
-                        ui,
-                        true,
-                        &[
-                            (
+                    let slots = [
+                        (
+                            ItemSlot::new(
                                 coins_item.id,
                                 Some(meta_or_default!(prefix_meta, coins_item.prefix.id)),
                                 coins_item.favourited,
                                 Some(coins_item.stack),
-                                ItemTab::Coins,
-                                row,
                             ),
-                            (
+                            ItemTab::Coins,
+                            row,
+                        ),
+                        (
+                            ItemSlot::new(
                                 ammo_item.id,
                                 Some(meta_or_default!(prefix_meta, ammo_item.prefix.id)),
                                 ammo_item.favourited,
                                 Some(ammo_item.stack),
-                                ItemTab::Ammo,
-                                row,
                             ),
-                        ],
-                    );
+                            ItemTab::Ammo,
+                            row,
+                        ),
+                    ]
+                    .into_iter();
+
+                    self.render_item_slots(ui, true, slots);
                 }
             },
         );
@@ -307,12 +333,9 @@ impl App {
 
         self.render_item_tab(
             ui,
-            "player_bank",
-            ItemTab::Bank,
+            ItemTabOptions::new("player_bank", ItemTab::Bank, BANK_STRIDE, BANK_STRIDE),
             &prefix_meta,
             &player.piggy_bank,
-            BANK_STRIDE,
-            BANK_STRIDE,
             |_, _| {},
         );
     }
@@ -323,12 +346,9 @@ impl App {
 
         self.render_item_tab(
             ui,
-            "player_safe",
-            ItemTab::Safe,
+            ItemTabOptions::new("player_safe", ItemTab::Safe, BANK_STRIDE, BANK_STRIDE),
             &prefix_meta,
             &player.safe,
-            BANK_STRIDE,
-            BANK_STRIDE,
             |_, _| {},
         );
     }
@@ -339,12 +359,9 @@ impl App {
 
         self.render_item_tab(
             ui,
-            "player_forge",
-            ItemTab::Forge,
+            ItemTabOptions::new("player_forge", ItemTab::Forge, BANK_STRIDE, BANK_STRIDE),
             &prefix_meta,
             &player.defenders_forge,
-            BANK_STRIDE,
-            BANK_STRIDE,
             |_, _| {},
         );
     }
@@ -355,12 +372,9 @@ impl App {
 
         self.render_item_tab(
             ui,
-            "player_void",
-            ItemTab::Void,
+            ItemTabOptions::new("player_void", ItemTab::Void, BANK_STRIDE, BANK_STRIDE),
             &prefix_meta,
             &player.void_vault,
-            BANK_STRIDE,
-            BANK_STRIDE,
             |_, _| {},
         );
     }
@@ -370,16 +384,15 @@ impl App {
 
         Grid::new("player_buffs").num_columns(10).show(ui, |ui| {
             for i in 0..BUFF_STRIDE {
-                let slice = player
+                let slots = player
                     .buffs
                     .iter()
                     .enumerate()
                     .skip(i * BUFF_STRIDE)
                     .take(BUFF_STRIDE)
-                    .map(|(index, buff)| (buff.id, Some(buff.time), index))
-                    .collect::<Vec<_>>();
+                    .map(|(index, buff)| (BuffSlot::new(buff.id, Some(buff.time)), index));
 
-                self.render_buff_slots_special(ui, true, &slice);
+                self.render_buff_slots(ui, true, slots);
 
                 ui.end_row();
             }
@@ -410,124 +423,143 @@ impl App {
                     let vanity_accessory_item = &current_loadout.vanity_accessories[i];
                     let accessory_item = &current_loadout.accessories[i];
 
-                    self.render_item_slots_special(
-                        ui,
-                        true,
-                        &[
-                            (
+                    let slots = [
+                        (
+                            ItemSlot::new(
                                 equipment_dye.id,
                                 Some(meta_or_default!(prefix_meta, equipment_dye.id)),
                                 equipment_dye.favourited,
                                 None,
-                                ItemTab::EquipmentDyes,
-                                i,
                             ),
-                            (
+                            ItemTab::EquipmentDyes,
+                            i,
+                        ),
+                        (
+                            ItemSlot::new(
                                 equipment_item.id,
                                 Some(meta_or_default!(prefix_meta, equipment_item.id)),
                                 equipment_item.favourited,
                                 None,
-                                ItemTab::Equipment,
-                                i,
                             ),
-                            (
+                            ItemTab::Equipment,
+                            i,
+                        ),
+                        (
+                            ItemSlot::new(
                                 accessory_dye.id,
                                 Some(meta_or_default!(prefix_meta, accessory_dye.id)),
                                 accessory_dye.favourited,
                                 None,
-                                ItemTab::AccessoryDyes,
-                                i,
                             ),
-                            (
+                            ItemTab::AccessoryDyes,
+                            i,
+                        ),
+                        (
+                            ItemSlot::new(
                                 vanity_accessory_item.id,
                                 Some(meta_or_default!(prefix_meta, vanity_accessory_item.id)),
                                 vanity_accessory_item.favourited,
                                 None,
-                                ItemTab::VanityAccessories,
-                                i,
                             ),
-                            (
+                            ItemTab::VanityAccessories,
+                            i,
+                        ),
+                        (
+                            ItemSlot::new(
                                 accessory_item.id,
                                 Some(meta_or_default!(prefix_meta, accessory_item.id)),
                                 accessory_item.favourited,
                                 None,
-                                ItemTab::Accessories,
-                                i,
                             ),
-                        ],
-                    );
+                            ItemTab::Accessories,
+                            i,
+                        ),
+                    ]
+                    .into_iter();
+
+                    self.render_item_slots(ui, true, slots);
 
                     if i < ARMOR_COUNT {
                         let armor_dye = &current_loadout.armor_dyes[i];
                         let vanity_armor = &current_loadout.vanity_armor[i];
                         let armor = &current_loadout.armor[i];
 
-                        self.render_item_slots_special(
-                            ui,
-                            true,
-                            &[
-                                (
+                        let slots = [
+                            (
+                                ItemSlot::new(
                                     armor_dye.id,
                                     Some(meta_or_default!(prefix_meta, armor_dye.id)),
                                     armor_dye.favourited,
                                     None,
-                                    ItemTab::ArmorDyes,
-                                    i,
                                 ),
-                                (
+                                ItemTab::ArmorDyes,
+                                i,
+                            ),
+                            (
+                                ItemSlot::new(
                                     vanity_armor.id,
                                     Some(meta_or_default!(prefix_meta, vanity_armor.id)),
                                     vanity_armor.favourited,
                                     None,
-                                    ItemTab::VanityArmor,
-                                    i,
                                 ),
-                                (
+                                ItemTab::VanityArmor,
+                                i,
+                            ),
+                            (
+                                ItemSlot::new(
                                     armor.id,
                                     Some(meta_or_default!(prefix_meta, armor.id)),
                                     armor.favourited,
                                     None,
-                                    ItemTab::Armor,
-                                    i,
                                 ),
-                            ],
-                        );
+                                ItemTab::Armor,
+                                i,
+                            ),
+                        ]
+                        .into_iter();
+
+                        self.render_item_slots(ui, true, slots);
                     } else {
                         let accessory_dye = &current_loadout.accessory_dyes[ARMOR_COUNT - 1 + i];
                         let vanity_accessory =
                             &current_loadout.vanity_accessories[ARMOR_COUNT - 1 + i];
                         let accessory = &current_loadout.accessories[ARMOR_COUNT - 1 + i];
 
-                        self.render_item_slots_special(
-                            ui,
-                            true,
-                            &[
-                                (
+                        let slots = [
+                            (
+                                ItemSlot::new(
                                     accessory_dye.id,
                                     Some(meta_or_default!(prefix_meta, accessory_dye.id)),
                                     accessory_dye.favourited,
                                     None,
-                                    ItemTab::AccessoryDyes,
-                                    ARMOR_COUNT - 1 + i,
                                 ),
-                                (
+                                ItemTab::AccessoryDyes,
+                                ARMOR_COUNT - 1 + i,
+                            ),
+                            (
+                                ItemSlot::new(
                                     vanity_accessory.id,
                                     Some(meta_or_default!(prefix_meta, vanity_accessory.id)),
                                     vanity_accessory.favourited,
                                     None,
-                                    ItemTab::VanityAccessories,
-                                    ARMOR_COUNT - 1 + i,
                                 ),
-                                (
+                                ItemTab::VanityAccessories,
+                                ARMOR_COUNT - 1 + i,
+                            ),
+                            (
+                                ItemSlot::new(
                                     accessory.id,
                                     Some(meta_or_default!(prefix_meta, accessory.id)),
                                     accessory.favourited,
                                     None,
-                                    ItemTab::Accessories,
-                                    ARMOR_COUNT - 1 + i,
                                 ),
-                            ],
-                        );
+                                ItemTab::Accessories,
+                                ARMOR_COUNT - 1 + i,
+                            ),
+                        ]
+                        .into_iter();
+
+                        self.render_item_slots(ui, true, slots);
                     }
 
                     ui.end_row();
