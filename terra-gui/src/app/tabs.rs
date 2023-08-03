@@ -3,6 +3,7 @@ use std::fmt::Display;
 use egui::{ComboBox, Grid, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
 use parking_lot::RwLockReadGuard;
+
 use terra_core::{
     utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, INVENTORY_STRIDE,
     LOADOUT_COUNT,

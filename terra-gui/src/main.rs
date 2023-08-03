@@ -1,9 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
+use egui::vec2;
+
 mod app;
 mod ui;
-
-use egui::vec2;
 
 use app::App;
 
