@@ -136,11 +136,12 @@ impl App {
     fn render_stats_tab(&mut self, ui: &mut Ui) {
         let mut player = self.player.write();
 
-        ui.labelled("Name: ", |ui| {
+        egui::Grid::new("stats").num_columns(3).show(ui, |ui| {
+            ui.label("Name: ");
             ui.text_edit_singleline(&mut player.name);
-        });
+            ui.end_row();
 
-        ui.labelled("Difficulty: ", |ui| {
+            ui.label("Difficulty: ");
             ComboBox::from_id_source("player_difficulty")
                 .selected_text(player.difficulty.to_string())
                 .show_ui(ui, |ui| {
@@ -153,35 +154,38 @@ impl App {
                         Difficulty::Hardcore
                     );
                 });
-        });
+            ui.end_row();
 
-        ui.labelled("Version:", |ui| {
-            ui.drag_value_with_buttons(&mut player.version, 1., 0..=i32::MAX);
-            ui.small(utils::version_lookup(player.version));
-        });
+            ui.label("Version: ");
+            ui.horizontal(|ui| {
+                ui.drag_value_with_buttons(&mut player.version, 1., 0..=i32::MAX);
+                ui.small(utils::version_lookup(player.version));
+            });
+            ui.end_row();
 
-        ui.labelled("Health: ", |ui| {
-            ui.drag_value_with_buttons(&mut player.life, 1., 0..=i32::MAX);
-            ui.label("/");
-            ui.drag_value_with_buttons(&mut player.max_life, 1., 0..=i32::MAX);
-        });
+            ui.label("Health: ");
+            ui.horizontal(|ui| {
+                ui.drag_value_with_buttons(&mut player.life, 1., 0..=i32::MAX);
+                ui.label("/");
+                ui.drag_value_with_buttons(&mut player.max_life, 1., 0..=i32::MAX);
+            });
+            ui.end_row();
 
-        ui.labelled("Mana: ", |ui| {
-            ui.drag_value_with_buttons(&mut player.mana, 1., 0..=i32::MAX);
-            ui.label("/");
-            ui.drag_value_with_buttons(&mut player.max_mana, 1., 0..=i32::MAX);
-        });
+            ui.label("Mana: ");
+            ui.horizontal(|ui| {
+                ui.drag_value_with_buttons(&mut player.mana, 1., 0..=i32::MAX);
+                ui.label("/");
+                ui.drag_value_with_buttons(&mut player.max_mana, 1., 0..=i32::MAX);
+            });
+            ui.end_row();
 
-        // Add some space so bottom matches up with selected tab
-        const SEPARATOR_SPACING: f32 = 6.;
-        ui.add_space(SEPARATOR_SPACING);
-
-        ui.labelled("Fishing quests: ", |ui| {
+            ui.label("Fishing quests: ");
             ui.drag_value_with_buttons(&mut player.angler_quests, 1., 0..=i32::MAX);
-        });
+            ui.end_row();
 
-        ui.labelled("Golfer score: ", |ui| {
+            ui.label("Golfer score: ");
             ui.drag_value_with_buttons(&mut player.golfer_score, 1., 0..=i32::MAX);
+            ui.end_row();
         });
     }
 
