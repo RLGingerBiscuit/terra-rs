@@ -31,6 +31,7 @@ pub const EGUI_GITHUB_REPO_URL: &str = "https://github.com/emilk/egui";
 
 pub const THEME_KEY: &str = "theme";
 pub const TREE_KEY: &str = "tree";
+pub const CLOSED_TABS_KEY: &str = "closed_tabs";
 
 static SHORTCUT_LOAD: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::O);
 static SHORTCUT_SAVE: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::S);
@@ -108,12 +109,13 @@ impl App {
         let item_meta = ItemMeta::load().expect("Could not load items");
         let buff_meta = BuffMeta::load().expect("Could not load buffs");
 
-        let (theme, tree) = match cc.storage {
+        let (theme, tree, closed_tabs) = match cc.storage {
             Some(s) => (
                 eframe::get_value::<visuals::Theme>(s, THEME_KEY).unwrap_or_default(),
                 eframe::get_value(s, TREE_KEY).unwrap_or_else(tabs::default_ui),
+                eframe::get_value(s, CLOSED_TABS_KEY).unwrap_or_default(),
             ),
-            None => (Default::default(), Default::default()),
+            None => (Default::default(), Default::default(), Default::default()),
         };
         theme.set_theme(&cc.egui_ctx);
 
@@ -136,7 +138,7 @@ impl App {
 
             theme,
             tree: Arc::new(RwLock::new(tree)),
-            closed_tabs: FxHashMap::default(),
+            closed_tabs: closed_tabs,
 
             search_term: String::new(),
 
@@ -400,6 +402,7 @@ impl eframe::App for App {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, THEME_KEY, &self.theme);
         eframe::set_value(storage, TREE_KEY, &*self.tree.read());
+        eframe::set_value(storage, CLOSED_TABS_KEY, &self.closed_tabs);
     }
 
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
