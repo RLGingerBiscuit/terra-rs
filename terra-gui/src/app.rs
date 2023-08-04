@@ -52,6 +52,7 @@ pub enum Message {
     ShowError(anyhow::Error),
     CloseError,
     SetTheme(visuals::Theme),
+    ResetTabs,
     ResetPlayer,
     LoadPlayer,
     SavePlayer,
@@ -217,6 +218,10 @@ impl App {
                 Message::SetTheme(theme) => {
                     theme.set_theme(ctx);
                     self.theme = theme;
+                }
+                Message::ResetTabs => {
+                    *self.tree.write() = tabs::default_ui();
+                    self.closed_tabs.clear();
                 }
                 Message::ResetPlayer => self.player.write().clone_from(&DEFAULT_PLAYER),
                 Message::LoadPlayer => {

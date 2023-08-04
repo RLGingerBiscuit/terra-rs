@@ -3,10 +3,7 @@ use egui_dock::{Node, NodeIndex};
 
 use crate::ui::UiExt;
 
-use super::{
-    tabs::{self, Tabs},
-    visuals, App, Message, SHORTCUT_EXIT, SHORTCUT_LOAD, SHORTCUT_SAVE,
-};
+use super::{tabs::Tabs, visuals, App, Message, SHORTCUT_EXIT, SHORTCUT_LOAD, SHORTCUT_SAVE};
 
 impl App {
     pub fn render_menu(&mut self, ctx: &egui::Context) {
@@ -67,7 +64,7 @@ impl App {
 
         if ui.button("Reset Tabs").clicked() {
             ui.close_menu();
-            *self.tree.write() = tabs::default_ui();
+            self.do_update(Message::ResetTabs);
         }
 
         ui.separator();
