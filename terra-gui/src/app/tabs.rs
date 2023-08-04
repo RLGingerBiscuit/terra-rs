@@ -137,11 +137,11 @@ impl App {
         let mut player = self.player.write();
 
         egui::Grid::new("stats").num_columns(3).show(ui, |ui| {
-            ui.label("Name: ");
+            ui.label("Name:");
             ui.text_edit_singleline(&mut player.name);
             ui.end_row();
 
-            ui.label("Difficulty: ");
+            ui.label("Difficulty:");
             ComboBox::from_id_source("player_difficulty")
                 .selected_text(player.difficulty.to_string())
                 .show_ui(ui, |ui| {
@@ -156,14 +156,14 @@ impl App {
                 });
             ui.end_row();
 
-            ui.label("Version: ");
+            ui.label("Version:");
             ui.horizontal(|ui| {
                 ui.drag_value_with_buttons(&mut player.version, 1., 0..=i32::MAX);
                 ui.small(utils::version_lookup(player.version));
             });
             ui.end_row();
 
-            ui.label("Health: ");
+            ui.label("Health:");
             ui.horizontal(|ui| {
                 ui.drag_value_with_buttons(&mut player.life, 1., 0..=i32::MAX);
                 ui.label("/");
@@ -171,7 +171,7 @@ impl App {
             });
             ui.end_row();
 
-            ui.label("Mana: ");
+            ui.label("Mana:");
             ui.horizontal(|ui| {
                 ui.drag_value_with_buttons(&mut player.mana, 1., 0..=i32::MAX);
                 ui.label("/");
@@ -179,11 +179,11 @@ impl App {
             });
             ui.end_row();
 
-            ui.label("Fishing quests: ");
+            ui.label("Fishing quests:");
             ui.drag_value_with_buttons(&mut player.angler_quests, 1., 0..=i32::MAX);
             ui.end_row();
 
-            ui.label("Golfer score: ");
+            ui.label("Golfer score:");
             ui.drag_value_with_buttons(&mut player.golfer_score, 1., 0..=i32::MAX);
             ui.end_row();
         });

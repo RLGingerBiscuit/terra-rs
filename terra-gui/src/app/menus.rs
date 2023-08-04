@@ -40,7 +40,8 @@ impl App {
     fn render_window_menu(&mut self, ui: &mut Ui) {
         let mut theme_change = None;
 
-        ui.labelled("Theme: ", |ui| {
+        ui.horizontal(|ui| {
+            ui.label("Theme:");
             egui::ComboBox::new("window_theme", "")
                 .selected_text(self.theme.to_string())
                 .show_ui(ui, |ui| {

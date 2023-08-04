@@ -381,21 +381,21 @@ impl App {
         egui::Grid::new("selected_item")
             .num_columns(3)
             .show(ui, |ui| {
-                ui.label("Id: ");
+                ui.label("Id:");
                 ui.drag_value_with_buttons(&mut item.id, 1., 0..=largest_item_id);
                 if ui.button("\u{1f50e}").clicked() {
                     self.do_update(Message::OpenItemBrowser);
                 }
                 ui.end_row();
 
-                ui.label("Stack: ");
+                ui.label("Stack:");
                 ui.drag_value_with_buttons(&mut item.stack, 1., 0..=current_item_meta.max_stack);
                 if ui.button("Max").clicked() {
                     item.stack = current_item_meta.max_stack;
                 }
                 ui.end_row();
 
-                ui.label("Prefix: ");
+                ui.label("Prefix:");
                 ui.drag_value_with_buttons(&mut item.prefix.id, 1., 0..=largest_prefix_id);
                 if ui.button("\u{1f50e}").clicked() {
                     self.do_update(Message::OpenPrefixBrowser);
@@ -721,14 +721,14 @@ impl App {
         egui::Grid::new("selected_buff")
             .num_columns(3)
             .show(ui, |ui| {
-                ui.label("Id: ");
+                ui.label("Id:");
                 ui.drag_value_with_buttons(&mut buff.id, 1., 0..=largest_buff_id);
                 if ui.button("\u{1f50e}").clicked() {
                     self.do_update(Message::OpenBuffBrowser);
                 }
                 ui.end_row();
 
-                ui.label("Duration: ");
+                ui.label("Duration:");
                 ui.drag_value_with_buttons(&mut buff.time, 1., 0..=i32::MAX);
                 if ui.button("Max").clicked() {
                     buff.time = i32::MAX;
