@@ -29,12 +29,6 @@ macro_rules! enum_selectable_value {
 }
 
 pub trait UiExt {
-    fn labelled<R>(
-        &mut self,
-        text: impl Into<WidgetText>,
-        add_contents: impl FnOnce(&mut Ui) -> R,
-    ) -> InnerResponse<R>;
-
     fn drag_value<Num: emath::Numeric>(
         &mut self,
         value: &mut Num,
@@ -64,18 +58,6 @@ pub trait UiExt {
 }
 
 impl UiExt for Ui {
-    #[inline]
-    fn labelled<R>(
-        &mut self,
-        text: impl Into<WidgetText>,
-        add_contents: impl FnOnce(&mut Ui) -> R,
-    ) -> InnerResponse<R> {
-        self.horizontal(|ui| {
-            ui.label(text);
-            add_contents(ui)
-        })
-    }
-
     #[inline]
     fn drag_value<Num: emath::Numeric>(
         &mut self,
