@@ -102,6 +102,7 @@ impl App {
 
     fn render_help_menu(&mut self, ui: &mut Ui) {
         if ui.button("About").clicked() {
+            ui.close_menu();
             self.do_update(Message::ShowAbout);
         };
     }
