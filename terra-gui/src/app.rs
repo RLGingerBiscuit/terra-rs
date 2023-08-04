@@ -372,8 +372,16 @@ impl App {
     }
 
     fn handle_keyboard(&mut self, ctx: &egui::Context) {
-        if !self.modal_open() {
-            ctx.input_mut(|input| {
+        ctx.input_mut(|input| {
+            if self.modal_open() {
+                if input.consume_key(Modifiers::NONE, Key::Escape) {
+                    self.error = None;
+                    self.show_about = false;
+                    self.show_item_browser = false;
+                    self.show_buff_browser = false;
+                    self.show_prefix_browser = false;
+                }
+            } else {
                 if input.consume_shortcut(&SHORTCUT_LOAD) {
                     self.do_update(Message::LoadPlayer);
                 }
@@ -383,8 +391,8 @@ impl App {
                 if input.consume_shortcut(&SHORTCUT_EXIT) {
                     self.do_update(Message::Exit);
                 }
-            });
-        }
+            }
+        });
     }
 }
 
