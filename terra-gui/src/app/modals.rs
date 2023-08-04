@@ -19,6 +19,9 @@ enum Sizing {
 const DEFAULT_MODAL_WIDTH: f32 = 360.;
 const DEFAULT_MODAL_HEIGHT: f32 = 240.;
 
+const ABOUT_MODAL_WIDTH: f32 = 300.;
+const ABOUT_MODAL_HEIGHT: f32 = DEFAULT_MODAL_HEIGHT;
+
 const ITEM_BROWSER_COLS: usize = 6;
 const BUFF_BROWSER_COLS: usize = 6;
 const PREFIX_BROWSER_COLS: usize = 4;
@@ -50,7 +53,7 @@ impl App {
                 ctx,
                 "About",
                 false,
-                Sizing::Fixed(vec2(DEFAULT_MODAL_WIDTH, DEFAULT_MODAL_HEIGHT)),
+                Sizing::Fixed(vec2(ABOUT_MODAL_WIDTH, ABOUT_MODAL_HEIGHT)),
                 |ui| {
                     ui.spacing_mut().item_spacing.y = 8.;
 
