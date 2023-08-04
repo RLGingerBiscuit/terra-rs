@@ -600,6 +600,8 @@ impl TabViewer for App {
     }
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
+        ui.set_enabled(!self.modal_open());
+
         match tab {
             Tabs::LoadSave => self.render_load_save_tab(ui),
             Tabs::Stats => self.render_stats_tab(ui),

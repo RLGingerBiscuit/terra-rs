@@ -155,6 +155,7 @@ impl App {
             || self.show_about
             || self.show_item_browser
             || self.show_buff_browser
+            || self.show_prefix_browser
     }
 
     fn do_task(&mut self, task: impl 'static + Send + Sync + FnOnce() -> anyhow::Result<Message>) {
@@ -414,14 +415,12 @@ impl eframe::App for App {
         let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
 
         ui.spacing_mut().item_spacing = Vec2::splat(8.);
+        ui.set_enabled(!self.modal_open());
 
-        // TODO: This isn't working for some reason
-        ui.add_enabled_ui(!self.modal_open(), |ui| {
-            DockArea::new(self.tree.clone().write().deref_mut())
-                .style(egui_dock::Style::from_egui(&ctx.style()))
-                .show_tab_name_on_hover(true)
-                .show_add_popup(true)
-                .show_inside(ui, self);
-        });
+        DockArea::new(self.tree.clone().write().deref_mut())
+            .style(egui_dock::Style::from_egui(&ctx.style()))
+            .show_tab_name_on_hover(true)
+            .show_add_popup(true)
+            .show_inside(&mut ui, self);
     }
 }
