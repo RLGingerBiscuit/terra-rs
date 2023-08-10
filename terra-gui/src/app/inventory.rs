@@ -376,7 +376,11 @@ impl App {
             .expect("We really should have at least one prefix")
             .id;
 
-        ui.label(self.item_name(&current_item_meta.name, Some(current_prefix_meta)));
+        if item.id > 0 {
+            ui.label(self.item_name(&current_item_meta.name, Some(current_prefix_meta)));
+        } else {
+            ui.label("");
+        }
 
         egui::Grid::new("selected_item")
             .num_columns(3)
@@ -688,7 +692,7 @@ impl App {
 
         if let Some(time) = time {
             if time == 0 {
-                name.to_owned()
+                format!("{} (0f)", name)
             } else {
                 let time = if time < FRAMES_PER_SECOND {
                     format!("({}f)", time)
@@ -722,7 +726,11 @@ impl App {
             .expect("we really should have at least one buff")
             .id;
 
-        ui.label(self.buff_name(&meta.name, Some(buff.time)));
+        if buff.id > 0 {
+            ui.label(self.buff_name(&meta.name, Some(buff.time)));
+        } else {
+            ui.label("");
+        }
 
         egui::Grid::new("selected_buff")
             .num_columns(3)
