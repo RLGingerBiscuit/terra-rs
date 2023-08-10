@@ -27,9 +27,9 @@ pub enum ItemRarity {
     Cyan = 9,
     Red = 10,
     Purple = 11,
+    Quest = -11,
     Expert = -12,
     Master = -13,
-    Quest = -11,
     Unknown = i32::MAX,
 }
 
