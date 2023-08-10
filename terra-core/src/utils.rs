@@ -2,7 +2,7 @@ use std::{num::ParseIntError, path::PathBuf};
 
 use dirs_next::{data_local_dir, document_dir};
 
-use crate::{Color, Item};
+use crate::{Color, Item, TICKS_PER_MICROSECOND};
 
 pub fn get_terraria_dir() -> PathBuf {
     match std::env::consts::OS {
@@ -199,6 +199,22 @@ pub fn coins_lookup(value: i32) -> String {
     }
 
     string
+}
+
+trait AsTicks {
+    fn as_ticks(&self) -> i64;
+}
+
+impl AsTicks for std::time::Duration {
+    fn as_ticks(&self) -> i64 {
+        (self.as_micros() * TICKS_PER_MICROSECOND as u128) as i64
+    }
+}
+
+impl AsTicks for chrono::Duration {
+    fn as_ticks(&self) -> i64 {
+        self.num_microseconds().unwrap_or_default() * TICKS_PER_MICROSECOND as i64
+    }
 }
 
 pub fn from_hex(hex: &str) -> Result<Color, ParseIntError> {
