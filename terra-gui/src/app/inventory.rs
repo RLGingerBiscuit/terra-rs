@@ -609,6 +609,12 @@ impl App {
             }
         }
 
+        // Add already researched/research X more
+        ui.label(format!(
+            "Research {} to unlock duplication",
+            item_meta.sacrifices
+        ));
+
         ui.label(format!("{} Max Stack", item_meta.max_stack));
 
         ui.label(format!("Worth {}", utils::coins_lookup(item_meta.value)));
