@@ -241,6 +241,7 @@ impl App {
                     if let Some(path) = rfd::FileDialog::new()
                         .set_directory(player_path)
                         .add_filter("Terraria Player File", &["plr"])
+                        .add_filter("Decrypted Player File", &["dplr"])
                         .add_filter("All Files", &["*"])
                         .pick_file()
                     {
@@ -250,7 +251,14 @@ impl App {
                         let item_meta = self.item_meta.clone();
 
                         self.do_task(move || {
-                            player.write().load(&item_meta.read(), &path)?;
+                            if path
+                                .extension()
+                                .is_some_and(|e| e.to_string_lossy() == "dplr")
+                            {
+                                player.write().load_decrypted(&item_meta.read(), &path)?;
+                            } else {
+                                player.write().load(&item_meta.read(), &path)?;
+                            }
                             Ok(Message::Noop)
                         });
                     }
@@ -282,13 +290,21 @@ impl App {
                         .set_directory(directory)
                         .set_file_name(&filename)
                         .add_filter("Terraria Player File", &["plr"])
+                        .add_filter("Decrypted Player File", &["dplr"])
                         .add_filter("All Files", &["*"])
                         .save_file()
                     {
                         self.player_path = Some(path.clone());
 
                         self.do_task(move || {
-                            player.read().save(&item_meta.read(), &path)?;
+                            if path
+                                .extension()
+                                .is_some_and(|e| e.to_string_lossy() == "dplr")
+                            {
+                                player.read().save_decrypted(&item_meta.read(), &path)?;
+                            } else {
+                                player.read().save(&item_meta.read(), &path)?;
+                            }
                             Ok(Message::Noop)
                         });
                     }
