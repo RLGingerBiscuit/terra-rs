@@ -1,5 +1,5 @@
 /// This entire thing is basically word-for-word with the official implementation.
-/// The only change is on line 279, to allow the frame to sense clicks.
+/// The only change is on line 278, to allow the frame to sense clicks.
 use eframe::epaint::{self, Shadow};
 use egui::{
     layers::ShapeIdx, Color32, InnerResponse, Margin, Rect, Response, Rounding, Sense, Shape,
