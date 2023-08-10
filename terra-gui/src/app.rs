@@ -232,10 +232,7 @@ impl App {
                     let player_path = if player_path.is_dir() {
                         player_path.clone()
                     } else {
-                        match player_path.parent() {
-                            Some(directory) => directory.to_path_buf(),
-                            None => DEFAULT_PLAYER_DIR.clone(),
-                        }
+                        utils::get_player_dir_or_default(player_path)
                     };
 
                     if let Some(path) = rfd::FileDialog::new()
@@ -268,19 +265,21 @@ impl App {
                         .player_path
                         .get_or_insert_with(|| DEFAULT_PLAYER_DIR.clone());
 
-                    let (directory, filename) = if player_path.is_dir() {
+                    let (directory, file_name) = if player_path.exists() && player_path.is_dir() {
                         (player_path.clone(), self.player.read().name.clone())
                     } else {
-                        let directory = match player_path.parent() {
-                            Some(directory) => directory.to_path_buf(),
-                            None => DEFAULT_PLAYER_DIR.clone(),
-                        };
-                        let filename = match player_path.file_name() {
-                            Some(file_name) => file_name.to_string_lossy().to_string(),
-                            None => self.player.read().name.clone(),
+                        let directory = utils::get_player_dir_or_default(player_path);
+
+                        let file_name = if player_path.exists() {
+                            match player_path.file_name() {
+                                Some(file_name) => file_name.to_string_lossy().to_string(),
+                                None => self.player.read().name.clone(),
+                            }
+                        } else {
+                            self.player.read().name.clone()
                         };
 
-                        (directory, filename)
+                        (directory, file_name)
                     };
 
                     let player = self.player.clone();
@@ -288,7 +287,7 @@ impl App {
 
                     if let Some(path) = rfd::FileDialog::new()
                         .set_directory(directory)
-                        .set_file_name(&filename)
+                        .set_file_name(&file_name)
                         .add_filter("Terraria Player File", &["plr"])
                         .add_filter("Decrypted Player File", &["dplr"])
                         .add_filter("All Files", &["*"])

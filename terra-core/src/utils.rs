@@ -4,16 +4,46 @@ use dirs_next::{data_local_dir, document_dir};
 
 use crate::{Color, Item, TICKS_PER_MICROSECOND};
 
+pub fn get_data_dir() -> PathBuf {
+    match std::env::consts::OS {
+        "windows" => document_dir().unwrap(),
+        _ => data_local_dir().unwrap(),
+    }
+}
+
 pub fn get_terraria_dir() -> PathBuf {
     match std::env::consts::OS {
-        "windows" => document_dir().unwrap().join("My Games"),
-        _ => data_local_dir().unwrap(),
+        "windows" => get_data_dir().join("My Games"),
+        _ => get_data_dir(),
     }
     .join("Terraria")
 }
 
 pub fn get_player_dir() -> PathBuf {
     get_terraria_dir().join("Players")
+}
+
+pub fn get_player_dir_or_default(player_path: &PathBuf) -> PathBuf {
+    let parent = player_path.parent();
+
+    let fallback = || {
+        if get_player_dir().exists() {
+            get_player_dir().clone()
+        } else {
+            get_data_dir()
+        }
+    };
+
+    match parent {
+        Some(directory) => {
+            if directory.exists() {
+                directory.to_path_buf()
+            } else {
+                fallback()
+            }
+        }
+        None => fallback(),
+    }
 }
 
 pub fn version_lookup(version: i32) -> &'static str {
