@@ -9,20 +9,20 @@ impl App {
     pub fn load_spritesheet(
         &mut self,
         ctx: &egui::Context,
-        filename: &str,
+        file_name: &str,
         spritesheet: Arc<RwLock<Option<TextureHandle>>>,
     ) {
         if self.busy {
             return;
         }
         let ctx = ctx.clone();
-        let debug_name = format!("{}_spritesheet", filename);
+        let debug_name = format!("{}_spritesheet", file_name);
         let path = std::env::current_exe()
             .expect("No current exe?")
             .parent()
             .expect("No parent?")
             .join("resources")
-            .join(filename);
+            .join(file_name);
 
         self.do_task(move || {
             let image = image::open(&path)?;

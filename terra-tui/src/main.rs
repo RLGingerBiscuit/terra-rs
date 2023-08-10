@@ -21,18 +21,18 @@ fn main() {
     let buff_meta = BuffMeta::load().expect("Could not load buffs.");
     let prefix_meta = PrefixMeta::load().expect("Could not load prefixes.");
 
-    let player_filename: String = args.next().unwrap();
+    let player_file_name: String = args.next().unwrap();
 
     println!("Item count: {}", item_meta.len());
     println!("Buff count: {}", buff_meta.len());
     println!("Prefix count: {}", prefix_meta.len());
 
-    let filepath = player_dir.join(format!("{}.plr", &player_filename));
+    let filepath = player_dir.join(format!("{}.plr", &player_file_name));
 
     let mut player = Player::default();
 
     if let Err(err) = player.load(&item_meta, &filepath) {
-        println!("Error loading player '{}': {}", player_filename, err);
+        println!("Error loading player '{}': {}", player_file_name, err);
         return;
     }
 
