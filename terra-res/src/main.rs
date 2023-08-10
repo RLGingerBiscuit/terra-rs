@@ -76,6 +76,9 @@ fn animated_items() -> HashMap<i32, [u32; 4]> {
     map.insert(2266, [9, 15, 0, 0]);
     map.insert(2267, [15, 11, 0, 0]);
     map.insert(2268, [15, 14, 0, 0]);
+    map.insert(2425, [15, 8, 0, 0]);
+    map.insert(2426, [17, 8, 0, 0]);
+    map.insert(2427, [15, 8, 0, 0]);
     map.insert(3195, [14, 12, 0, 0]);
     map.insert(3453, [7, 10, 1, 3]);
     map.insert(3454, [7, 10, 1, 3]);
