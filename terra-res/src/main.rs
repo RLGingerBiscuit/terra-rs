@@ -802,6 +802,7 @@ fn generate_spritesheet(
     let mut running_x = SPRITE_SPACING;
     let mut running_y = SPRITE_SPACING;
 
+    let mut final_width = 0;
     let mut final_height = 0;
     let mut largest_width = 0;
     let mut largest_height = 0;
@@ -818,7 +819,10 @@ fn generate_spritesheet(
         };
 
         if running_x + width > max_width {
-            running_x = SPRITE_SPACING;
+            if running_x > final_width {
+                final_width = running_x;
+            }
+            running_x = 0;
             running_y += largest_height + SPRITE_SPACING * 2;
             final_height = running_y + height + SPRITE_SPACING;
         }
@@ -834,7 +838,7 @@ fn generate_spritesheet(
         running_x += SPRITE_SPACING + width + SPRITE_SPACING;
     }
 
-    let mut new_image = DynamicImage::new_rgba8(max_width, final_height);
+    let mut final_image = DynamicImage::new_rgba8(final_width, final_height);
 
     largest_width = 0;
     largest_height = 0;
@@ -870,7 +874,7 @@ fn generate_spritesheet(
 
             let view = image.view(x, y, width, height);
 
-            new_image.copy_from(&*view, running_x, running_y).expect("Wut");
+            final_image.copy_from(&*view, running_x, running_y).expect("Wut");
 
             running_x += SPRITE_SPACING + width + SPRITE_SPACING;
 
@@ -880,7 +884,7 @@ fn generate_spritesheet(
             }
         });
 
-    Ok(new_image)
+    Ok(final_image)
 }
 
 fn main() -> Result<()> {
