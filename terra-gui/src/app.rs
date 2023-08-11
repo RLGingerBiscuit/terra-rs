@@ -265,18 +265,20 @@ impl App {
                         .player_path
                         .get_or_insert_with(|| DEFAULT_PLAYER_DIR.clone());
 
+                    let fallback_name = || self.player.read().name.replace(" ", "_");
+
                     let (directory, file_name) = if player_path.exists() && player_path.is_dir() {
-                        (player_path.clone(), self.player.read().name.clone())
+                        (player_path.clone(), fallback_name())
                     } else {
                         let directory = utils::get_player_dir_or_default(player_path);
 
                         let file_name = if player_path.exists() {
                             match player_path.file_name() {
                                 Some(file_name) => file_name.to_string_lossy().to_string(),
-                                None => self.player.read().name.clone(),
+                                None => fallback_name(),
                             }
                         } else {
-                            self.player.read().name.clone()
+                            fallback_name()
                         };
 
                         (directory, file_name)

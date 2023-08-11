@@ -27,8 +27,10 @@ pub fn get_player_dir_or_default(player_path: &PathBuf) -> PathBuf {
     let parent = player_path.parent();
 
     let fallback = || {
-        if get_player_dir().exists() {
-            get_player_dir().clone()
+        let player_dir = get_player_dir();
+
+        if player_dir.exists() {
+            player_dir
         } else {
             get_data_dir()
         }
