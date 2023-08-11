@@ -2,14 +2,15 @@ name: Rust
 
 on:
   push:
-    branches: ["master"]
+    branches: ['master']
     paths:
-      - ".github/workflows/**"
-      - "aes-stream/**/*.rs"
-      - "terra-*/**/*.rs"
-      - "**/Cargo.*"
+      - 'data/resources.zip'
+      - '.github/workflows/**'
+      - 'aes-stream/**/*.rs'
+      - 'terra-*/**/*.rs'
+      - '**/Cargo.*'
   pull_request:
-    branches: ["master"]
+    branches: ['master']
 
 env:
   CARGO_TERM_COLOR: always
@@ -24,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      code: ${{ steps.get_changes.outputs.code }}
+      changed: ${{ steps.get_changes.outputs.files }}
 
     steps:
       - uses: actions/checkout@v3
@@ -34,9 +35,9 @@ jobs:
         id: get_changes
         with:
           filters: |
-            workflows:
+            files:
               - '.github/workflows/**'
-            code:
+              - 'data/resources.zip'
               - 'aes-stream/**/'
               - 'terra-*/**'
               - '**/Cargo.*'
@@ -47,13 +48,13 @@ jobs:
         platform:
           - name: linux
             os: ubuntu-latest
-            ext: ""
+            ext: ''
           - name: windows
             os: windows-latest
             ext: .exe
 
     needs: check_changes
-    if: ${{ needs.check_changes.outputs.code == 'true' }}
+    if: ${{ needs.check_changes.outputs.changed == 'true' }}
     runs-on: ${{ matrix.platform.os }}
 
     steps:
