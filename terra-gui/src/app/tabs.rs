@@ -407,13 +407,16 @@ impl App {
         let player = self.player.read();
         let prefix_meta = self.prefix_meta.read();
 
-        ComboBox::from_id_source("player_loadouts").show_index(
-            ui,
-            // TODO: This works but I'd like to change this into a message
-            &mut self.selected_loadout.0,
-            LOADOUT_COUNT,
-            |i| format!("Loadout {}", i + 1),
-        );
+        let mut loadout = self.selected_loadout;
+
+        if ComboBox::from_id_source("player_loadouts")
+            .show_index(ui, &mut loadout.0, LOADOUT_COUNT, |i| {
+                format!("Loadout {}", i + 1)
+            })
+            .changed()
+        {
+            self.do_update(Message::SelectLoadout(loadout));
+        }
 
         egui::Grid::new("player_equipment")
             .num_columns(8)

@@ -104,7 +104,7 @@ pub enum ItemTab {
     AccessoryDyes,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct SelectedItem(pub ItemTab, pub usize);
 
 impl SelectedItem {
@@ -113,7 +113,7 @@ impl SelectedItem {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct SelectedBuff(pub usize);
 
 impl SelectedBuff {
@@ -122,7 +122,7 @@ impl SelectedBuff {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct SelectedLoadout(pub usize);
 
 #[derive(Debug)]

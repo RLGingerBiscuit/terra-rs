@@ -56,6 +56,7 @@ pub enum Message {
     ResetPlayer,
     LoadPlayer,
     SavePlayer,
+    SelectLoadout(SelectedLoadout),
     SelectItem(SelectedItem),
     SelectBuff(SelectedBuff),
     RemoveAllResearch,
@@ -310,6 +311,7 @@ impl App {
                         });
                     }
                 }
+                Message::SelectLoadout(selection) => self.selected_loadout = selection,
                 Message::SelectItem(selection) => self.selected_item = selection,
                 Message::SelectBuff(selection) => self.selected_buff = selection,
                 Message::RemoveAllResearch => {
