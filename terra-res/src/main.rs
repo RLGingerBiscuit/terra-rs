@@ -586,7 +586,6 @@ fn get_buff_meta(
                 internal_name,
                 buff_type,
                 tooltip,
-                ..Default::default()
             });
         });
 

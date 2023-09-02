@@ -6,6 +6,7 @@ pub mod file_type;
 pub mod item;
 pub mod journey_powers;
 pub mod loadout;
+pub mod meta;
 pub mod player;
 pub mod prefix;
 pub mod spawnpoint;

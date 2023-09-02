@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 
-use crate::ItemRarity;
+use crate::{meta::Meta, ItemRarity};
 
 #[repr(u8)]
 #[derive(
@@ -71,49 +71,25 @@ pub struct ItemMeta {
     pub is_expert: Option<bool>,
 }
 
-impl Default for ItemMeta {
-    fn default() -> Self {
-        Self {
-            id: 0,
-            name: String::new(),
-            internal_name: String::new(),
-            width: 0,
-            height: 0,
-            x: 0,
-            y: 0,
-            max_stack: 0,
-            sacrifices: 0,
-            value: 0,
-            rarity: ItemRarity::White,
-            use_time: None,
-            damage: None,
-            crit_chance: None,
-            knockback: None,
-            defense: None,
-            use_ammo: None,
-            mana_cost: None,
-            heal_life: None,
-            heal_mana: None,
-            pickaxe_power: None,
-            axe_power: None,
-            hammer_power: None,
-            fishing_power: None,
-            fishing_bait: None,
-            range_boost: None,
-            tooltip: None,
-            forbidden: None,
-            consumes_tile: None,
-            item_type: None,
-            is_material: None,
-            is_consumable: None,
-            is_quest_item: None,
-            is_expert: None,
-        }
-    }
-}
+impl Meta for ItemMeta {
+    type Id = i32;
 
-impl ItemMeta {
-    pub fn load() -> Result<Vec<Self>> {
+    fn id(&self) -> Self::Id {
+        self.id
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn internal_name(&self) -> &str {
+        &self.internal_name
+    }
+
+    fn load() -> Result<Vec<Self>>
+    where
+        Self: Sized,
+    {
         let file = File::open(
             std::env::current_exe()?
                 .parent()
@@ -128,20 +104,5 @@ impl ItemMeta {
         meta.sort_by(|a, b| a.id.cmp(&b.id));
 
         Ok(meta)
-    }
-
-    pub fn meta_from_id(item_meta: &[Self], id: i32) -> Option<&Self> {
-        item_meta.iter().find(|i| i.id == id)
-    }
-
-    pub fn meta_from_internal_name<'a>(
-        item_meta: &'a [Self],
-        internal_name: &str,
-    ) -> Option<&'a Self> {
-        item_meta.iter().find(|i| i.internal_name == internal_name)
-    }
-
-    pub fn meta_from_name<'a>(item_meta: &'a [Self], name: &str) -> Option<&'a Self> {
-        item_meta.iter().find(|i| i.name == name)
     }
 }

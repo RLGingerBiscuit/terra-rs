@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ext::{TerraReadExt, TerraWriteExt},
+    meta::Meta,
     ItemMeta, Prefix,
 };
 
@@ -120,7 +121,7 @@ impl Item {
         if internal_name {
             let internal_name = reader.read_lpstring()?;
 
-            if let Some(item) = ItemMeta::meta_from_internal_name(item_meta, &internal_name) {
+            if let Some(item) = ItemMeta::get_by_internal_name(item_meta, &internal_name) {
                 self.id = item.id;
             }
         }
@@ -141,7 +142,7 @@ impl Item {
         Ok(())
     }
 
-    pub fn load_legacy_name(
+    pub fn load_from_legacy_name(
         &mut self,
         reader: &mut dyn Read,
         item_meta: &[ItemMeta],
@@ -156,7 +157,7 @@ impl Item {
         }
 
         if name.is_empty() {
-            if let Some(item) = ItemMeta::meta_from_name(item_meta, name) {
+            if let Some(item) = ItemMeta::get_by_name(item_meta, name) {
                 self.id = item.id;
             }
 
@@ -166,30 +167,6 @@ impl Item {
         }
 
         Ok(())
-    }
-
-    pub fn load_new(
-        reader: &mut dyn Read,
-        item_meta: &[ItemMeta],
-        id: bool,
-        internal_name: bool,
-        stack: bool,
-        prefix: bool,
-        favourited: bool,
-    ) -> Result<Self> {
-        let mut item = Item::default();
-
-        item.load(
-            reader,
-            item_meta,
-            id,
-            internal_name,
-            stack,
-            prefix,
-            favourited,
-        )?;
-
-        Ok(item)
     }
 
     pub fn skip(
@@ -211,7 +188,7 @@ impl Item {
             let _ = reader.read_lpstring()?;
         }
         if stack {
-            _ = reader.read_i32::<LE>()?;
+            let _ = reader.read_i32::<LE>()?;
         }
         if prefix {
             Prefix::skip(reader)?;
@@ -251,7 +228,7 @@ impl Item {
             writer.write_i32::<LE>(self.id)?;
         }
         if internal_name {
-            if let Some(item) = ItemMeta::meta_from_id(item_meta, self.id) {
+            if let Some(item) = ItemMeta::get(item_meta, self.id) {
                 writer.write_lpstring(&item.internal_name)?;
             } else {
                 writer.write_lpstring("")?;
@@ -277,7 +254,7 @@ impl Item {
         version: i32,
         stack: bool,
     ) -> Result<()> {
-        if let Some(item) = ItemMeta::meta_from_id(item_meta, self.id) {
+        if let Some(item) = ItemMeta::get(item_meta, self.id) {
             let name = Self::reverse_legacy_lookup(version, &item.name);
             writer.write_lpstring(name)?;
         } else {

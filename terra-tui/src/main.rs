@@ -1,6 +1,6 @@
 use terra_core::{
     utils::{get_player_dir, to_hex, version_lookup},
-    BuffMeta, Item, ItemMeta, Player, PrefixMeta, TICKS_PER_MICROSECOND,
+    BuffMeta, Item, ItemMeta, Player, PrefixMeta, TICKS_PER_MICROSECOND, meta::Meta,
 };
 
 fn usage() {
@@ -106,9 +106,9 @@ fn main() {
 
 fn print_items(item_meta: &Vec<ItemMeta>, prefix_meta: &Vec<PrefixMeta>, items: &[Item]) {
     items.iter().for_each(|item| {
-        let item_meta = ItemMeta::meta_from_id(item_meta, item.id);
+        let item_meta = ItemMeta::get(item_meta, item.id);
         let name = item_meta.map_or("Unknown", |m| m.name.as_str());
-        let prefix_meta = PrefixMeta::meta_from_id(prefix_meta, item.prefix.id);
+        let prefix_meta = PrefixMeta::get(prefix_meta, item.prefix.id);
         let prefix_name = prefix_meta.map_or(String::new(), |p| format!(" {}", p.name));
 
         print!("  [{: >4}]", item.id);

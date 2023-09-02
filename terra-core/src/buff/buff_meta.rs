@@ -3,7 +3,7 @@ use std::{fs::File, io::BufReader};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::BuffType;
+use crate::{meta::Meta, BuffType};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BuffMeta {
@@ -16,22 +16,25 @@ pub struct BuffMeta {
     pub tooltip: Option<Vec<String>>,
 }
 
-impl Default for BuffMeta {
-    fn default() -> Self {
-        Self {
-            id: 0,
-            name: String::new(),
-            internal_name: String::new(),
-            x: 0,
-            y: 0,
-            buff_type: BuffType::Buff,
-            tooltip: None,
-        }
-    }
-}
+impl Meta for BuffMeta {
+    type Id = i32;
 
-impl BuffMeta {
-    pub fn load() -> Result<Vec<Self>> {
+    fn id(&self) -> Self::Id {
+        self.id
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn internal_name(&self) -> &str {
+        &self.internal_name
+    }
+
+    fn load() -> Result<Vec<Self>>
+    where
+        Self: Sized,
+    {
         let file = File::open(
             std::env::current_exe()?
                 .parent()
@@ -46,9 +49,5 @@ impl BuffMeta {
         meta.sort_by(|a, b| a.id.cmp(&b.id));
 
         Ok(meta)
-    }
-
-    pub fn meta_from_id(buff_meta: &[Self], id: i32) -> Option<&Self> {
-        buff_meta.iter().find(|i| i.id == id)
     }
 }
