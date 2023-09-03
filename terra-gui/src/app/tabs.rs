@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use egui::{ComboBox, Grid, Ui, WidgetText};
+use egui::{ComboBox, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
 
 use terra_core::{
@@ -8,10 +8,18 @@ use terra_core::{
     LOADOUT_COUNT,
 };
 
-use crate::{app::inventory::item_slot::ItemSlotIcon, enum_selectable_value, ui::UiExt};
+use crate::{
+    app::inventory::item_slot::{self, ItemSlotIcon},
+    enum_selectable_value,
+    ui::UiExt,
+};
 
 use super::{
-    inventory::{buff_slot::BuffSlotOptions, item_slot::ItemSlotOptions, ItemGroup},
+    inventory::{
+        buff_slot::{self, BuffSlotOptions},
+        item_slot::ItemSlotOptions,
+        ItemGroup,
+    },
     App, Message,
 };
 
@@ -103,15 +111,17 @@ struct ItemTabOptions {
     id: &'static str,
     tab: ItemGroup,
     columns: usize,
+    rows: usize,
     stride: usize,
 }
 
 impl ItemTabOptions {
-    fn new(id: &'static str, tab: ItemGroup, columns: usize, stride: usize) -> Self {
+    fn new(id: &'static str, tab: ItemGroup, columns: usize, rows: usize, stride: usize) -> Self {
         Self {
             id,
             tab,
             columns,
+            rows,
             stride,
         }
     }
@@ -249,30 +259,48 @@ impl App {
     ) where
         F: Fn(&mut Ui, usize),
     {
-        egui::Grid::new(options.id)
-            .num_columns(options.columns)
-            .show(ui, |ui| {
-                for i in 0..options.stride {
-                    let options = items
-                        .iter()
-                        .enumerate()
-                        .skip(i * options.stride)
-                        .take(options.stride)
-                        .map(|(index, item)| {
-                            (
-                                index,
-                                ItemSlotOptions::from_item(item, options.tab, prefix_meta)
-                                    .tooltip_on_hover(true),
-                            )
-                        });
+        let spacing = (ui.available_height()
+            - item_slot::SLOT_SIZE.y * (options.rows + 1) as f32
+            - ui.spacing().item_spacing.y * ((options.rows - 1) * 2 - 1) as f32)
+            / 2.;
+        if spacing > 0. {
+            ui.add_space(spacing);
+        }
 
-                    self.render_item_slots(ui, options);
+        ui.horizontal_top(|ui| {
+            let spacing = (ui.available_width()
+                - item_slot::SLOT_SIZE.x * (options.columns + 1) as f32
+                - ui.spacing().item_spacing.x * (options.columns * 2) as f32)
+                / 2.;
+            if spacing > 0. {
+                ui.add_space(spacing);
+            }
 
-                    extra_cols(ui, i);
+            egui::Grid::new(options.id)
+                .num_columns(options.columns)
+                .show(ui, |ui| {
+                    for i in 0..options.stride {
+                        let options = items
+                            .iter()
+                            .enumerate()
+                            .skip(i * options.stride)
+                            .take(options.stride)
+                            .map(|(index, item)| {
+                                (
+                                    index,
+                                    ItemSlotOptions::from_item(item, options.tab, prefix_meta)
+                                        .tooltip_on_hover(true),
+                                )
+                            });
 
-                    ui.end_row();
-                }
-            });
+                        self.render_item_slots(ui, options);
+
+                        extra_cols(ui, i);
+
+                        ui.end_row();
+                    }
+                });
+        });
     }
 
     fn render_inventory_tab(&mut self, ui: &mut Ui) {
@@ -287,6 +315,7 @@ impl App {
                 "player_inventory",
                 ItemGroup::Inventory,
                 INVENTORY_STRIDE + EXTRA_STRIDE,
+                5,
                 INVENTORY_STRIDE,
             ),
             &prefix_meta,
@@ -322,7 +351,7 @@ impl App {
 
         self.render_item_tab(
             ui,
-            ItemTabOptions::new("player_bank", ItemGroup::Bank, BANK_STRIDE, BANK_STRIDE),
+            ItemTabOptions::new("player_bank", ItemGroup::Bank, BANK_STRIDE, 4, BANK_STRIDE),
             &prefix_meta,
             &player.piggy_bank,
             |_, _| {},
@@ -335,7 +364,7 @@ impl App {
 
         self.render_item_tab(
             ui,
-            ItemTabOptions::new("player_safe", ItemGroup::Safe, BANK_STRIDE, BANK_STRIDE),
+            ItemTabOptions::new("player_safe", ItemGroup::Safe, BANK_STRIDE, 4, BANK_STRIDE),
             &prefix_meta,
             &player.safe,
             |_, _| {},
@@ -348,7 +377,13 @@ impl App {
 
         self.render_item_tab(
             ui,
-            ItemTabOptions::new("player_forge", ItemGroup::Forge, BANK_STRIDE, BANK_STRIDE),
+            ItemTabOptions::new(
+                "player_forge",
+                ItemGroup::Forge,
+                BANK_STRIDE,
+                4,
+                BANK_STRIDE,
+            ),
             &prefix_meta,
             &player.defenders_forge,
             |_, _| {},
@@ -361,7 +396,7 @@ impl App {
 
         self.render_item_tab(
             ui,
-            ItemTabOptions::new("player_void", ItemGroup::Void, BANK_STRIDE, BANK_STRIDE),
+            ItemTabOptions::new("player_void", ItemGroup::Void, BANK_STRIDE, 4, BANK_STRIDE),
             &prefix_meta,
             &player.void_vault,
             |_, _| {},
@@ -371,25 +406,45 @@ impl App {
     fn render_buffs_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
 
-        Grid::new("player_buffs").num_columns(10).show(ui, |ui| {
-            for i in 0..BUFF_STRIDE {
-                let options = player
-                    .buffs
-                    .iter()
-                    .enumerate()
-                    .skip(i * BUFF_STRIDE)
-                    .take(BUFF_STRIDE)
-                    .map(|(index, buff)| {
-                        (
-                            index,
-                            BuffSlotOptions::from_buff(buff).tooltip_on_hover(true),
-                        )
-                    });
+        let spacing = (ui.available_height()
+            - buff_slot::SLOT_SIZE.y * 4.
+            - ui.spacing().item_spacing.y * 5.)
+            / 2.;
+        if spacing > 0. {
+            ui.add_space(spacing);
+        }
 
-                self.render_buff_slots(ui, options);
-
-                ui.end_row();
+        ui.horizontal_top(|ui| {
+            let spacing = (ui.available_width()
+                - buff_slot::SLOT_SIZE.x * 11.
+                - ui.spacing().item_spacing.x * 22.)
+                / 2.;
+            if spacing > 0. {
+                ui.add_space(spacing);
             }
+
+            egui::Grid::new("player_buffs")
+                .num_columns(10)
+                .show(ui, |ui| {
+                    for i in 0..BUFF_STRIDE {
+                        let options = player
+                            .buffs
+                            .iter()
+                            .enumerate()
+                            .skip(i * BUFF_STRIDE)
+                            .take(BUFF_STRIDE)
+                            .map(|(index, buff)| {
+                                (
+                                    index,
+                                    BuffSlotOptions::from_buff(buff).tooltip_on_hover(true),
+                                )
+                            });
+
+                        self.render_buff_slots(ui, options);
+
+                        ui.end_row();
+                    }
+                });
         });
     }
 
@@ -417,81 +472,41 @@ impl App {
             ItemSlotIcon::VanityLegsPiece,
         ];
 
-        egui::Grid::new("player_equipment")
-            .num_columns(9)
-            .show(ui, |ui| {
-                let current_loadout = &player.loadouts[self.selected_loadout.0];
+        let spacing = (ui.available_height()
+            - item_slot::SLOT_SIZE.y * 6.
+            - ui.spacing().item_spacing.y * 7.)
+            / 2.;
+        if spacing > 0. {
+            ui.add_space(spacing);
+        }
 
-                for i in 0..5 {
-                    let equipment_dye = &player.equipment_dyes[i];
-                    let equipment = &player.equipment[i];
-                    let accessory_dye = &current_loadout.accessory_dyes[i];
-                    let vanity_accessory = &current_loadout.vanity_accessories[i];
-                    let accessory = &current_loadout.accessories[i];
+        ui.horizontal_top(|ui| {
+            let spacing = (ui.available_width()
+                - item_slot::SLOT_SIZE.x * 9.
+                - ui.spacing().item_spacing.x * 16.)
+                / 2.;
+            if spacing > 0. {
+                ui.add_space(spacing);
+            }
 
-                    let options = [
-                        (
-                            i,
-                            ItemSlotOptions::from_item(
-                                equipment_dye,
-                                ItemGroup::EquipmentDyes,
-                                &prefix_meta,
-                            )
-                            .icon(Some(ItemSlotIcon::Dye)),
-                        ),
-                        (
-                            i,
-                            ItemSlotOptions::from_item(
-                                equipment,
-                                ItemGroup::Equipment,
-                                &prefix_meta,
-                            )
-                            .icon(Some(EQUIPMENT_ICONS[i])),
-                        ),
-                        (
-                            i,
-                            ItemSlotOptions::from_item(
-                                accessory_dye,
-                                ItemGroup::AccessoryDyes,
-                                &prefix_meta,
-                            )
-                            .icon(Some(ItemSlotIcon::Dye)),
-                        ),
-                        (
-                            i,
-                            ItemSlotOptions::from_item(
-                                vanity_accessory,
-                                ItemGroup::VanityAccessories,
-                                &prefix_meta,
-                            )
-                            .icon(Some(ItemSlotIcon::VanityAccessory)),
-                        ),
-                        (
-                            i,
-                            ItemSlotOptions::from_item(
-                                accessory,
-                                ItemGroup::Accessories,
-                                &prefix_meta,
-                            )
-                            .icon(Some(ItemSlotIcon::Accessory)),
-                        ),
-                    ]
-                    .into_iter()
-                    .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+            egui::Grid::new("player_equipment")
+                .num_columns(9)
+                .show(ui, |ui| {
+                    let current_loadout = &player.loadouts[self.selected_loadout.0];
 
-                    self.render_item_slots(ui, options);
+                    for i in 0..5 {
+                        let equipment_dye = &player.equipment_dyes[i];
+                        let equipment = &player.equipment[i];
+                        let accessory_dye = &current_loadout.accessory_dyes[i];
+                        let vanity_accessory = &current_loadout.vanity_accessories[i];
+                        let accessory = &current_loadout.accessories[i];
 
-                    if i < ARMOR_COUNT {
-                        let armor_dye = &current_loadout.armor_dyes[i];
-                        let vanity_armor = &current_loadout.vanity_armor[i];
-                        let armor = &current_loadout.armor[i];
-
-                        let slots = [
+                        let options = [
                             (
                                 i,
                                 ItemSlotOptions::from_item(
-                                    armor_dye,
-                                    ItemGroup::ArmorDyes,
+                                    equipment_dye,
+                                    ItemGroup::EquipmentDyes,
                                     &prefix_meta,
                                 )
                                 .icon(Some(ItemSlotIcon::Dye)),
@@ -499,31 +514,12 @@ impl App {
                             (
                                 i,
                                 ItemSlotOptions::from_item(
-                                    vanity_armor,
-                                    ItemGroup::VanityArmor,
+                                    equipment,
+                                    ItemGroup::Equipment,
                                     &prefix_meta,
                                 )
-                                .icon(Some(VANITY_ARMOR_ICONS[i])),
+                                .icon(Some(EQUIPMENT_ICONS[i])),
                             ),
-                            (
-                                i,
-                                ItemSlotOptions::from_item(armor, ItemGroup::Armor, &prefix_meta)
-                                    .icon(Some(ARMOR_ICONS[i])),
-                            ),
-                        ]
-                        .into_iter()
-                        .map(|(i, o)| (i, o.tooltip_on_hover(true)));
-
-                        self.render_item_slots(ui, slots);
-                    } else {
-                        let accessory_dye = &current_loadout.accessory_dyes[ARMOR_COUNT - 1 + i];
-                        let vanity_accessory =
-                            &current_loadout.vanity_accessories[ARMOR_COUNT - 1 + i];
-                        let accessory = &current_loadout.accessories[ARMOR_COUNT - 1 + i];
-
-                        let i = ARMOR_COUNT - 1 + i;
-
-                        let options = [
                             (
                                 i,
                                 ItemSlotOptions::from_item(
@@ -556,24 +552,106 @@ impl App {
                         .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
                         self.render_item_slots(ui, options);
-                    }
 
-                    if i == 0 {
-                        let mut loadout = self.selected_loadout;
+                        if i < ARMOR_COUNT {
+                            let armor_dye = &current_loadout.armor_dyes[i];
+                            let vanity_armor = &current_loadout.vanity_armor[i];
+                            let armor = &current_loadout.armor[i];
 
-                        if ComboBox::from_id_source("player_loadouts")
-                            .show_index(ui, &mut loadout.0, LOADOUT_COUNT, |i| {
-                                format!("Loadout {}", i + 1)
-                            })
-                            .changed()
-                        {
-                            self.do_update(Message::SelectLoadout(loadout));
+                            let slots = [
+                                (
+                                    i,
+                                    ItemSlotOptions::from_item(
+                                        armor_dye,
+                                        ItemGroup::ArmorDyes,
+                                        &prefix_meta,
+                                    )
+                                    .icon(Some(ItemSlotIcon::Dye)),
+                                ),
+                                (
+                                    i,
+                                    ItemSlotOptions::from_item(
+                                        vanity_armor,
+                                        ItemGroup::VanityArmor,
+                                        &prefix_meta,
+                                    )
+                                    .icon(Some(VANITY_ARMOR_ICONS[i])),
+                                ),
+                                (
+                                    i,
+                                    ItemSlotOptions::from_item(
+                                        armor,
+                                        ItemGroup::Armor,
+                                        &prefix_meta,
+                                    )
+                                    .icon(Some(ARMOR_ICONS[i])),
+                                ),
+                            ]
+                            .into_iter()
+                            .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+
+                            self.render_item_slots(ui, slots);
+                        } else {
+                            let accessory_dye =
+                                &current_loadout.accessory_dyes[ARMOR_COUNT - 1 + i];
+                            let vanity_accessory =
+                                &current_loadout.vanity_accessories[ARMOR_COUNT - 1 + i];
+                            let accessory = &current_loadout.accessories[ARMOR_COUNT - 1 + i];
+
+                            let i = ARMOR_COUNT - 1 + i;
+
+                            let options = [
+                                (
+                                    i,
+                                    ItemSlotOptions::from_item(
+                                        accessory_dye,
+                                        ItemGroup::AccessoryDyes,
+                                        &prefix_meta,
+                                    )
+                                    .icon(Some(ItemSlotIcon::Dye)),
+                                ),
+                                (
+                                    i,
+                                    ItemSlotOptions::from_item(
+                                        vanity_accessory,
+                                        ItemGroup::VanityAccessories,
+                                        &prefix_meta,
+                                    )
+                                    .icon(Some(ItemSlotIcon::VanityAccessory)),
+                                ),
+                                (
+                                    i,
+                                    ItemSlotOptions::from_item(
+                                        accessory,
+                                        ItemGroup::Accessories,
+                                        &prefix_meta,
+                                    )
+                                    .icon(Some(ItemSlotIcon::Accessory)),
+                                ),
+                            ]
+                            .into_iter()
+                            .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+
+                            self.render_item_slots(ui, options);
                         }
-                    }
 
-                    ui.end_row();
-                }
-            });
+                        if i == 0 {
+                            let mut loadout = self.selected_loadout;
+
+                            if ComboBox::from_id_source("player_loadouts")
+                                .show_index(ui, &mut loadout.0, LOADOUT_COUNT, |i| {
+                                    format!("Loadout {}", i + 1)
+                                })
+                                .changed()
+                            {
+                                self.do_update(Message::SelectLoadout(loadout));
+                            }
+                        }
+
+                        ui.end_row();
+                    }
+                });
+        });
     }
 
     fn render_research_tab(&mut self, ui: &mut Ui) {
