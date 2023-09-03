@@ -4,8 +4,8 @@ use egui::{ComboBox, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
 
 use terra_core::{
-    utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, INVENTORY_STRIDE,
-    LOADOUT_COUNT,
+    meta::Meta, utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE,
+    INVENTORY_STRIDE, LOADOUT_COUNT,
 };
 
 use crate::{
@@ -87,7 +87,7 @@ pub fn default_ui() -> Tree<Tabs> {
     let mut tree = Tree::new(vec![Tabs::LoadSave]);
     let [load_save, _inventory] = tree.split_below(
         0.into(),
-        0.385,
+        0.4,
         vec![
             Tabs::Inventory,
             Tabs::Bank,
@@ -96,11 +96,10 @@ pub fn default_ui() -> Tree<Tabs> {
             Tabs::Void,
             Tabs::Buffs,
             Tabs::Equipment,
-            Tabs::Research,
         ],
     );
     let [load_save, stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Bonuses]);
-    let [_stats, _selected] = tree.split_right(stats, 0.6, vec![Tabs::Selected]);
+    let [_stats, _selected] = tree.split_right(stats, 0.6, vec![Tabs::Selected, Tabs::Research]);
 
     tree.set_focused_node(load_save);
     tree
@@ -109,17 +108,17 @@ pub fn default_ui() -> Tree<Tabs> {
 #[derive(Debug)]
 struct ItemTabOptions {
     id: &'static str,
-    tab: ItemGroup,
+    group: ItemGroup,
     columns: usize,
     rows: usize,
     stride: usize,
 }
 
 impl ItemTabOptions {
-    fn new(id: &'static str, tab: ItemGroup, columns: usize, rows: usize, stride: usize) -> Self {
+    fn new(id: &'static str, group: ItemGroup, columns: usize, rows: usize, stride: usize) -> Self {
         Self {
             id,
-            tab,
+            group,
             columns,
             rows,
             stride,
@@ -288,7 +287,8 @@ impl App {
                             .map(|(index, item)| {
                                 (
                                     index,
-                                    ItemSlotOptions::from_item(item, options.tab, prefix_meta)
+                                    ItemSlotOptions::from_item(item, options.group)
+                                        .prefix_meta(PrefixMeta::get(prefix_meta, item.prefix.id))
                                         .tooltip_on_hover(true),
                                 )
                             });
@@ -328,12 +328,14 @@ impl App {
                     let options = [
                         (
                             row,
-                            ItemSlotOptions::from_item(coins, ItemGroup::Coins, &prefix_meta)
-                                .icon(Some(ItemSlotIcon::Coins)),
+                            ItemSlotOptions::from_item(coins, ItemGroup::Coins)
+                                .icon(Some(ItemSlotIcon::Coins))
+                                .prefix_meta(PrefixMeta::get(&prefix_meta, coins.prefix.id)),
                         ),
                         (
                             row,
-                            ItemSlotOptions::from_item(ammo, ItemGroup::Ammo, &prefix_meta),
+                            ItemSlotOptions::from_item(ammo, ItemGroup::Ammo)
+                                .prefix_meta(PrefixMeta::get(&prefix_meta, ammo.prefix.id)),
                         ),
                     ]
                     .into_iter()
@@ -424,7 +426,7 @@ impl App {
             }
 
             egui::Grid::new("player_buffs")
-                .num_columns(10)
+                .num_columns(BUFF_STRIDE)
                 .show(ui, |ui| {
                     for i in 0..BUFF_STRIDE {
                         let options = player
@@ -504,48 +506,51 @@ impl App {
                         let options = [
                             (
                                 i,
-                                ItemSlotOptions::from_item(
-                                    equipment_dye,
-                                    ItemGroup::EquipmentDyes,
-                                    &prefix_meta,
-                                )
-                                .icon(Some(ItemSlotIcon::Dye)),
+                                ItemSlotOptions::from_item(equipment_dye, ItemGroup::EquipmentDyes)
+                                    .icon(Some(ItemSlotIcon::Dye))
+                                    .prefix_meta(PrefixMeta::get(
+                                        &prefix_meta,
+                                        equipment_dye.prefix.id,
+                                    )),
                             ),
                             (
                                 i,
-                                ItemSlotOptions::from_item(
-                                    equipment,
-                                    ItemGroup::Equipment,
-                                    &prefix_meta,
-                                )
-                                .icon(Some(EQUIPMENT_ICONS[i])),
+                                ItemSlotOptions::from_item(equipment, ItemGroup::Equipment)
+                                    .icon(Some(EQUIPMENT_ICONS[i]))
+                                    .prefix_meta(PrefixMeta::get(
+                                        &prefix_meta,
+                                        equipment.prefix.id,
+                                    )),
                             ),
                             (
                                 i,
-                                ItemSlotOptions::from_item(
-                                    accessory_dye,
-                                    ItemGroup::AccessoryDyes,
-                                    &prefix_meta,
-                                )
-                                .icon(Some(ItemSlotIcon::Dye)),
+                                ItemSlotOptions::from_item(accessory_dye, ItemGroup::AccessoryDyes)
+                                    .icon(Some(ItemSlotIcon::Dye))
+                                    .prefix_meta(PrefixMeta::get(
+                                        &prefix_meta,
+                                        accessory_dye.prefix.id,
+                                    )),
                             ),
                             (
                                 i,
                                 ItemSlotOptions::from_item(
                                     vanity_accessory,
                                     ItemGroup::VanityAccessories,
-                                    &prefix_meta,
                                 )
-                                .icon(Some(ItemSlotIcon::VanityAccessory)),
+                                .icon(Some(ItemSlotIcon::VanityAccessory))
+                                .prefix_meta(PrefixMeta::get(
+                                    &prefix_meta,
+                                    vanity_accessory.prefix.id,
+                                )),
                             ),
                             (
                                 i,
-                                ItemSlotOptions::from_item(
-                                    accessory,
-                                    ItemGroup::Accessories,
-                                    &prefix_meta,
-                                )
-                                .icon(Some(ItemSlotIcon::Accessory)),
+                                ItemSlotOptions::from_item(accessory, ItemGroup::Accessories)
+                                    .icon(Some(ItemSlotIcon::Accessory))
+                                    .prefix_meta(PrefixMeta::get(
+                                        &prefix_meta,
+                                        accessory.prefix.id,
+                                    )),
                             ),
                         ]
                         .into_iter()
@@ -561,30 +566,32 @@ impl App {
                             let slots = [
                                 (
                                     i,
-                                    ItemSlotOptions::from_item(
-                                        armor_dye,
-                                        ItemGroup::ArmorDyes,
-                                        &prefix_meta,
-                                    )
-                                    .icon(Some(ItemSlotIcon::Dye)),
+                                    ItemSlotOptions::from_item(armor_dye, ItemGroup::ArmorDyes)
+                                        .icon(Some(ItemSlotIcon::Dye))
+                                        .prefix_meta(PrefixMeta::get(
+                                            &prefix_meta,
+                                            armor_dye.prefix.id,
+                                        )),
                                 ),
                                 (
                                     i,
                                     ItemSlotOptions::from_item(
                                         vanity_armor,
                                         ItemGroup::VanityArmor,
-                                        &prefix_meta,
                                     )
-                                    .icon(Some(VANITY_ARMOR_ICONS[i])),
+                                    .icon(Some(VANITY_ARMOR_ICONS[i]))
+                                    .prefix_meta(
+                                        PrefixMeta::get(&prefix_meta, vanity_armor.prefix.id),
+                                    ),
                                 ),
                                 (
                                     i,
-                                    ItemSlotOptions::from_item(
-                                        armor,
-                                        ItemGroup::Armor,
-                                        &prefix_meta,
-                                    )
-                                    .icon(Some(ARMOR_ICONS[i])),
+                                    ItemSlotOptions::from_item(armor, ItemGroup::Armor)
+                                        .icon(Some(ARMOR_ICONS[i]))
+                                        .prefix_meta(PrefixMeta::get(
+                                            &prefix_meta,
+                                            armor.prefix.id,
+                                        )),
                                 ),
                             ]
                             .into_iter()
@@ -606,27 +613,31 @@ impl App {
                                     ItemSlotOptions::from_item(
                                         accessory_dye,
                                         ItemGroup::AccessoryDyes,
-                                        &prefix_meta,
                                     )
-                                    .icon(Some(ItemSlotIcon::Dye)),
+                                    .icon(Some(ItemSlotIcon::Dye))
+                                    .prefix_meta(
+                                        PrefixMeta::get(&prefix_meta, accessory_dye.prefix.id),
+                                    ),
                                 ),
                                 (
                                     i,
                                     ItemSlotOptions::from_item(
                                         vanity_accessory,
                                         ItemGroup::VanityAccessories,
-                                        &prefix_meta,
                                     )
-                                    .icon(Some(ItemSlotIcon::VanityAccessory)),
+                                    .icon(Some(ItemSlotIcon::VanityAccessory))
+                                    .prefix_meta(
+                                        PrefixMeta::get(&prefix_meta, vanity_accessory.prefix.id),
+                                    ),
                                 ),
                                 (
                                     i,
-                                    ItemSlotOptions::from_item(
-                                        accessory,
-                                        ItemGroup::Accessories,
-                                        &prefix_meta,
-                                    )
-                                    .icon(Some(ItemSlotIcon::Accessory)),
+                                    ItemSlotOptions::from_item(accessory, ItemGroup::Accessories)
+                                        .icon(Some(ItemSlotIcon::Accessory))
+                                        .prefix_meta(PrefixMeta::get(
+                                            &prefix_meta,
+                                            accessory.prefix.id,
+                                        )),
                                 ),
                             ]
                             .into_iter()
@@ -687,7 +698,7 @@ impl TabViewer for App {
     }
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
-        ui.set_enabled(!self.modal_open());
+        ui.set_enabled(!self.is_modal_open());
 
         match tab {
             Tabs::LoadSave => self.render_load_save_tab(ui),

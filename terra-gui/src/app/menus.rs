@@ -9,7 +9,7 @@ impl App {
     pub fn render_menu(&mut self, ctx: &egui::Context) {
         egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
             ui.style_mut().visuals.button_frame = false;
-            ui.set_enabled(!self.modal_open());
+            ui.set_enabled(!self.is_modal_open());
 
             ui.horizontal(|ui| {
                 ui.menu_button("File", |ui| self.render_file_menu(ui));
@@ -42,11 +42,11 @@ impl App {
             egui::ComboBox::new("window_theme", "")
                 .selected_text(self.theme.to_string())
                 .show_ui(ui, |ui| {
-                    let mut current_theme = self.theme;
+                    let current_theme = &mut self.theme;
 
                     for theme in visuals::Theme::iter() {
                         if ui
-                            .selectable_value(&mut current_theme, theme, theme.to_string())
+                            .selectable_value(current_theme, theme, theme.to_string())
                             .clicked()
                         {
                             theme_change = Some(theme);

@@ -45,8 +45,8 @@ pub enum ItemGroup {
 pub struct SelectedItem(pub ItemGroup, pub usize);
 
 impl SelectedItem {
-    pub fn equals(&self, tab: ItemGroup, index: usize) -> bool {
-        self.0 == tab && self.1 == index
+    pub fn equals(&self, group: ItemGroup, index: usize) -> bool {
+        self.0 == group && self.1 == index
     }
 }
 
@@ -148,21 +148,21 @@ impl App {
         }
         .inner_margin(slot.margin());
 
-        ui.style_mut().spacing.item_spacing = Vec2::splat(0.);
+        ui.style_mut().spacing.item_spacing = Vec2::ZERO;
 
         group.show(ui, |ui| ui.add(slot)).response
     }
 
     pub fn render_item_slot(&self, ui: &mut Ui, options: ItemSlotOptions) -> Response {
-        let item_spritesheet = self.item_spritesheet.read();
         let icon_spritesheet = self.icon_spritesheet.read();
+        let item_spritesheet = self.item_spritesheet.read();
         let item_meta = self.item_meta.read();
 
-        if icon_spritesheet.is_none() && !self.busy {
+        if icon_spritesheet.is_none() && !self.is_busy() {
             self.do_update(Message::LoadIconSpritesheet);
         }
 
-        if item_spritesheet.is_none() && !self.busy {
+        if item_spritesheet.is_none() && !self.is_busy() {
             self.do_update(Message::LoadItemSpritesheet);
         }
 
@@ -259,17 +259,16 @@ impl App {
         let buff_spritesheet = self.buff_spritesheet.read();
         let buff_meta = self.buff_meta.read();
 
-        if buff_spritesheet.is_none() && !self.busy {
+        if buff_spritesheet.is_none() && !self.is_busy() {
             self.do_update(Message::LoadBuffSpritesheet);
         }
 
         let meta = BuffMeta::get_or_default(&buff_meta, options.id);
         let slot = BuffSlot::new(options, meta, buff_spritesheet.as_ref());
         let response = self.render_slot(ui, slot);
-
         if meta.id != 0 && options.tooltip_on_hover {
             response.on_hover_ui(|ui| {
-                self.render_buff_tooltip(ui, BuffTooltipOptions::from_slot_options(&options))
+                self.render_buff_tooltip(ui, BuffTooltipOptions::from_slot_options(&options));
             })
         } else {
             response

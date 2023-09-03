@@ -1,4 +1,4 @@
-use egui::{Rect, Sense, Widget};
+use egui::{Response, Ui, Vec2, Widget};
 use terra_core::PrefixMeta;
 
 #[derive(Debug, Clone, Copy)]
@@ -18,6 +18,7 @@ impl PrefixTooltipOptions {
 }
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub(super) struct PrefixTooltip<'a> {
     options: PrefixTooltipOptions,
     meta: &'a PrefixMeta,
@@ -30,18 +31,16 @@ impl<'a> PrefixTooltip<'a> {
 }
 
 impl<'a> Widget for PrefixTooltip<'a> {
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        let response = ui.allocate_rect(Rect::NOTHING, Sense::hover());
+    fn ui(self, ui: &mut Ui) -> Response {
+        ui.allocate_ui(Vec2::INFINITY, |ui| {
+            let prefix = self.meta;
+            if prefix.id == 0 {
+                return;
+            }
 
-        let prefix = self.meta;
-
-        if prefix.id == 0 {
-            return response;
-        }
-
-        response.union(ui.heading(&prefix.name));
-        response.union(ui.small(format!("Id: {}", prefix.id)));
-
-        response
+            ui.heading(&prefix.name);
+            ui.small(format!("Id: {}", prefix.id));
+        })
+        .response
     }
 }

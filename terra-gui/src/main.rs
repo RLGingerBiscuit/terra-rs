@@ -10,6 +10,7 @@ use app::App;
 fn main() {
     let options = eframe::NativeOptions {
         initial_window_size: Some(vec2(800., 600.)),
+        centered: true,
         follow_system_theme: false,
         default_theme: eframe::Theme::Dark,
         ..Default::default()

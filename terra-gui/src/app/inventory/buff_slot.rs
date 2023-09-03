@@ -43,6 +43,10 @@ impl BuffSlotOptions {
         }
     }
 
+    pub fn from_meta(meta: &BuffMeta) -> Self {
+        Self::new().id(meta.id)
+    }
+
     pub fn id(mut self, id: i32) -> Self {
         self.id = id;
         self
@@ -130,7 +134,7 @@ impl<'a> Widget for BuffSlot<'a> {
                     },
                 );
 
-                ui.horizontal_top(|ui| {
+                ui.allocate_ui(self.slot_size(), |ui| {
                     ui.add_space(padding.x);
                     ui.vertical(|ui| {
                         ui.add_space(padding.y);

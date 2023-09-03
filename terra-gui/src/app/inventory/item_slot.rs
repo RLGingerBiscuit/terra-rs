@@ -2,7 +2,7 @@ use egui::{
     pos2, vec2, Align2, Color32, Image, Margin, Rect, Response, Sense, TextStyle, TextureHandle,
     Ui, Vec2, Widget,
 };
-use terra_core::{meta::Meta, Item, ItemMeta, PrefixMeta};
+use terra_core::{Item, ItemMeta, PrefixMeta};
 
 use super::{calculate_uv, slot::Slot, ItemGroup};
 
@@ -71,17 +71,18 @@ impl<'a> ItemSlotOptions<'a> {
         }
     }
 
-    pub fn from_item(item: &Item, tab: ItemGroup, prefix_meta: &'a [PrefixMeta]) -> Self {
-        let options = Self::new(tab)
-            .id(item.id)
-            .prefix_meta(PrefixMeta::get(prefix_meta, item.prefix.id))
-            .favourited(item.favourited);
+    pub fn from_item(item: &Item, group: ItemGroup) -> Self {
+        let options = Self::new(group).id(item.id).favourited(item.favourited);
 
         if item.stack > 0 {
             options.stack(Some(item.stack))
         } else {
             options
         }
+    }
+
+    pub fn from_meta(meta: &ItemMeta, group: ItemGroup) -> Self {
+        Self::new(group).id(meta.id)
     }
 
     pub fn id(mut self, id: i32) -> Self {
@@ -265,7 +266,7 @@ impl<'a> Widget for ItemSlot<'a> {
                         },
                     );
 
-                    ui.horizontal_top(|ui| {
+                    ui.allocate_ui(self.slot_size(), |ui| {
                         ui.add_space(padding.x);
                         ui.vertical(|ui| {
                             ui.add_space(padding.y);

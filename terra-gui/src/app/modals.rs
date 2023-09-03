@@ -6,19 +6,12 @@ use crate::ui::UiExt;
 
 use super::{
     inventory::{
-        self,
         buff_slot::{self, BuffSlotOptions},
-        item_slot::ItemSlotOptions,
+        item_slot::{self, ItemSlotOptions},
         prefix_tooltip::PrefixTooltipOptions,
         ItemGroup,
     },
-    // inventory::{BuffSlot, ItemSlot, BUFF_SLOT_SIZE},
-    App,
-    Message,
-    EGUI_GITHUB_REPO_NAME,
-    EGUI_GITHUB_REPO_URL,
-    GITHUB_REPO_NAME,
-    GITHUB_REPO_URL,
+    App, Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,
 };
 
 #[allow(dead_code)]
@@ -35,7 +28,7 @@ const ABOUT_MODAL_WIDTH: f32 = 300.;
 const ABOUT_MODAL_HEIGHT: f32 = DEFAULT_MODAL_HEIGHT;
 
 const ITEM_BROWSER_COLS: usize = 6;
-const BUFF_BROWSER_COLS: usize = 6;
+const BUFF_BROWSER_COLS: usize = 8;
 const PREFIX_BROWSER_COLS: usize = 4;
 
 impl App {
@@ -132,14 +125,14 @@ impl App {
         let mut term_changed = false;
 
         if self.show_item_browser {
-            let style = &*ctx.style();
-
             self.render_modal(
                 ctx,
                 "Item Browser",
                 false,
                 Sizing::Fixed(vec2(
-                    DEFAULT_MODAL_WIDTH + style.spacing.item_spacing.x,
+                    item_slot::SLOT_SIZE.x * (ITEM_BROWSER_COLS + 1) as f32
+                        + ctx.style().spacing.item_spacing.x * (ITEM_BROWSER_COLS * 2) as f32
+                        - ctx.style().spacing.scroll_bar_width,
                     DEFAULT_MODAL_HEIGHT * 2.,
                 )),
                 |ui| {
@@ -162,44 +155,39 @@ impl App {
 
                         ScrollArea::new([false, true])
                             .id_source("item_browser_scrollarea")
-                            .show_rows(
-                                ui,
-                                inventory::item_slot::SLOT_SIZE.x,
-                                total_rows,
-                                |ui, row_range| {
-                                    Grid::new("item_browser_grid")
-                                        .num_columns(ITEM_BROWSER_COLS)
-                                        .show(ui, |ui| {
-                                            let mut filtered =
-                                                filtered.skip(row_range.start * ITEM_BROWSER_COLS);
+                            .show_rows(ui, item_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
+                                Grid::new("item_browser_grid")
+                                    .num_columns(ITEM_BROWSER_COLS)
+                                    .show(ui, |ui| {
+                                        let mut filtered =
+                                            filtered.skip(row_range.start * ITEM_BROWSER_COLS);
 
-                                            for i in (row_range.start * ITEM_BROWSER_COLS)
-                                                ..(row_range.end * ITEM_BROWSER_COLS)
-                                            {
-                                                let meta = filtered.next();
-                                                if meta.is_none() {
-                                                    break;
-                                                }
-                                                let meta = meta.unwrap();
-
-                                                let options =
-                                                    ItemSlotOptions::new(ItemGroup::ItemBrowser)
-                                                        .tooltip_on_hover(true);
-                                                let response = self.render_item_slot(ui, options);
-
-                                                if response.clicked() {
-                                                    self.do_update(Message::SetCurrentItemId(
-                                                        meta.id,
-                                                    ));
-                                                }
-
-                                                if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
-                                                    ui.end_row();
-                                                }
+                                        for i in (row_range.start * ITEM_BROWSER_COLS)
+                                            ..(row_range.end * ITEM_BROWSER_COLS)
+                                        {
+                                            let meta = filtered.next();
+                                            if meta.is_none() {
+                                                break;
                                             }
-                                        });
-                                },
-                            );
+                                            let meta = meta.unwrap();
+
+                                            let options = ItemSlotOptions::from_meta(
+                                                meta,
+                                                ItemGroup::ItemBrowser,
+                                            )
+                                            .tooltip_on_hover(true);
+                                            let response = self.render_item_slot(ui, options);
+
+                                            if response.clicked() {
+                                                self.do_update(Message::SetCurrentItemId(meta.id));
+                                            }
+
+                                            if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
+                                                ui.end_row();
+                                            }
+                                        }
+                                    });
+                            });
                     }
 
                     ui.vertical_right_justified(|ui| {
@@ -226,7 +214,8 @@ impl App {
                 "Buff Browser",
                 false,
                 Sizing::Fixed(vec2(
-                    DEFAULT_MODAL_WIDTH + ctx.style().spacing.item_spacing.x,
+                    buff_slot::SLOT_SIZE.x * (BUFF_BROWSER_COLS) as f32
+                        + ctx.style().spacing.item_spacing.x * (BUFF_BROWSER_COLS * 2) as f32,
                     DEFAULT_MODAL_HEIGHT * 2.,
                 )),
                 |ui| {
@@ -265,8 +254,8 @@ impl App {
                                             }
                                             let meta = meta.unwrap();
 
-                                            let options =
-                                                BuffSlotOptions::new().tooltip_on_hover(true);
+                                            let options = BuffSlotOptions::from_meta(meta)
+                                                .tooltip_on_hover(true);
                                             let response = self.render_buff_slot(ui, options);
 
                                             if response.clicked() {

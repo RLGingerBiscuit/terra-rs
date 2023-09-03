@@ -12,9 +12,10 @@ impl App {
         file_name: &str,
         spritesheet: Arc<RwLock<Option<TextureHandle>>>,
     ) {
-        if self.busy {
+        if self.is_busy() || spritesheet.read().is_some() {
             return;
         }
+
         let ctx = ctx.clone();
         let debug_name = format!("{}_spritesheet", file_name);
         let path = std::env::current_exe()
@@ -35,8 +36,7 @@ impl App {
 
             let handle = ctx.load_texture(debug_name, image, TextureOptions::NEAREST);
 
-            let mut spritesheet = spritesheet.write();
-            *spritesheet = Some(handle);
+            *spritesheet.write() = Some(handle);
 
             ctx.request_repaint();
             Ok(Message::Noop)

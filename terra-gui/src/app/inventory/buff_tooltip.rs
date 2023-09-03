@@ -1,4 +1,4 @@
-use egui::{Rect, Sense, Widget};
+use egui::{Vec2, Widget, Ui, Response};
 use terra_core::BuffMeta;
 
 use super::{buff_name, buff_slot::BuffSlotOptions};
@@ -33,6 +33,7 @@ impl BuffTooltipOptions {
     }
 }
 
+#[derive(Debug)]
 pub(super) struct BuffTooltip<'a> {
     options: BuffTooltipOptions,
     meta: &'a BuffMeta,
@@ -45,26 +46,25 @@ impl<'a> BuffTooltip<'a> {
 }
 
 impl<'a> Widget for BuffTooltip<'a> {
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        let response = ui.allocate_rect(Rect::NOTHING, Sense::hover());
-
-        let buff = self.meta;
-        let time = self.options.time;
-
-        if buff.id == 0 {
-            return response;
-        }
-
-        response.union(ui.heading(buff_name(&buff.name, time)));
-
-        response.union(ui.small(format!("ID: {}", buff.id)));
-
-        if let Some(tooltip) = &buff.tooltip {
-            for line in tooltip {
-                response.union(ui.label(line));
+    fn ui(self, ui: &mut Ui) -> Response {
+        ui.allocate_ui(Vec2::INFINITY, |ui| {
+            let buff = self.meta;
+            if buff.id == 0 {
+                return;
             }
-        }
 
-        response
+            let time = self.options.time;
+
+            ui.heading(buff_name(&buff.name, time));
+
+            ui.small(format!("ID: {}", buff.id));
+
+            if let Some(tooltip) = &buff.tooltip {
+                for line in tooltip {
+                    ui.label(line);
+                }
+            }
+        })
+        .response
     }
 }

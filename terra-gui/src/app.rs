@@ -102,7 +102,7 @@ pub struct App {
     search_term: String,
 
     error: Option<anyhow::Error>,
-    busy: bool,
+    busy: Arc<RwLock<bool>>,
     show_about: bool,
     show_item_browser: bool,
     show_buff_browser: bool,
@@ -152,7 +152,7 @@ impl App {
             search_term: String::new(),
 
             error: None,
-            busy: false,
+            busy: Arc::new(RwLock::new(false)),
             show_about: false,
             show_item_browser: false,
             show_buff_browser: false,
@@ -160,8 +160,12 @@ impl App {
         }
     }
 
-    fn modal_open(&self) -> bool {
-        self.busy
+    fn is_busy(&self) -> bool {
+        *self.busy.read()
+    }
+
+    fn is_modal_open(&self) -> bool {
+        self.is_busy()
             || self.error.is_some()
             || self.show_about
             || self.show_item_browser
@@ -172,15 +176,18 @@ impl App {
     fn do_task(&mut self, task: impl 'static + Send + Sync + FnOnce() -> anyhow::Result<Message>) {
         let tx = self.channel.0.clone();
         let task = Box::new(task);
-
-        self.busy = true;
+        let busy = self.busy.clone();
 
         thread::spawn(move || {
+            *busy.write() = true;
+
             tx.send(match task() {
                 Ok(msg) => msg,
                 Err(err) => Message::ShowError(err),
             })
             .unwrap();
+
+            *busy.write() = false;
         });
     }
 
@@ -191,45 +198,24 @@ impl App {
     fn handle_update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if let Ok(msg) = self.channel.1.try_recv() {
             match msg {
-                Message::Noop => {
-                    self.busy = false;
-                    ctx.request_repaint();
-                }
+                Message::Noop => {}
                 Message::Exit => frame.close(),
                 Message::LoadItemSpritesheet => {
-                    {
-                        let spritesheet = self.item_spritesheet.read();
-                        if self.busy || (*spritesheet).is_some() {
-                            return;
-                        }
-                    }
                     let spritesheet = self.item_spritesheet.clone();
                     self.load_spritesheet(ctx, "items.png", spritesheet);
                 }
                 Message::LoadBuffSpritesheet => {
-                    {
-                        let spritesheet = self.buff_spritesheet.read();
-                        if self.busy || (*spritesheet).is_some() {
-                            return;
-                        }
-                    }
                     let spritesheet = self.buff_spritesheet.clone();
                     self.load_spritesheet(ctx, "buffs.png", spritesheet);
                 }
                 Message::LoadIconSpritesheet => {
-                    {
-                        let spritesheet = self.buff_spritesheet.read();
-                        if self.busy || (*spritesheet).is_some() {
-                            return;
-                        }
-                    }
                     let spritesheet = self.icon_spritesheet.clone();
                     self.load_spritesheet(ctx, "icons.png", spritesheet);
                 }
                 Message::ShowAbout => self.show_about = true,
                 Message::CloseAbout => self.show_about = false,
                 Message::ShowError(err) => {
-                    self.busy = false;
+                    *self.busy.write() = false;
                     self.error = Some(err)
                 }
                 Message::CloseError => self.error = None,
@@ -266,13 +252,14 @@ impl App {
                         let item_meta = self.item_meta.clone();
 
                         self.do_task(move || {
+                            let mut player = player.write();
                             if path
                                 .extension()
                                 .is_some_and(|e| e.to_string_lossy() == "dplr")
                             {
-                                player.write().load_decrypted(&item_meta.read(), &path)?;
+                                player.load_decrypted(&item_meta.read(), &path)?;
                             } else {
-                                player.write().load(&item_meta.read(), &path)?;
+                                player.load(&item_meta.read(), &path)?;
                             }
                             Ok(Message::Noop)
                         });
@@ -302,9 +289,6 @@ impl App {
                         (directory, file_name)
                     };
 
-                    let player = self.player.clone();
-                    let item_meta = self.item_meta.clone();
-
                     if let Some(path) = rfd::FileDialog::new()
                         .set_directory(directory)
                         .set_file_name(&file_name)
@@ -315,14 +299,18 @@ impl App {
                     {
                         self.player_path = Some(path.clone());
 
+                        let player = self.player.clone();
+                        let item_meta = self.item_meta.clone();
+
                         self.do_task(move || {
+                            let player = player.read();
                             if path
                                 .extension()
                                 .is_some_and(|e| e.to_string_lossy() == "dplr")
                             {
-                                player.read().save_decrypted(&item_meta.read(), &path)?;
+                                player.save_decrypted(&item_meta.read(), &path)?;
                             } else {
-                                player.read().save(&item_meta.read(), &path)?;
+                                player.save(&item_meta.read(), &path)?;
                             }
                             Ok(Message::Noop)
                         });
@@ -413,13 +401,14 @@ impl App {
 
     fn handle_keyboard(&mut self, ctx: &egui::Context) {
         ctx.input_mut(|input| {
-            if self.modal_open() {
+            if self.is_modal_open() {
                 if input.consume_key(Modifiers::NONE, Key::Escape) {
                     self.error = None;
                     self.show_about = false;
                     self.show_item_browser = false;
                     self.show_buff_browser = false;
                     self.show_prefix_browser = false;
+                    self.search_term.clear();
                 }
             } else {
                 if input.consume_shortcut(&SHORTCUT_LOAD) {
@@ -464,7 +453,7 @@ impl eframe::App for App {
         let mut ui = Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
 
         ui.spacing_mut().item_spacing = Vec2::splat(8.);
-        ui.set_enabled(!self.modal_open());
+        ui.set_enabled(!self.is_modal_open());
 
         DockArea::new(self.tree.clone().write().deref_mut())
             .style(egui_dock::Style::from_egui(&ctx.style()))
