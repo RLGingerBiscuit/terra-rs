@@ -933,6 +933,14 @@ fn main() -> Result<()> {
         generate_spritesheet(&items_fol, &res_fol, "slot", 2560, &item_offset_filepath)?;
     let buff_spritesheet =
         generate_spritesheet(&buffs_fol, &res_fol, "buff", 512, &buff_offset_filepath)?;
+    let icon_spritesheet = {
+        let sheet = image::open(res_fol.join("other").join("Extra_54.png"))?;
+        sheet.resize(
+            sheet.width() / 2,
+            sheet.height() / 2,
+            image::imageops::FilterType::Nearest,
+        )
+    };
 
     let item_meta = get_item_meta(
         &template,
@@ -970,6 +978,7 @@ fn main() -> Result<()> {
     }
     item_spritesheet.save(gen_fol.join("items.png"))?;
     buff_spritesheet.save(gen_fol.join("buffs.png"))?;
+    icon_spritesheet.save(gen_fol.join("icons.png"))?;
 
     let target_dir = PathBuf::from("./target").join(&build_type);
     let final_dir = target_dir.join("resources");
@@ -978,10 +987,8 @@ fn main() -> Result<()> {
         fs::remove_dir_all(&final_dir)?;
     }
 
-    let mut options = DirCopyOptions::new();
-    options.overwrite = true;
-    options.copy_inside = true;
-    copy_dir(&gen_fol, &final_dir, &options)?;
+    let dir_options = DirCopyOptions::new().overwrite(true).copy_inside(true);
+    copy_dir(&gen_fol, &final_dir, &dir_options)?;
 
     Ok(())
 }

@@ -8,7 +8,7 @@ use terra_core::{
     LOADOUT_COUNT,
 };
 
-use crate::{enum_selectable_value, ui::UiExt};
+use crate::{app::inventory::item_slot::ItemSlotIcon, enum_selectable_value, ui::UiExt};
 
 use super::{
     inventory::{buff_slot::BuffSlotOptions, item_slot::ItemSlotOptions, ItemGroup},
@@ -299,7 +299,8 @@ impl App {
                     let options = [
                         (
                             row,
-                            ItemSlotOptions::from_item(coins, ItemGroup::Coins, &prefix_meta),
+                            ItemSlotOptions::from_item(coins, ItemGroup::Coins, &prefix_meta)
+                                .icon(Some(ItemSlotIcon::Coins)),
                         ),
                         (
                             row,
@@ -407,6 +408,26 @@ impl App {
             self.do_update(Message::SelectLoadout(loadout));
         }
 
+        const EQUIPMENT_ICONS: [ItemSlotIcon; 5] = [
+            ItemSlotIcon::Pet,
+            ItemSlotIcon::LightPet,
+            ItemSlotIcon::Cart,
+            ItemSlotIcon::Mount,
+            ItemSlotIcon::Hook,
+        ];
+
+        const ARMOR_ICONS: [ItemSlotIcon; 3] = [
+            ItemSlotIcon::HeadPiece,
+            ItemSlotIcon::ArmorPiece,
+            ItemSlotIcon::LegsPiece,
+        ];
+
+        const VANITY_ARMOR_ICONS: [ItemSlotIcon; 3] = [
+            ItemSlotIcon::VanityHeadPiece,
+            ItemSlotIcon::VanityArmorPiece,
+            ItemSlotIcon::VanityLegsPiece,
+        ];
+
         egui::Grid::new("player_equipment")
             .num_columns(8)
             .show(ui, |ui| {
@@ -414,10 +435,10 @@ impl App {
 
                 for i in 0..5 {
                     let equipment_dye = &player.equipment_dyes[i];
-                    let equipment_item = &player.equipment[i];
+                    let equipment = &player.equipment[i];
                     let accessory_dye = &current_loadout.accessory_dyes[i];
-                    let vanity_accessory_item = &current_loadout.vanity_accessories[i];
-                    let accessory_item = &current_loadout.accessories[i];
+                    let vanity_accessory = &current_loadout.vanity_accessories[i];
+                    let accessory = &current_loadout.accessories[i];
 
                     let options = [
                         (
@@ -426,15 +447,17 @@ impl App {
                                 equipment_dye,
                                 ItemGroup::EquipmentDyes,
                                 &prefix_meta,
-                            ),
+                            )
+                            .icon(Some(ItemSlotIcon::Dye)),
                         ),
                         (
                             i,
                             ItemSlotOptions::from_item(
-                                equipment_item,
+                                equipment,
                                 ItemGroup::Equipment,
                                 &prefix_meta,
-                            ),
+                            )
+                            .icon(Some(EQUIPMENT_ICONS[i])),
                         ),
                         (
                             i,
@@ -442,23 +465,26 @@ impl App {
                                 accessory_dye,
                                 ItemGroup::AccessoryDyes,
                                 &prefix_meta,
-                            ),
+                            )
+                            .icon(Some(ItemSlotIcon::Dye)),
                         ),
                         (
                             i,
                             ItemSlotOptions::from_item(
-                                vanity_accessory_item,
+                                vanity_accessory,
                                 ItemGroup::VanityAccessories,
                                 &prefix_meta,
-                            ),
+                            )
+                            .icon(Some(ItemSlotIcon::VanityAccessory)),
                         ),
                         (
                             i,
                             ItemSlotOptions::from_item(
-                                accessory_item,
+                                accessory,
                                 ItemGroup::Accessories,
                                 &prefix_meta,
-                            ),
+                            )
+                            .icon(Some(ItemSlotIcon::Accessory)),
                         ),
                     ]
                     .into_iter()
@@ -478,7 +504,8 @@ impl App {
                                     armor_dye,
                                     ItemGroup::ArmorDyes,
                                     &prefix_meta,
-                                ),
+                                )
+                                .icon(Some(ItemSlotIcon::Dye)),
                             ),
                             (
                                 i,
@@ -486,11 +513,13 @@ impl App {
                                     vanity_armor,
                                     ItemGroup::VanityArmor,
                                     &prefix_meta,
-                                ),
+                                )
+                                .icon(Some(VANITY_ARMOR_ICONS[i])),
                             ),
                             (
                                 i,
-                                ItemSlotOptions::from_item(armor, ItemGroup::Armor, &prefix_meta),
+                                ItemSlotOptions::from_item(armor, ItemGroup::Armor, &prefix_meta)
+                                    .icon(Some(ARMOR_ICONS[i])),
                             ),
                         ]
                         .into_iter()
@@ -503,30 +532,35 @@ impl App {
                             &current_loadout.vanity_accessories[ARMOR_COUNT - 1 + i];
                         let accessory = &current_loadout.accessories[ARMOR_COUNT - 1 + i];
 
+                        let i = ARMOR_COUNT - 1 + i;
+
                         let options = [
                             (
-                                ARMOR_COUNT - 1 + i,
+                                i,
                                 ItemSlotOptions::from_item(
                                     accessory_dye,
                                     ItemGroup::AccessoryDyes,
                                     &prefix_meta,
-                                ),
+                                )
+                                .icon(Some(ItemSlotIcon::Dye)),
                             ),
                             (
-                                ARMOR_COUNT - 1 + i,
+                                i,
                                 ItemSlotOptions::from_item(
                                     vanity_accessory,
                                     ItemGroup::VanityAccessories,
                                     &prefix_meta,
-                                ),
+                                )
+                                .icon(Some(ItemSlotIcon::VanityAccessory)),
                             ),
                             (
-                                ARMOR_COUNT - 1 + i,
+                                i,
                                 ItemSlotOptions::from_item(
                                     accessory,
                                     ItemGroup::Accessories,
                                     &prefix_meta,
-                                ),
+                                )
+                                .icon(Some(ItemSlotIcon::Accessory)),
                             ),
                         ]
                         .into_iter()

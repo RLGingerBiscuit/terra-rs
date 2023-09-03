@@ -155,14 +155,24 @@ impl App {
 
     pub fn render_item_slot(&self, ui: &mut Ui, options: ItemSlotOptions) -> Response {
         let item_spritesheet = self.item_spritesheet.read();
+        let icon_spritesheet = self.icon_spritesheet.read();
         let item_meta = self.item_meta.read();
+
+        if icon_spritesheet.is_none() && !self.busy {
+            self.do_update(Message::LoadIconSpritesheet);
+        }
 
         if item_spritesheet.is_none() && !self.busy {
             self.do_update(Message::LoadItemSpritesheet);
         }
 
         let meta = ItemMeta::get_or_default(&item_meta, options.id);
-        let slot = ItemSlot::new(options, meta, item_spritesheet.as_ref());
+        let slot = ItemSlot::new(
+            options,
+            meta,
+            item_spritesheet.as_ref(),
+            icon_spritesheet.as_ref(),
+        );
         let response = self.render_slot(ui, slot);
 
         if meta.id != 0 && options.tooltip_on_hover {

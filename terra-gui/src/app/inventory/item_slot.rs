@@ -1,10 +1,13 @@
 use egui::{
-    pos2, vec2, Align2, Image, Margin, Rect, Response, Sense, TextStyle, TextureHandle, Ui, Vec2,
-    Widget,
+    pos2, vec2, Align2, Color32, Image, Margin, Rect, Response, Sense, TextStyle, TextureHandle,
+    Ui, Vec2, Widget,
 };
 use terra_core::{meta::Meta, Item, ItemMeta, PrefixMeta};
 
 use super::{calculate_uv, slot::Slot, ItemGroup};
+
+pub const ICON_SIZE: Vec2 = Vec2::splat(17.);
+pub const ICON_DISPLAYED_SIZE: Vec2 = Vec2::splat(32.);
 
 pub const SLOT_SIZE: Vec2 = Vec2::splat(40.);
 pub const MARGIN: Margin = Margin {
@@ -16,10 +19,36 @@ pub const MARGIN: Margin = Margin {
 
 pub const SPRITE_SCALE: Vec2 = Vec2::splat(2.);
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ItemSlotIcon {
+    HeadPiece,
+    VanityHeadPiece,
+    ArmorPiece,
+    VanityArmorPiece,
+    LegsPiece,
+    VanityLegsPiece,
+    Dye,
+    Hook,
+    Cart,
+    Pet,
+    Mount,
+    // ...
+    VanityAccessory,
+    // ...
+    // ...
+    Accessory,
+    // ...
+    LightPet,
+    //
+    // TODO: Coins icon
+    Coins,
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct ItemSlotOptions<'a> {
     pub id: i32,
     pub group: ItemGroup,
+    pub icon: Option<ItemSlotIcon>,
     pub prefix_meta: Option<&'a PrefixMeta>,
     pub selected: bool,
     pub favourited: bool,
@@ -33,6 +62,7 @@ impl<'a> ItemSlotOptions<'a> {
         Self {
             id: 0,
             group,
+            icon: None,
             prefix_meta: None,
             selected: false,
             favourited: false,
@@ -56,6 +86,11 @@ impl<'a> ItemSlotOptions<'a> {
 
     pub fn group(mut self, group: ItemGroup) -> Self {
         self.group = group;
+        self
+    }
+
+    pub fn icon(mut self, icon: Option<ItemSlotIcon>) -> Self {
+        self.icon = icon;
         self
     }
 
@@ -88,7 +123,8 @@ impl<'a> ItemSlotOptions<'a> {
 pub(super) struct ItemSlot<'a> {
     options: ItemSlotOptions<'a>,
     meta: &'a ItemMeta,
-    sheet: Option<&'a TextureHandle>,
+    item_sheet: Option<&'a TextureHandle>,
+    icon_sheet: Option<&'a TextureHandle>,
 }
 
 #[allow(dead_code)]
@@ -96,12 +132,14 @@ impl<'a> ItemSlot<'a> {
     pub fn new(
         options: ItemSlotOptions<'a>,
         meta: &'a ItemMeta,
-        spritesheet: Option<&'a TextureHandle>,
+        item_spritesheet: Option<&'a TextureHandle>,
+        icon_spritesheet: Option<&'a TextureHandle>,
     ) -> Self {
         Self {
             options,
             meta,
-            sheet: spritesheet,
+            item_sheet: item_spritesheet,
+            icon_sheet: icon_spritesheet,
         }
     }
 
@@ -116,52 +154,123 @@ impl<'a> ItemSlot<'a> {
     pub fn prefix_meta(&self) -> Option<&PrefixMeta> {
         self.options.prefix_meta
     }
+
+    fn render_item_slot_icon(
+        &self,
+        ui: &mut Ui,
+        icon: ItemSlotIcon,
+        sheet: &TextureHandle,
+    ) -> Response {
+        let index = match icon {
+            ItemSlotIcon::HeadPiece => vec2(0., 0.),
+            ItemSlotIcon::VanityHeadPiece => vec2(0., 1.),
+            ItemSlotIcon::ArmorPiece => vec2(0., 2.),
+            ItemSlotIcon::VanityArmorPiece => vec2(0., 3.),
+            ItemSlotIcon::LegsPiece => vec2(0., 4.),
+            ItemSlotIcon::VanityLegsPiece => vec2(0., 5.),
+            ItemSlotIcon::Dye => vec2(1., 0.),
+            ItemSlotIcon::Hook => vec2(1., 1.),
+            ItemSlotIcon::Cart => vec2(1., 2.),
+            ItemSlotIcon::Pet => vec2(1., 3.),
+            ItemSlotIcon::Mount => vec2(1., 4.),
+            ItemSlotIcon::VanityAccessory => vec2(2., 0.),
+            ItemSlotIcon::Accessory => vec2(2., 3.),
+            ItemSlotIcon::LightPet => vec2(2., 5.),
+            ItemSlotIcon::Coins => todo!(),
+        };
+
+        let sheet_size = sheet.size_vec2();
+        let min = ((index * ICON_SIZE) / sheet_size).to_pos2();
+        let uv = Rect::from_min_size(min, ICON_SIZE / sheet_size);
+        let padding = (SLOT_SIZE - ICON_DISPLAYED_SIZE) / 2.;
+
+        // TODO: Make translucent, but IDK how to do that atm
+        let tint = ui.style().visuals.weak_text_color();
+        let tint = Color32::from_rgba_premultiplied(
+            tint.r(),
+            tint.g(),
+            tint.b(),
+            (u8::MAX as f32 / 8.) as u8,
+        );
+
+        ui.horizontal_top(|ui| {
+            ui.add_space(padding.x);
+            ui.vertical(|ui| {
+                ui.add_space(padding.y);
+                ui.add(Image::new(sheet, ICON_DISPLAYED_SIZE).uv(uv).tint(tint));
+                ui.add_space(padding.y);
+            });
+            ui.add_space(padding.x);
+        })
+        .response
+    }
 }
 
 impl<'a> Widget for ItemSlot<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
-        let response = match self.sheet {
-            None => {
-                let (_, response) = ui.allocate_exact_size(self.slot_size(), Sense::hover());
-                response
-            }
-            Some(sheet) => {
-                let uv = calculate_uv(sheet, self.sprite_rect());
-                let mut size = self.sprite_rect().size() * self.scale();
+        let allocate_size = |ui: &mut Ui| {
+            let (_, response) = ui.allocate_exact_size(self.slot_size(), Sense::hover());
+            response
+        };
 
-                if size.x > self.slot_size().x || size.y > self.slot_size().y {
-                    if size.x >= size.y {
-                        // Landscape
-                        size *= self.slot_size().x / size.x;
-                    } else {
-                        // Portrait
-                        size *= self.slot_size().y / size.y;
+        let try_render_icon = |ui: &mut Ui| match self.options.icon {
+            None => allocate_size(ui),
+            Some(icon) => {
+                // TODO: Coins icon
+                if icon == ItemSlotIcon::Coins {
+                    allocate_size(ui)
+                } else {
+                    match self.icon_sheet {
+                        None => allocate_size(ui),
+                        Some(sheet) => self.render_item_slot_icon(ui, icon, sheet),
                     }
                 }
+            }
+        };
 
-                let padding = vec2(
-                    if size.x < self.slot_size().x {
-                        (self.slot_size().x - size.x) / 2.
-                    } else {
-                        0.
-                    },
-                    if size.y < self.slot_size().y {
-                        (self.slot_size().y - size.y) / 2.
-                    } else {
-                        0.
-                    },
-                );
+        let response = if self.meta.id == 0 {
+            try_render_icon(ui)
+        } else {
+            match self.item_sheet {
+                None => try_render_icon(ui),
+                Some(sheet) => {
+                    let uv = calculate_uv(sheet, self.sprite_rect());
+                    let mut size = self.sprite_rect().size() * self.scale();
 
-                ui.horizontal_top(|ui| {
-                    ui.add_space(padding.x);
-                    ui.vertical(|ui| {
-                        ui.add_space(padding.y);
-                        ui.add(Image::new(sheet, size).uv(uv));
-                        ui.add_space(padding.y);
-                    });
-                    ui.add_space(padding.x);
-                })
-                .response
+                    if size.x > self.slot_size().x || size.y > self.slot_size().y {
+                        if size.x >= size.y {
+                            // Landscape
+                            size *= self.slot_size().x / size.x;
+                        } else {
+                            // Portrait
+                            size *= self.slot_size().y / size.y;
+                        }
+                    }
+
+                    let padding = vec2(
+                        if size.x < self.slot_size().x {
+                            (self.slot_size().x - size.x) / 2.
+                        } else {
+                            0.
+                        },
+                        if size.y < self.slot_size().y {
+                            (self.slot_size().y - size.y) / 2.
+                        } else {
+                            0.
+                        },
+                    );
+
+                    ui.horizontal_top(|ui| {
+                        ui.add_space(padding.x);
+                        ui.vertical(|ui| {
+                            ui.add_space(padding.y);
+                            ui.add(Image::new(sheet, size).uv(uv));
+                            ui.add_space(padding.y);
+                        });
+                        ui.add_space(padding.x);
+                    })
+                    .response
+                }
             }
         };
 

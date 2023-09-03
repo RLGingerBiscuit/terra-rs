@@ -47,6 +47,7 @@ pub enum Message {
     Exit,
     LoadItemSpritesheet,
     LoadBuffSpritesheet,
+    LoadIconSpritesheet,
     ShowAbout,
     CloseAbout,
     ShowError(anyhow::Error),
@@ -88,6 +89,7 @@ pub struct App {
 
     item_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
     buff_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
+    icon_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
 
     theme: visuals::Theme,
     tree: Arc<RwLock<Tree<Tabs>>>,
@@ -137,6 +139,7 @@ impl App {
 
             item_spritesheet: Arc::new(RwLock::new(None)),
             buff_spritesheet: Arc::new(RwLock::new(None)),
+            icon_spritesheet: Arc::new(RwLock::new(None)),
 
             theme,
             tree: Arc::new(RwLock::new(tree)),
@@ -208,6 +211,16 @@ impl App {
                     }
                     let spritesheet = self.buff_spritesheet.clone();
                     self.load_spritesheet(ctx, "buffs.png", spritesheet);
+                }
+                Message::LoadIconSpritesheet => {
+                    {
+                        let spritesheet = self.buff_spritesheet.read();
+                        if self.busy || (*spritesheet).is_some() {
+                            return;
+                        }
+                    }
+                    let spritesheet = self.icon_spritesheet.clone();
+                    self.load_spritesheet(ctx, "icons.png", spritesheet);
                 }
                 Message::ShowAbout => self.show_about = true,
                 Message::CloseAbout => self.show_about = false,
