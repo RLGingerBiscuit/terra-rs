@@ -397,17 +397,6 @@ impl App {
         let player = self.player.read();
         let prefix_meta = self.prefix_meta.read();
 
-        let mut loadout = self.selected_loadout;
-
-        if ComboBox::from_id_source("player_loadouts")
-            .show_index(ui, &mut loadout.0, LOADOUT_COUNT, |i| {
-                format!("Loadout {}", i + 1)
-            })
-            .changed()
-        {
-            self.do_update(Message::SelectLoadout(loadout));
-        }
-
         const EQUIPMENT_ICONS: [ItemSlotIcon; 5] = [
             ItemSlotIcon::Pet,
             ItemSlotIcon::LightPet,
@@ -429,7 +418,7 @@ impl App {
         ];
 
         egui::Grid::new("player_equipment")
-            .num_columns(8)
+            .num_columns(9)
             .show(ui, |ui| {
                 let current_loadout = &player.loadouts[self.selected_loadout.0];
 
@@ -567,6 +556,19 @@ impl App {
                         .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
                         self.render_item_slots(ui, options);
+                    }
+
+                    if i == 0 {
+                        let mut loadout = self.selected_loadout;
+
+                        if ComboBox::from_id_source("player_loadouts")
+                            .show_index(ui, &mut loadout.0, LOADOUT_COUNT, |i| {
+                                format!("Loadout {}", i + 1)
+                            })
+                            .changed()
+                        {
+                            self.do_update(Message::SelectLoadout(loadout));
+                        }
                     }
 
                     ui.end_row();
