@@ -34,7 +34,13 @@ impl BuffSlotOptions {
     }
 
     pub fn from_buff(buff: &Buff) -> Self {
-        Self::new().id(buff.id).time(Some(buff.time))
+        let options = Self::new().id(buff.id);
+
+        if buff.time > 0 {
+            options.time(Some(buff.time))
+        } else {
+            options
+        }
     }
 
     pub fn id(mut self, id: i32) -> Self {

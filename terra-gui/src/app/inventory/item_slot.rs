@@ -72,11 +72,16 @@ impl<'a> ItemSlotOptions<'a> {
     }
 
     pub fn from_item(item: &Item, tab: ItemGroup, prefix_meta: &'a [PrefixMeta]) -> Self {
-        Self::new(tab)
+        let options = Self::new(tab)
             .id(item.id)
             .prefix_meta(PrefixMeta::get(prefix_meta, item.prefix.id))
-            .favourited(item.favourited)
-            .stack(Some(item.stack))
+            .favourited(item.favourited);
+
+        if item.stack > 0 {
+            options.stack(Some(item.stack))
+        } else {
+            options
+        }
     }
 
     pub fn id(mut self, id: i32) -> Self {
