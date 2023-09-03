@@ -1,4 +1,4 @@
-use egui::{pos2, vec2, Margin, Rect, Response, Sense, TextureHandle, Ui, Vec2, Widget, Image};
+use egui::{pos2, vec2, Image, Margin, Rect, Response, Sense, TextureHandle, Ui, Vec2, Widget};
 use terra_core::{Buff, BuffMeta, BUFF_SPRITE_SIZE};
 
 use super::{calculate_uv, slot::Slot};

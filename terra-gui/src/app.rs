@@ -140,7 +140,7 @@ impl App {
 
             theme,
             tree: Arc::new(RwLock::new(tree)),
-            closed_tabs: closed_tabs,
+            closed_tabs,
 
             search_term: String::new(),
 
@@ -266,7 +266,7 @@ impl App {
                         .player_path
                         .get_or_insert_with(|| DEFAULT_PLAYER_DIR.clone());
 
-                    let fallback_name = || self.player.read().name.replace(" ", "_");
+                    let fallback_name = || self.player.read().name.replace(' ', "_");
 
                     let (directory, file_name) = if player_path.exists() && player_path.is_dir() {
                         (player_path.clone(), fallback_name())
@@ -382,7 +382,7 @@ impl App {
                     }
                 }
                 Message::SetCurrentPrefixId(id) => {
-                    let     player = &mut *self.player.write();
+                    let player = &mut *self.player.write();
                     let item = selected_item(self.selected_item, self.selected_loadout, player);
 
                     item.prefix.id = id;

@@ -1,4 +1,7 @@
-use std::{num::ParseIntError, path::PathBuf};
+use std::{
+    num::ParseIntError,
+    path::{Path, PathBuf},
+};
 
 use dirs_next::{data_local_dir, document_dir};
 
@@ -23,7 +26,7 @@ pub fn get_player_dir() -> PathBuf {
     get_terraria_dir().join("Players")
 }
 
-pub fn get_player_dir_or_default(player_path: &PathBuf) -> PathBuf {
+pub fn get_player_dir_or_default(player_path: &Path) -> PathBuf {
     let parent = player_path.parent();
 
     let fallback = || {

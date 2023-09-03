@@ -192,8 +192,8 @@ impl App {
         let player = &mut *self.player.write();
         let item = selected_item(self.selected_item, self.selected_loadout, player);
 
-        let item_meta = &self.item_meta.read();
-        let prefix_meta = &self.prefix_meta.read();
+        let item_meta = self.item_meta.read();
+        let prefix_meta = self.prefix_meta.read();
 
         let largest_item_id = item_meta
             .last()
@@ -283,7 +283,7 @@ impl App {
         let player = &mut *self.player.write();
         let buff = selected_buff(self.selected_buff, player);
 
-        let buff_meta = &self.buff_meta.read();
+        let buff_meta = self.buff_meta.read();
 
         let largest_buff_id = buff_meta
             .last()

@@ -1,6 +1,7 @@
 use terra_core::{
+    meta::Meta,
     utils::{get_player_dir, to_hex, version_lookup},
-    BuffMeta, Item, ItemMeta, Player, PrefixMeta, TICKS_PER_MICROSECOND, meta::Meta,
+    BuffMeta, Item, ItemMeta, Player, PrefixMeta, TICKS_PER_MICROSECOND,
 };
 
 fn usage() {

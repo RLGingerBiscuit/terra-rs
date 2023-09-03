@@ -2,7 +2,7 @@ use std::{fs::File, io::Read, path::PathBuf};
 
 use anyhow::Result;
 
-use terra_core::{BuffMeta, ItemMeta, Player, PrefixMeta, meta::Meta};
+use terra_core::{meta::Meta, BuffMeta, ItemMeta, Player, PrefixMeta};
 
 #[derive(thiserror::Error, Debug)]
 pub enum TestError {
