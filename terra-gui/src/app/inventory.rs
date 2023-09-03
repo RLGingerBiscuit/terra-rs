@@ -1,92 +1,28 @@
-use egui::{
-    pos2, vec2, Align2, Image, Margin, Rect, Response, RichText, Sense, TextStyle, TextureHandle,
-    Ui,
-};
-
-use terra_core::{
-    utils, BuffMeta, ItemMeta, ItemType, PrefixMeta, BUFF_SPRITE_SIZE as CORE_BUFF_SPRITE_SIZE,
-    STRANGE_BREW_ID, STRANGE_BREW_MAX_HEAL,
-};
+use egui::{Rect, Response, TextureHandle, Ui, Vec2, Widget};
+use terra_core::{meta::Meta, Buff, BuffMeta, Item, ItemMeta, Player, PrefixMeta};
 
 use crate::ui::{ClickableFrame, UiExt};
 
+use self::{
+    buff_slot::{BuffSlot, BuffSlotOptions},
+    buff_tooltip::{BuffTooltip, BuffTooltipOptions},
+    item_slot::{ItemSlot, ItemSlotOptions},
+    item_tooltip::{ItemTooltip, ItemTooltipOptions},
+    prefix_tooltip::{PrefixTooltip, PrefixTooltipOptions},
+    slot::Slot,
+};
+
 use super::{App, Message};
 
-pub const ITEM_SLOT_SIZE: f32 = 40.;
-pub const ITEM_SLOT_MARGIN: Margin = Margin {
-    left: 6.,
-    right: 6.,
-    top: 6.,
-    bottom: 6.,
-};
-pub const ITEM_SPRITE_SCALE: f32 = 2.;
-
-pub const BUFF_SLOT_SIZE: f32 = 32.;
-pub const BUFF_SLOT_MARGIN: Margin = Margin {
-    left: 0.,
-    right: 0.,
-    top: 0.,
-    bottom: 0.,
-};
-pub const BUFF_SPRITE_SIZE: f32 = CORE_BUFF_SPRITE_SIZE as f32;
-pub const BUFF_SPRITE_SCALE: f32 = 2.;
-
-#[macro_export]
-macro_rules! meta_or_default {
-    ($meta:expr,$id:expr) => {
-        $meta
-            .get($id as usize)
-            // .iter().filter(|m| m.id == id).next()
-            .unwrap_or($meta.get(0).expect("We really should have a zeroth meta"))
-    };
-}
-
-#[macro_export]
-macro_rules! selected_item {
-    ($selected_item:expr,$selected_loadout:expr,$player:expr) => {
-        match $selected_item.0 {
-            ItemTab::Inventory => &mut $player.inventory[$selected_item.1],
-            ItemTab::Coins => &mut $player.coins[$selected_item.1],
-            ItemTab::Ammo => &mut $player.ammo[$selected_item.1],
-            ItemTab::Bank => &mut $player.piggy_bank[$selected_item.1],
-            ItemTab::Safe => &mut $player.safe[$selected_item.1],
-            ItemTab::Forge => &mut $player.defenders_forge[$selected_item.1],
-            ItemTab::Void => &mut $player.void_vault[$selected_item.1],
-            ItemTab::Equipment => &mut $player.equipment[$selected_item.1],
-            ItemTab::EquipmentDyes => &mut $player.equipment_dyes[$selected_item.1],
-            // TODO: The only case where a change will happen immediately without clicking on another item is changing loadouts, do I want to keep this?
-            ItemTab::VanityArmor => {
-                &mut $player.loadouts[$selected_loadout.0].vanity_armor[$selected_item.1]
-            }
-            ItemTab::Armor => {
-                &mut $player.loadouts[$selected_loadout.0].armor[$selected_item.1]
-            }
-            ItemTab::ArmorDyes => {
-                &mut $player.loadouts[$selected_loadout.0].armor_dyes[$selected_item.1]
-            }
-            ItemTab::VanityAccessories => {
-                &mut $player.loadouts[$selected_loadout.0].vanity_accessories
-                    [$selected_item.1]
-            }
-            ItemTab::Accessories => {
-                &mut $player.loadouts[$selected_loadout.0].accessories[$selected_item.1]
-            }
-            ItemTab::AccessoryDyes => {
-                &mut $player.loadouts[$selected_loadout.0].accessory_dyes[$selected_item.1]
-            }
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! selected_buff {
-    ($selected_buff:expr,$player:expr) => {
-        &mut $player.buffs[$selected_buff.0]
-    };
-}
+pub mod buff_slot;
+pub mod buff_tooltip;
+pub mod item_slot;
+pub mod item_tooltip;
+pub mod prefix_tooltip;
+pub mod slot;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ItemTab {
+pub enum ItemGroup {
     Inventory,
     Coins,
     Ammo,
@@ -102,13 +38,14 @@ pub enum ItemTab {
     Accessories,
     VanityAccessories,
     AccessoryDyes,
+    ItemBrowser,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct SelectedItem(pub ItemTab, pub usize);
+pub struct SelectedItem(pub ItemGroup, pub usize);
 
 impl SelectedItem {
-    pub fn equals(&self, tab: ItemTab, index: usize) -> bool {
+    pub fn equals(&self, tab: ItemGroup, index: usize) -> bool {
         self.0 == tab && self.1 == index
     }
 }
@@ -125,259 +62,153 @@ impl SelectedBuff {
 #[derive(Debug, Clone, Copy)]
 pub struct SelectedLoadout(pub usize);
 
-#[derive(Debug)]
-struct Slot {
-    rect: Rect,
-    size: f32,
-    scale: f32,
-    margin: Margin,
-    selected: bool,
-    stack: Option<i32>,
-}
-
-#[derive(Default, Debug)]
-pub struct ItemSlot<'a> {
-    id: i32,
-    prefix_meta: Option<&'a PrefixMeta>,
-    favourited: bool,
-    stack: Option<i32>,
-}
-
-impl<'a> ItemSlot<'a> {
-    pub fn new(
-        id: i32,
-        prefix_meta: Option<&'a PrefixMeta>,
-        favourited: bool,
-        stack: Option<i32>,
-    ) -> Self {
-        Self {
-            id,
-            prefix_meta,
-            favourited,
-            stack,
-        }
-    }
-
-    pub fn with_id_only(id: i32) -> Self {
-        Self {
-            id,
-            ..Default::default()
+pub fn selected_item(
+    item: SelectedItem,
+    loadout: SelectedLoadout,
+    player: &mut Player,
+) -> &mut Item {
+    match item.0 {
+        ItemGroup::Inventory => &mut player.inventory[item.1],
+        ItemGroup::Coins => &mut player.coins[item.1],
+        ItemGroup::Ammo => &mut player.ammo[item.1],
+        ItemGroup::Bank => &mut player.piggy_bank[item.1],
+        ItemGroup::Safe => &mut player.safe[item.1],
+        ItemGroup::Forge => &mut player.defenders_forge[item.1],
+        ItemGroup::Void => &mut player.void_vault[item.1],
+        ItemGroup::Equipment => &mut player.equipment[item.1],
+        ItemGroup::EquipmentDyes => &mut player.equipment_dyes[item.1],
+        ItemGroup::VanityArmor => &mut player.loadouts[loadout.0].vanity_armor[item.1],
+        ItemGroup::Armor => &mut player.loadouts[loadout.0].armor[item.1],
+        ItemGroup::ArmorDyes => &mut player.loadouts[loadout.0].armor_dyes[item.1],
+        ItemGroup::VanityAccessories => &mut player.loadouts[loadout.0].vanity_accessories[item.1],
+        ItemGroup::Accessories => &mut player.loadouts[loadout.0].accessories[item.1],
+        ItemGroup::AccessoryDyes => &mut player.loadouts[loadout.0].accessory_dyes[item.1],
+        ItemGroup::ItemBrowser => {
+            panic!("You should never try to get the selected item of an item browser")
         }
     }
 }
 
-#[derive(Default, Debug)]
-pub struct BuffSlot {
-    id: i32,
-    time: Option<i32>,
+pub fn selected_buff(buff: SelectedBuff, player: &mut Player) -> &mut Buff {
+    &mut player.buffs[buff.0]
 }
 
-impl BuffSlot {
-    pub fn new(id: i32, time: Option<i32>) -> Self {
-        Self { id, time }
-    }
-
-    pub fn with_id_only(id: i32) -> Self {
-        Self {
-            id,
-            ..Default::default()
+pub fn item_name(name: &str, prefix_meta: Option<&PrefixMeta>) -> String {
+    if let Some(prefix_meta) = prefix_meta {
+        if prefix_meta.id() != 0 {
+            return format!("{} {}", prefix_meta.name(), name);
         }
     }
+
+    name.to_owned()
+}
+
+pub fn buff_name(name: &str, time: Option<i32>) -> String {
+    const FRAMES_PER_SECOND: i32 = 60;
+    const FRAMES_PER_MINUTE: i32 = FRAMES_PER_SECOND * 60;
+    const FRAMES_PER_HOUR: i32 = FRAMES_PER_MINUTE * 60;
+    const FRAMES_PER_THOUSAND_HOURS: i32 = FRAMES_PER_HOUR * 1000;
+
+    if let Some(time) = time {
+        let time = if time < FRAMES_PER_SECOND {
+            format!("({}f)", time)
+        } else if time < FRAMES_PER_MINUTE {
+            format!("({}s)", time / FRAMES_PER_SECOND)
+        } else if time < FRAMES_PER_HOUR {
+            format!("({}m)", time / FRAMES_PER_MINUTE)
+        } else if time < FRAMES_PER_THOUSAND_HOURS {
+            format!("({}h)", time / FRAMES_PER_HOUR)
+        } else {
+            "(∞)".to_owned()
+        };
+
+        format!("{} {}", name, time)
+    } else {
+        name.to_owned()
+    }
+}
+
+fn calculate_uv(sheet: &TextureHandle, sprite_rect: Rect) -> Rect {
+    let sheet_size = sheet.size_vec2();
+    let min = (sprite_rect.min.to_vec2() / sheet_size).to_pos2();
+    let size = sprite_rect.size() / sheet_size;
+
+    Rect::from_min_size(min, size)
 }
 
 impl App {
-    // TODO: split sprite into render_icon (or something)
-    // TODO: render slot icons
-    // TODO: render coloured slots
-    fn render_slot(
-        &self,
-        ui: &mut Ui,
-        spritesheet: Option<&TextureHandle>,
-        slot: Slot,
-    ) -> Response {
-        let group = if slot.selected {
-            let mut frame = ClickableFrame::group(ui.style());
-            frame.fill = ui.visuals().code_bg_color;
-            frame
+    fn render_slot<S>(&self, ui: &mut Ui, slot: S) -> Response
+    where
+        S: Slot + Widget,
+    {
+        let group = if slot.selected() {
+            ClickableFrame::group(ui.style()).fill(ui.visuals().code_bg_color)
         } else {
             ClickableFrame::group(ui.style())
         }
-        .inner_margin(slot.margin);
+        .inner_margin(slot.margin());
 
-        let response = group
-            .show(ui, |ui| {
-                ui.spacing_mut().item_spacing = vec2(0., 0.);
+        ui.style_mut().spacing.item_spacing = Vec2::splat(0.);
 
-                match spritesheet {
-                    None => {
-                        let _ = ui.allocate_exact_size(vec2(slot.size, slot.size), Sense::hover());
-                    }
-                    Some(sheet) => {
-                        let sheet_size = sheet.size_vec2();
-
-                        let pos = slot.rect.left_top();
-                        let mut size = slot.rect.size();
-
-                        let min = pos2(pos.x / sheet_size.x, pos.y / sheet_size.y);
-                        let max = vec2(size.x / sheet_size.x, size.y / sheet_size.y);
-                        let uv = Rect::from_min_size(min, max);
-
-                        size *= slot.scale;
-
-                        if size.x > slot.size || size.y > slot.size {
-                            if size.x >= size.y {
-                                // Landscape
-                                size *= slot.size / size.x;
-                            } else {
-                                // Portrait
-                                size *= slot.size / size.y;
-                            }
-                        }
-
-                        let padding = vec2(
-                            if size.x < slot.size {
-                                (slot.size - size.x) / 2.
-                            } else {
-                                0.
-                            },
-                            if size.y < slot.size {
-                                (slot.size - size.y) / 2.
-                            } else {
-                                0.
-                            },
-                        );
-
-                        ui.add_space(padding.x);
-                        ui.vertical(|ui| {
-                            ui.add_space(padding.y);
-                            ui.add(Image::new(sheet, size).uv(uv));
-                            ui.add_space(padding.y);
-                        });
-                        ui.add_space(padding.x);
-                    }
-                }
-            })
-            .response;
-
-        if let Some(stack) = slot.stack {
-            let max = response.rect.max;
-            let icon_spacing = ui.style().spacing.icon_spacing;
-
-            ui.painter().text(
-                pos2(max.x - icon_spacing, max.y - icon_spacing),
-                Align2::RIGHT_BOTTOM,
-                stack.to_string(),
-                TextStyle::Body.resolve(ui.style()),
-                ui.style().visuals.text_color(),
-            );
-        }
-
-        response
+        group.show(ui, |ui| ui.add(slot)).response
     }
 
-    pub fn render_item_slot(
-        &self,
-        ui: &mut Ui,
-        slot: ItemSlot,
-        selected: bool,
-        tooltip_on_hover: bool,
-    ) -> Response {
-        let spritesheet = self.item_spritesheet.read();
+    pub fn render_item_slot(&self, ui: &mut Ui, options: ItemSlotOptions) -> Response {
+        let item_spritesheet = self.item_spritesheet.read();
+        let item_meta = self.item_meta.read();
 
-        if spritesheet.is_none() && !self.busy {
+        if item_spritesheet.is_none() && !self.busy {
             self.do_update(Message::LoadItemSpritesheet);
         }
 
-        let item_meta = &*self.item_meta.read();
-        let meta = meta_or_default!(item_meta, slot.id);
+        let meta = ItemMeta::get_or_default(&item_meta, options.id);
+        let slot = ItemSlot::new(options, meta, item_spritesheet.as_ref());
+        let response = self.render_slot(ui, slot);
 
-        let min = pos2(meta.x as f32, meta.y as f32);
-        let size = vec2(meta.width as f32, meta.height as f32);
-        let rect = Rect::from_min_size(min, size);
-
-        let response = self.render_slot(
-            ui,
-            spritesheet.as_ref(),
-            Slot {
-                rect,
-                size: ITEM_SLOT_SIZE,
-                scale: ITEM_SPRITE_SCALE,
-                margin: ITEM_SLOT_MARGIN,
-                selected,
-                stack: slot.stack,
-            },
-        );
-
-        if meta.id != 0 && tooltip_on_hover {
+        if meta.id != 0 && options.tooltip_on_hover {
             response.on_hover_ui(|ui| {
-                self.render_item_tooltip(ui, meta, slot.prefix_meta, slot.favourited);
+                self.render_item_tooltip(ui, ItemTooltipOptions::from_slot_options(&options))
             })
         } else {
             response
         }
     }
 
-    pub fn render_item_slots<'a, I>(&self, ui: &mut Ui, tooltip_on_hover: bool, items: I)
+    pub fn render_item_slots<'a, I>(&self, ui: &mut Ui, options: I)
     where
-        I: Iterator<Item = (ItemSlot<'a>, ItemTab, usize)>,
+        I: Iterator<Item = (usize, ItemSlotOptions<'a>)>,
     {
-        for (slot, tab, index) in items {
-            let selected = self.selected_item.equals(tab, index);
+        for (index, mut options) in options {
+            let group = options.group;
+            options.selected = self.selected_item.equals(group, index);
 
-            if self
-                .render_item_slot(ui, slot, selected, tooltip_on_hover)
-                .clicked()
-            {
-                self.do_update(Message::SelectItem(SelectedItem(tab, index)));
+            if self.render_item_slot(ui, options).clicked() {
+                self.do_update(Message::SelectItem(SelectedItem(group, index)));
             }
         }
-    }
-
-    pub fn item_name(&self, item_name: &str, prefix_meta: Option<&PrefixMeta>) -> String {
-        if let Some(prefix_meta) = prefix_meta {
-            if prefix_meta.id != 0 {
-                return format!("{} {}", &prefix_meta.name, item_name);
-            }
-        }
-
-        item_name.to_owned()
-    }
-
-    pub fn item_name_from_id(&self, item_id: i32, prefix_meta: Option<&PrefixMeta>) -> String {
-        let item_meta = &*self.item_meta.read();
-        let item_meta = meta_or_default!(item_meta, item_id);
-
-        if let Some(prefix_meta) = prefix_meta {
-            if prefix_meta.id != 0 {
-                return format!("{} {}", prefix_meta.name, item_meta.name);
-            }
-        }
-
-        item_meta.name.to_owned()
     }
 
     pub fn render_selected_item(&mut self, ui: &mut Ui) {
-        let mut player = self.player.write();
+        let player = &mut *self.player.write();
+        let item = selected_item(self.selected_item, self.selected_loadout, player);
 
-        let item = selected_item!(self.selected_item, self.selected_loadout, player);
-
-        let item_meta = &*self.item_meta.read();
-        let prefix_meta = &*self.prefix_meta.read();
-
-        let current_item_meta = meta_or_default!(item_meta, item.id);
-        let current_prefix_meta = meta_or_default!(prefix_meta, item.prefix.id);
+        let item_meta = &self.item_meta.read();
+        let prefix_meta = &self.prefix_meta.read();
 
         let largest_item_id = item_meta
             .last()
-            .expect("We really should have at least one item")
+            .expect("There should be at least one item")
             .id;
         let largest_prefix_id = prefix_meta
             .last()
-            .expect("We really should have at least one prefix")
+            .expect("There should be at least one prefix")
             .id;
 
+        let item_meta = ItemMeta::get_or_default(&item_meta, item.id);
+        let prefix_meta = PrefixMeta::get(&prefix_meta, item.prefix.id);
+
         if item.id > 0 {
-            ui.label(self.item_name(&current_item_meta.name, Some(current_prefix_meta)));
+            ui.label(item_name(&item_meta.name, prefix_meta));
         } else {
             ui.label("");
         }
@@ -393,9 +224,9 @@ impl App {
                 ui.end_row();
 
                 ui.label("Stack:");
-                ui.drag_value_with_buttons(&mut item.stack, 1., 0..=current_item_meta.max_stack);
+                ui.drag_value_with_buttons(&mut item.stack, 1., 0..=item_meta.max_stack);
                 if ui.button("Max").clicked() {
-                    item.stack = current_item_meta.max_stack;
+                    item.stack = item_meta.max_stack;
                 }
                 ui.end_row();
 
@@ -408,326 +239,61 @@ impl App {
             });
     }
 
-    pub fn render_item_tooltip(
-        &self,
-        ui: &mut Ui,
-        item_meta: &ItemMeta,
-        prefix_meta: Option<&PrefixMeta>,
-        favourited: bool,
-    ) {
-        if item_meta.id == 0 {
-            return;
-        }
-
-        ui.heading(self.item_name(&item_meta.name, prefix_meta));
-        if item_meta.forbidden.is_some_and(|f| f) {
-            ui.small(
-                RichText::new("Forbidden")
-                    .small()
-                    .color(ui.style().visuals.error_fg_color),
-            );
-        }
-
-        ui.small(format!("Id: {}", item_meta.id));
-        if let Some(prefix_meta) = prefix_meta {
-            if prefix_meta.id != 0 {
-                ui.small(format!("Prefix Id: {}", prefix_meta.id));
-            }
-        }
-
-        if favourited {
-            ui.label("Marked as favorite");
-            ui.label("Quick trash, stacking, and selling will be blocked");
-        }
-
-        if let Some(damage) = item_meta.damage {
-            let mut string = damage.to_string();
-
-            if let Some(item_type) = &item_meta.item_type {
-                match item_type {
-                    ItemType::Melee => string += " melee",
-                    ItemType::Ranged => string += " ranged",
-                    ItemType::Magic => string += " magic",
-                    ItemType::Summon => string += " summon",
-                    _ => {}
-                }
-            }
-
-            string += " damage";
-
-            if let Some(use_time) = item_meta.use_time {
-                string += &format!(" (~{:.0} DPS)", (damage as f32) * (60. / (use_time) as f32));
-            }
-
-            ui.label(string);
-        }
-
-        // NOTE: Inaccuracy here: crit chance is only displayed if melee, ranged, or magic, not always
-        if let Some(crit_chance) = item_meta.crit_chance {
-            ui.label(format!("{}% critical strike chance", crit_chance));
-        }
-
-        if let Some(use_time) = item_meta.use_time {
-            ui.label(format!(
-                "Use time {} ({:.02}/s, {})",
-                use_time,
-                (60. / (use_time) as f32),
-                utils::use_time_lookup(use_time)
-            ));
-        }
-
-        if let Some(knockback) = item_meta.knockback {
-            ui.label(format!(
-                "Knockback {} ({})",
-                knockback,
-                utils::knockback_lookup(knockback)
-            ));
-        }
-
-        if let Some(fishing_power) = item_meta.fishing_power {
-            ui.label(format!("{}% fishing power", fishing_power));
-        }
-
-        if let Some(fishing_bait) = item_meta.fishing_bait {
-            ui.label(format!("{}% fishing bait", fishing_bait));
-        }
-
-        if let Some(consumes_tile) = item_meta.consumes_tile {
-            ui.label(format!(
-                "Consumes {}",
-                self.item_name_from_id(consumes_tile, prefix_meta)
-            ));
-        }
-
-        if item_meta
-            .is_quest_item
-            .is_some_and(|is_quest_item| is_quest_item)
-        {
-            ui.label("Quest Item");
-        }
-
-        if let Some(ItemType::Vanity) = &item_meta.item_type {
-            ui.label("Vanity Item");
-        }
-
-        if let Some(defense) = item_meta.defense {
-            if defense > 0 {
-                ui.label(format!("{} defense", defense));
-            }
-        }
-
-        if let Some(pickaxe_power) = item_meta.pickaxe_power {
-            if pickaxe_power > 0 {
-                ui.label(format!("{}% pickaxe power", pickaxe_power));
-            }
-        }
-
-        if let Some(axe_power) = item_meta.axe_power {
-            if axe_power > 0 {
-                ui.label(format!("{}% axe power", axe_power * 5));
-            }
-        }
-
-        if let Some(hammer_power) = item_meta.hammer_power {
-            if hammer_power > 0 {
-                ui.label(format!("{}% hammer power", hammer_power));
-            }
-        }
-
-        if let Some(range_boost) = item_meta.range_boost {
-            ui.label(format!(
-                "{}{} range",
-                if range_boost.is_positive() { "+" } else { "" },
-                range_boost
-            ));
-        }
-
-        if let Some(heal_life) = item_meta.heal_life {
-            // Strange brew is strange
-            if item_meta.id == STRANGE_BREW_ID {
-                ui.label(format!(
-                    "Restores from {} to {} life",
-                    heal_life, STRANGE_BREW_MAX_HEAL
-                ));
-            } else {
-                ui.label(format!("Restores {} life", heal_life));
-            }
-        }
-
-        if let Some(heal_mana) = item_meta.heal_mana {
-            ui.label(format!("Restores {} mana", heal_mana));
-        }
-
-        if let Some(mana_cost) = item_meta.mana_cost {
-            ui.label(format!("Uses {} mana", mana_cost));
-        }
-
-        // NOTE: Not ingame
-        if let Some(item_type) = &item_meta.item_type {
-            match item_type {
-                ItemType::HeadArmor => {
-                    ui.label("Equippable (head slot)");
-                }
-                ItemType::BodyArmor => {
-                    ui.label("Equippable (body slot)");
-                }
-                ItemType::LegArmor => {
-                    ui.label("Equippable (legs slot)");
-                }
-                ItemType::Accessory => {
-                    ui.label("Equippable (accessory)");
-                }
-                _ => {}
-            }
-        }
-
-        if let Some(item_type) = &item_meta.item_type {
-            match item_type {
-                ItemType::Wall => {
-                    ui.label("Can be placed (wall)");
-                }
-                ItemType::Tile => {
-                    ui.label("Can be placed (tile)");
-                }
-                ItemType::Ammo => {
-                    ui.label("Ammo");
-                }
-                _ => {}
-            }
-        }
-
-        if item_meta
-            .is_consumable
-            .is_some_and(|is_consumable| is_consumable)
-        {
-            ui.label("Consumable");
-        }
-
-        if item_meta.is_material.is_some_and(|is_material| is_material) {
-            ui.label("Material");
-        }
-
-        if let Some(tooltip) = &item_meta.tooltip {
-            for line in tooltip {
-                ui.label(line);
-            }
-        }
-
-        // Add already researched/research X more
-        ui.label(format!(
-            "Research {} to unlock duplication",
-            item_meta.sacrifices
-        ));
-
-        ui.label(format!("{} Max Stack", item_meta.max_stack));
-
-        ui.label(format!("Worth {}", utils::coins_lookup(item_meta.value)));
-
-        // TODO: Maybe prefix values?
+    pub fn render_item_tooltip(&self, ui: &mut Ui, options: ItemTooltipOptions) {
+        let item_meta = self.item_meta.read();
+        let meta = ItemMeta::get_or_default(&item_meta, options.id);
+        ui.add(ItemTooltip::new(options, meta));
     }
 
-    pub fn render_buff_slot(
-        &self,
-        ui: &mut Ui,
-        slot: BuffSlot,
-        selected: bool,
-        tooltip_on_hover: bool,
-    ) -> Response {
-        let spritesheet = self.buff_spritesheet.read();
+    pub fn render_buff_slot(&self, ui: &mut Ui, options: BuffSlotOptions) -> Response {
+        let buff_spritesheet = self.buff_spritesheet.read();
+        let buff_meta = self.buff_meta.read();
 
-        if spritesheet.is_none() && !self.busy {
+        if buff_spritesheet.is_none() && !self.busy {
             self.do_update(Message::LoadBuffSpritesheet);
         }
 
-        let buff_meta = &*self.buff_meta.read();
-        let meta = meta_or_default!(buff_meta, slot.id);
+        let meta = BuffMeta::get_or_default(&buff_meta, options.id);
+        let slot = BuffSlot::new(options, meta, buff_spritesheet.as_ref());
+        let response = self.render_slot(ui, slot);
 
-        let min = pos2(meta.x as f32, meta.y as f32);
-        let size = vec2(BUFF_SPRITE_SIZE, BUFF_SPRITE_SIZE);
-        let rect = Rect::from_min_size(min, size);
-
-        let response = self.render_slot(
-            ui,
-            spritesheet.as_ref(),
-            Slot {
-                rect,
-                size: BUFF_SLOT_SIZE,
-                scale: BUFF_SPRITE_SCALE,
-                margin: BUFF_SLOT_MARGIN,
-                selected,
-                stack: None,
-            },
-        );
-
-        if meta.id != 0 && tooltip_on_hover {
+        if meta.id != 0 && options.tooltip_on_hover {
             response.on_hover_ui(|ui| {
-                self.render_buff_tooltip(ui, meta, slot.time);
+                self.render_buff_tooltip(ui, BuffTooltipOptions::from_slot_options(&options))
             })
         } else {
             response
         }
     }
 
-    pub fn render_buff_slots<I>(&self, ui: &mut Ui, tooltip_on_hover: bool, slots: I)
+    pub fn render_buff_slots<I>(&self, ui: &mut Ui, options: I)
     where
-        I: Iterator<Item = (BuffSlot, usize)>,
+        I: Iterator<Item = (usize, BuffSlotOptions)>,
     {
-        for (slot, index) in slots {
-            let selected = self.selected_buff.equals(index);
+        for (index, mut options) in options {
+            options.selected = self.selected_buff.equals(index);
 
-            if self
-                .render_buff_slot(ui, slot, selected, tooltip_on_hover)
-                .clicked()
-            {
+            if self.render_buff_slot(ui, options).clicked() {
                 self.do_update(Message::SelectBuff(SelectedBuff(index)));
             }
         }
     }
 
-    pub fn buff_name(&self, name: &str, time: Option<i32>) -> String {
-        const FRAMES_PER_SECOND: i32 = 60;
-        const FRAMES_PER_MINUTE: i32 = FRAMES_PER_SECOND * 60;
-        const FRAMES_PER_HOUR: i32 = FRAMES_PER_MINUTE * 60;
-        const FRAMES_PER_THOUSAND_HOURS: i32 = FRAMES_PER_HOUR * 1000;
-
-        if let Some(time) = time {
-            if time == 0 {
-                format!("{} (0f)", name)
-            } else {
-                let time = if time < FRAMES_PER_SECOND {
-                    format!("({}f)", time)
-                } else if time < FRAMES_PER_MINUTE {
-                    format!("({}s)", time / FRAMES_PER_SECOND)
-                } else if time < FRAMES_PER_HOUR {
-                    format!("({}m)", time / FRAMES_PER_MINUTE)
-                } else if time < FRAMES_PER_THOUSAND_HOURS {
-                    format!("({}h)", time / FRAMES_PER_HOUR)
-                } else {
-                    "(∞)".to_owned()
-                };
-
-                format!("{} {}", name, time)
-            }
-        } else {
-            name.to_owned()
-        }
-    }
-
     pub fn render_selected_buff(&mut self, ui: &mut Ui) {
-        let mut player = self.player.write();
+        let player = &mut *self.player.write();
+        let buff = selected_buff(self.selected_buff, player);
 
-        let buff = selected_buff!(self.selected_buff, player);
-
-        let buff_meta = &*self.buff_meta.read();
-        let meta = meta_or_default!(buff_meta, buff.id);
+        let buff_meta = &self.buff_meta.read();
 
         let largest_buff_id = buff_meta
             .last()
-            .expect("we really should have at least one buff")
+            .expect("We really should have at least one buff")
             .id;
 
+        let buff_meta = BuffMeta::get_or_default(&buff_meta, buff.id);
+
         if buff.id > 0 {
-            ui.label(self.buff_name(&meta.name, Some(buff.time)));
+            ui.label(buff_name(&buff_meta.name, Some(buff.time)));
         } else {
             ui.label("");
         }
@@ -751,28 +317,15 @@ impl App {
             });
     }
 
-    pub fn render_buff_tooltip(&self, ui: &mut Ui, meta: &BuffMeta, time: Option<i32>) {
-        if meta.id == 0 {
-            return;
-        }
-
-        ui.heading(self.buff_name(&meta.name, time));
-
-        ui.small(format!("ID: {}", meta.id));
-
-        if let Some(tooltip) = &meta.tooltip {
-            for line in tooltip {
-                ui.label(line);
-            }
-        }
+    pub fn render_buff_tooltip(&self, ui: &mut Ui, options: BuffTooltipOptions) {
+        let buff_meta = self.buff_meta.read();
+        let meta = BuffMeta::get_or_default(&buff_meta, options.id);
+        ui.add(BuffTooltip::new(options, meta));
     }
 
-    pub fn render_prefix_tooltip(&self, ui: &mut Ui, meta: &PrefixMeta) {
-        if meta.id == 0 {
-            return;
-        }
-
-        ui.heading(&meta.name);
-        ui.small(format!("Id: {}", meta.id));
+    pub fn render_prefix_tooltip(&self, ui: &mut Ui, options: PrefixTooltipOptions) {
+        let prefix_meta = self.prefix_meta.read();
+        let meta = PrefixMeta::get_or_default(&prefix_meta, options.id);
+        ui.add(PrefixTooltip::new(options, meta));
     }
 }

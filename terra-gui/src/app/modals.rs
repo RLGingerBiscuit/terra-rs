@@ -2,11 +2,23 @@ use egui::{
     vec2, Align2, CollapsingHeader, Grid, RichText, ScrollArea, TextStyle, Ui, Vec2, WidgetText,
 };
 
-use crate::{app::inventory::ITEM_SLOT_SIZE, ui::UiExt};
+use crate::ui::UiExt;
 
 use super::{
-    inventory::{BuffSlot, ItemSlot, BUFF_SLOT_SIZE},
-    App, Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,
+    inventory::{
+        self,
+        buff_slot::{self, BuffSlotOptions},
+        item_slot::ItemSlotOptions,
+        prefix_tooltip::PrefixTooltipOptions,
+        ItemGroup,
+    },
+    // inventory::{BuffSlot, ItemSlot, BUFF_SLOT_SIZE},
+    App,
+    Message,
+    EGUI_GITHUB_REPO_NAME,
+    EGUI_GITHUB_REPO_URL,
+    GITHUB_REPO_NAME,
+    GITHUB_REPO_URL,
 };
 
 #[allow(dead_code)]
@@ -150,39 +162,44 @@ impl App {
 
                         ScrollArea::new([false, true])
                             .id_source("item_browser_scrollarea")
-                            .show_rows(ui, ITEM_SLOT_SIZE, total_rows, |ui, row_range| {
-                                Grid::new("item_browser_grid")
-                                    .num_columns(ITEM_BROWSER_COLS)
-                                    .show(ui, |ui| {
-                                        let mut filtered =
-                                            filtered.skip(row_range.start * ITEM_BROWSER_COLS);
+                            .show_rows(
+                                ui,
+                                inventory::item_slot::SLOT_SIZE.x,
+                                total_rows,
+                                |ui, row_range| {
+                                    Grid::new("item_browser_grid")
+                                        .num_columns(ITEM_BROWSER_COLS)
+                                        .show(ui, |ui| {
+                                            let mut filtered =
+                                                filtered.skip(row_range.start * ITEM_BROWSER_COLS);
 
-                                        for i in (row_range.start * ITEM_BROWSER_COLS)
-                                            ..(row_range.end * ITEM_BROWSER_COLS)
-                                        {
-                                            let meta = filtered.next();
-                                            if meta.is_none() {
-                                                break;
+                                            for i in (row_range.start * ITEM_BROWSER_COLS)
+                                                ..(row_range.end * ITEM_BROWSER_COLS)
+                                            {
+                                                let meta = filtered.next();
+                                                if meta.is_none() {
+                                                    break;
+                                                }
+                                                let meta = meta.unwrap();
+
+                                                let options =
+                                                    ItemSlotOptions::new(ItemGroup::ItemBrowser)
+                                                        .tooltip_on_hover(true);
+                                                let response = self.render_item_slot(ui, options);
+
+                                                if response.clicked() {
+                                                    self.do_update(Message::SetCurrentItemId(
+                                                        meta.id,
+                                                    ));
+                                                }
+
+                                                if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
+                                                    ui.end_row();
+                                                }
                                             }
-                                            let meta = meta.unwrap();
-
-                                            let response = self.render_item_slot(
-                                                ui,
-                                                ItemSlot::with_id_only(meta.id),
-                                                false,
-                                                true,
-                                            );
-
-                                            if response.clicked() {
-                                                self.do_update(Message::SetCurrentItemId(meta.id));
-                                            }
-
-                                            if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
-                                                ui.end_row();
-                                            }
-                                        }
-                                    });
-                            });
+                                        });
+                                },
+                            );
                     }
 
                     ui.vertical_right_justified(|ui| {
@@ -232,7 +249,7 @@ impl App {
 
                         ScrollArea::new([false, true])
                             .id_source("buff_browser_scrollarea")
-                            .show_rows(ui, BUFF_SLOT_SIZE, total_rows, |ui, row_range| {
+                            .show_rows(ui, buff_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
                                 Grid::new("buff_browser_grid")
                                     .num_columns(BUFF_BROWSER_COLS)
                                     .show(ui, |ui| {
@@ -248,12 +265,9 @@ impl App {
                                             }
                                             let meta = meta.unwrap();
 
-                                            let response = self.render_buff_slot(
-                                                ui,
-                                                BuffSlot::with_id_only(meta.id),
-                                                false,
-                                                true,
-                                            );
+                                            let options =
+                                                BuffSlotOptions::new().tooltip_on_hover(true);
+                                            let response = self.render_buff_slot(ui, options);
 
                                             if response.clicked() {
                                                 self.do_update(Message::SetCurrentBuffId(meta.id));
@@ -345,7 +359,9 @@ impl App {
                                                 }
 
                                                 response.on_hover_ui(|ui| {
-                                                    self.render_prefix_tooltip(ui, meta);
+                                                    let options =
+                                                        PrefixTooltipOptions::new().id(meta.id);
+                                                    self.render_prefix_tooltip(ui, options);
                                                 });
 
                                                 if i % PREFIX_BROWSER_COLS

@@ -8,10 +8,10 @@ use terra_core::{
     LOADOUT_COUNT,
 };
 
-use crate::{enum_selectable_value, meta_or_default, ui::UiExt};
+use crate::{enum_selectable_value, ui::UiExt};
 
 use super::{
-    inventory::{BuffSlot, ItemSlot, ItemTab},
+    inventory::{buff_slot::BuffSlotOptions, item_slot::ItemSlotOptions, ItemGroup},
     App, Message,
 };
 
@@ -101,13 +101,13 @@ pub fn default_ui() -> Tree<Tabs> {
 #[derive(Debug)]
 struct ItemTabOptions {
     id: &'static str,
-    tab: ItemTab,
+    tab: ItemGroup,
     columns: usize,
     stride: usize,
 }
 
 impl ItemTabOptions {
-    fn new(id: &'static str, tab: ItemTab, columns: usize, stride: usize) -> Self {
+    fn new(id: &'static str, tab: ItemGroup, columns: usize, stride: usize) -> Self {
         Self {
             id,
             tab,
@@ -242,36 +242,31 @@ impl App {
     fn render_item_tab<F>(
         &self,
         ui: &mut Ui,
-        opts: ItemTabOptions,
+        options: ItemTabOptions,
         prefix_meta: &[PrefixMeta],
         items: &[Item],
         extra_cols: F,
     ) where
         F: Fn(&mut Ui, usize),
     {
-        egui::Grid::new(opts.id)
-            .num_columns(opts.columns)
+        egui::Grid::new(options.id)
+            .num_columns(options.columns)
             .show(ui, |ui| {
-                for i in 0..opts.stride {
-                    let slots = items
+                for i in 0..options.stride {
+                    let options = items
                         .iter()
                         .enumerate()
-                        .skip(i * opts.stride)
-                        .take(opts.stride)
+                        .skip(i * options.stride)
+                        .take(options.stride)
                         .map(|(index, item)| {
                             (
-                                ItemSlot::new(
-                                    item.id,
-                                    Some(meta_or_default!(prefix_meta, item.prefix.id)),
-                                    item.favourited,
-                                    Some(item.stack),
-                                ),
-                                opts.tab,
                                 index,
+                                ItemSlotOptions::from_item(item, options.tab, prefix_meta)
+                                    .tooltip_on_hover(true),
                             )
                         });
 
-                    self.render_item_slots(ui, true, slots);
+                    self.render_item_slots(ui, options);
 
                     extra_cols(ui, i);
 
@@ -290,7 +285,7 @@ impl App {
             ui,
             ItemTabOptions::new(
                 "player_inventory",
-                ItemTab::Inventory,
+                ItemGroup::Inventory,
                 INVENTORY_STRIDE + EXTRA_STRIDE,
                 INVENTORY_STRIDE,
             ),
@@ -298,34 +293,23 @@ impl App {
             &player.inventory,
             |ui, row| {
                 if row < 4 {
-                    let coins_item = &player.coins[row];
-                    let ammo_item = &player.ammo[row];
+                    let coins = &player.coins[row];
+                    let ammo = &player.ammo[row];
 
-                    let slots = [
+                    let options = [
                         (
-                            ItemSlot::new(
-                                coins_item.id,
-                                Some(meta_or_default!(prefix_meta, coins_item.prefix.id)),
-                                coins_item.favourited,
-                                Some(coins_item.stack),
-                            ),
-                            ItemTab::Coins,
                             row,
+                            ItemSlotOptions::from_item(coins, ItemGroup::Coins, &prefix_meta),
                         ),
                         (
-                            ItemSlot::new(
-                                ammo_item.id,
-                                Some(meta_or_default!(prefix_meta, ammo_item.prefix.id)),
-                                ammo_item.favourited,
-                                Some(ammo_item.stack),
-                            ),
-                            ItemTab::Ammo,
                             row,
+                            ItemSlotOptions::from_item(ammo, ItemGroup::Ammo, &prefix_meta),
                         ),
                     ]
-                    .into_iter();
+                    .into_iter()
+                    .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
-                    self.render_item_slots(ui, true, slots);
+                    self.render_item_slots(ui, options);
                 }
             },
         );
@@ -337,7 +321,7 @@ impl App {
 
         self.render_item_tab(
             ui,
-            ItemTabOptions::new("player_bank", ItemTab::Bank, BANK_STRIDE, BANK_STRIDE),
+            ItemTabOptions::new("player_bank", ItemGroup::Bank, BANK_STRIDE, BANK_STRIDE),
             &prefix_meta,
             &player.piggy_bank,
             |_, _| {},
@@ -350,7 +334,7 @@ impl App {
 
         self.render_item_tab(
             ui,
-            ItemTabOptions::new("player_safe", ItemTab::Safe, BANK_STRIDE, BANK_STRIDE),
+            ItemTabOptions::new("player_safe", ItemGroup::Safe, BANK_STRIDE, BANK_STRIDE),
             &prefix_meta,
             &player.safe,
             |_, _| {},
@@ -363,7 +347,7 @@ impl App {
 
         self.render_item_tab(
             ui,
-            ItemTabOptions::new("player_forge", ItemTab::Forge, BANK_STRIDE, BANK_STRIDE),
+            ItemTabOptions::new("player_forge", ItemGroup::Forge, BANK_STRIDE, BANK_STRIDE),
             &prefix_meta,
             &player.defenders_forge,
             |_, _| {},
@@ -376,7 +360,7 @@ impl App {
 
         self.render_item_tab(
             ui,
-            ItemTabOptions::new("player_void", ItemTab::Void, BANK_STRIDE, BANK_STRIDE),
+            ItemTabOptions::new("player_void", ItemGroup::Void, BANK_STRIDE, BANK_STRIDE),
             &prefix_meta,
             &player.void_vault,
             |_, _| {},
@@ -388,15 +372,20 @@ impl App {
 
         Grid::new("player_buffs").num_columns(10).show(ui, |ui| {
             for i in 0..BUFF_STRIDE {
-                let slots = player
+                let options = player
                     .buffs
                     .iter()
                     .enumerate()
                     .skip(i * BUFF_STRIDE)
                     .take(BUFF_STRIDE)
-                    .map(|(index, buff)| (BuffSlot::new(buff.id, Some(buff.time)), index));
+                    .map(|(index, buff)| {
+                        (
+                            index,
+                            BuffSlotOptions::from_buff(buff).tooltip_on_hover(true),
+                        )
+                    });
 
-                self.render_buff_slots(ui, true, slots);
+                self.render_buff_slots(ui, options);
 
                 ui.end_row();
             }
@@ -430,61 +419,52 @@ impl App {
                     let vanity_accessory_item = &current_loadout.vanity_accessories[i];
                     let accessory_item = &current_loadout.accessories[i];
 
-                    let slots = [
+                    let options = [
                         (
-                            ItemSlot::new(
-                                equipment_dye.id,
-                                Some(meta_or_default!(prefix_meta, equipment_dye.id)),
-                                equipment_dye.favourited,
-                                None,
-                            ),
-                            ItemTab::EquipmentDyes,
                             i,
+                            ItemSlotOptions::from_item(
+                                equipment_dye,
+                                ItemGroup::EquipmentDyes,
+                                &prefix_meta,
+                            ),
                         ),
                         (
-                            ItemSlot::new(
-                                equipment_item.id,
-                                Some(meta_or_default!(prefix_meta, equipment_item.id)),
-                                equipment_item.favourited,
-                                None,
-                            ),
-                            ItemTab::Equipment,
                             i,
+                            ItemSlotOptions::from_item(
+                                equipment_item,
+                                ItemGroup::Equipment,
+                                &prefix_meta,
+                            ),
                         ),
                         (
-                            ItemSlot::new(
-                                accessory_dye.id,
-                                Some(meta_or_default!(prefix_meta, accessory_dye.id)),
-                                accessory_dye.favourited,
-                                None,
-                            ),
-                            ItemTab::AccessoryDyes,
                             i,
+                            ItemSlotOptions::from_item(
+                                accessory_dye,
+                                ItemGroup::AccessoryDyes,
+                                &prefix_meta,
+                            ),
                         ),
                         (
-                            ItemSlot::new(
-                                vanity_accessory_item.id,
-                                Some(meta_or_default!(prefix_meta, vanity_accessory_item.id)),
-                                vanity_accessory_item.favourited,
-                                None,
-                            ),
-                            ItemTab::VanityAccessories,
                             i,
+                            ItemSlotOptions::from_item(
+                                vanity_accessory_item,
+                                ItemGroup::VanityAccessories,
+                                &prefix_meta,
+                            ),
                         ),
                         (
-                            ItemSlot::new(
-                                accessory_item.id,
-                                Some(meta_or_default!(prefix_meta, accessory_item.id)),
-                                accessory_item.favourited,
-                                None,
-                            ),
-                            ItemTab::Accessories,
                             i,
+                            ItemSlotOptions::from_item(
+                                accessory_item,
+                                ItemGroup::Accessories,
+                                &prefix_meta,
+                            ),
                         ),
                     ]
-                    .into_iter();
+                    .into_iter()
+                    .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
-                    self.render_item_slots(ui, true, slots);
+                    self.render_item_slots(ui, options);
 
                     if i < ARMOR_COUNT {
                         let armor_dye = &current_loadout.armor_dyes[i];
@@ -493,80 +473,66 @@ impl App {
 
                         let slots = [
                             (
-                                ItemSlot::new(
-                                    armor_dye.id,
-                                    Some(meta_or_default!(prefix_meta, armor_dye.id)),
-                                    armor_dye.favourited,
-                                    None,
-                                ),
-                                ItemTab::ArmorDyes,
                                 i,
+                                ItemSlotOptions::from_item(
+                                    armor_dye,
+                                    ItemGroup::ArmorDyes,
+                                    &prefix_meta,
+                                ),
                             ),
                             (
-                                ItemSlot::new(
-                                    vanity_armor.id,
-                                    Some(meta_or_default!(prefix_meta, vanity_armor.id)),
-                                    vanity_armor.favourited,
-                                    None,
-                                ),
-                                ItemTab::VanityArmor,
                                 i,
+                                ItemSlotOptions::from_item(
+                                    vanity_armor,
+                                    ItemGroup::VanityArmor,
+                                    &prefix_meta,
+                                ),
                             ),
                             (
-                                ItemSlot::new(
-                                    armor.id,
-                                    Some(meta_or_default!(prefix_meta, armor.id)),
-                                    armor.favourited,
-                                    None,
-                                ),
-                                ItemTab::Armor,
                                 i,
+                                ItemSlotOptions::from_item(armor, ItemGroup::Armor, &prefix_meta),
                             ),
                         ]
-                        .into_iter();
+                        .into_iter()
+                        .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
-                        self.render_item_slots(ui, true, slots);
+                        self.render_item_slots(ui, slots);
                     } else {
                         let accessory_dye = &current_loadout.accessory_dyes[ARMOR_COUNT - 1 + i];
                         let vanity_accessory =
                             &current_loadout.vanity_accessories[ARMOR_COUNT - 1 + i];
                         let accessory = &current_loadout.accessories[ARMOR_COUNT - 1 + i];
 
-                        let slots = [
+                        let options = [
                             (
-                                ItemSlot::new(
-                                    accessory_dye.id,
-                                    Some(meta_or_default!(prefix_meta, accessory_dye.id)),
-                                    accessory_dye.favourited,
-                                    None,
-                                ),
-                                ItemTab::AccessoryDyes,
                                 ARMOR_COUNT - 1 + i,
+                                ItemSlotOptions::from_item(
+                                    accessory_dye,
+                                    ItemGroup::AccessoryDyes,
+                                    &prefix_meta,
+                                ),
                             ),
                             (
-                                ItemSlot::new(
-                                    vanity_accessory.id,
-                                    Some(meta_or_default!(prefix_meta, vanity_accessory.id)),
-                                    vanity_accessory.favourited,
-                                    None,
-                                ),
-                                ItemTab::VanityAccessories,
                                 ARMOR_COUNT - 1 + i,
+                                ItemSlotOptions::from_item(
+                                    vanity_accessory,
+                                    ItemGroup::VanityAccessories,
+                                    &prefix_meta,
+                                ),
                             ),
                             (
-                                ItemSlot::new(
-                                    accessory.id,
-                                    Some(meta_or_default!(prefix_meta, accessory.id)),
-                                    accessory.favourited,
-                                    None,
-                                ),
-                                ItemTab::Accessories,
                                 ARMOR_COUNT - 1 + i,
+                                ItemSlotOptions::from_item(
+                                    accessory,
+                                    ItemGroup::Accessories,
+                                    &prefix_meta,
+                                ),
                             ),
                         ]
-                        .into_iter();
+                        .into_iter()
+                        .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
-                        self.render_item_slots(ui, true, slots);
+                        self.render_item_slots(ui, options);
                     }
 
                     ui.end_row();

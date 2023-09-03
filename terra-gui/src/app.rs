@@ -1,10 +1,3 @@
-mod inventory;
-mod menus;
-mod modals;
-mod tabs;
-mod tasks;
-mod visuals;
-
 use std::{ops::DerefMut, path::PathBuf, sync::Arc, thread};
 
 use eframe::CreationContext;
@@ -15,12 +8,19 @@ use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 
-use terra_core::{utils, BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem};
+use terra_core::{meta::Meta, utils, BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem};
 
-use crate::{selected_buff, selected_item};
+mod inventory;
+mod menus;
+mod modals;
+mod tabs;
+mod tasks;
+mod visuals;
 
 use self::{
-    inventory::{ItemTab, SelectedBuff, SelectedItem, SelectedLoadout},
+    inventory::{
+        selected_buff, selected_item, ItemGroup, SelectedBuff, SelectedItem, SelectedLoadout,
+    },
     tabs::Tabs,
 };
 
@@ -125,7 +125,7 @@ impl App {
             player: Arc::new(RwLock::new(Player::default())),
             player_path: None,
 
-            selected_item: SelectedItem(ItemTab::Inventory, 0),
+            selected_item: SelectedItem(ItemGroup::Inventory, 0),
             selected_buff: SelectedBuff(0),
             selected_loadout: SelectedLoadout(0),
 
@@ -349,9 +349,9 @@ impl App {
                     self.show_prefix_browser = false;
                 }
                 Message::SetCurrentItemId(id) => {
-                    let mut player = self.player.write();
+                    let player = &mut *self.player.write();
                     let selected_item =
-                        selected_item!(self.selected_item, self.selected_loadout, player);
+                        selected_item(self.selected_item, self.selected_loadout, player);
 
                     selected_item.id = id;
 
@@ -365,8 +365,8 @@ impl App {
                     }
                 }
                 Message::SetCurrentBuffId(id) => {
-                    let mut player = self.player.write();
-                    let selected_buff = selected_buff!(self.selected_buff, player);
+                    let player = &mut *self.player.write();
+                    let selected_buff = selected_buff(self.selected_buff, player);
 
                     selected_buff.id = id;
 
@@ -382,11 +382,10 @@ impl App {
                     }
                 }
                 Message::SetCurrentPrefixId(id) => {
-                    let mut player = self.player.write();
-                    let selected_item =
-                        selected_item!(self.selected_item, self.selected_loadout, player);
+                    let     player = &mut *self.player.write();
+                    let item = selected_item(self.selected_item, self.selected_loadout, player);
 
-                    selected_item.prefix.id = id;
+                    item.prefix.id = id;
 
                     if self.show_prefix_browser {
                         self.search_term.clear();
