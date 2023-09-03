@@ -1,4 +1,4 @@
-use std::{ops::DerefMut, path::PathBuf, sync::Arc, thread};
+use std::{ops::DerefMut, path::PathBuf, sync::Arc, thread, time::Duration};
 
 use eframe::CreationContext;
 use egui::{self, Id, Key, KeyboardShortcut, LayerId, Modifiers, TextureHandle, Ui, Vec2};
@@ -8,7 +8,11 @@ use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 
-use terra_core::{meta::Meta, utils, BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem};
+use terra_core::{
+    meta::Meta,
+    utils::{self, AsTicks},
+    BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem,
+};
 
 mod inventory;
 mod menus;
@@ -384,9 +388,7 @@ impl App {
                     selected_buff.id = id;
 
                     if selected_buff.time == 0 {
-                        // TODO: utils::duration_to_ticks() ?
-                        // 15 minutes
-                        selected_buff.time = 54000;
+                        selected_buff.time = Duration::from_secs(60 * 15).as_ticks() as i32;
                     }
 
                     if self.show_buff_browser {

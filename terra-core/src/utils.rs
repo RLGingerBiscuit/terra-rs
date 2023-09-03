@@ -236,7 +236,7 @@ pub fn coins_lookup(value: i32) -> String {
     string
 }
 
-trait AsTicks {
+pub trait AsTicks {
     fn as_ticks(&self) -> i64;
 }
 
