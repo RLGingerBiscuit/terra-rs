@@ -19,7 +19,7 @@ pub fn get_terraria_dir() -> PathBuf {
         "windows" => get_data_dir().join("My Games"),
         _ => get_data_dir(),
     }
-    .join("Terraria")
+        .join("Terraria")
 }
 
 pub fn get_player_dir() -> PathBuf {
@@ -254,9 +254,9 @@ impl AsTicks for chrono::Duration {
 
 pub fn from_hex(hex: &str) -> Result<Color, ParseIntError> {
     let start = if hex.starts_with('#') { 1 } else { 0 };
-    let r = u8::from_str_radix(&hex[start..2], 16)?;
-    let g = u8::from_str_radix(&hex[(start + 2)..4], 16)?;
-    let b = u8::from_str_radix(&hex[(start + 4)..6], 16)?;
+    let r = u8::from_str_radix(&hex[start..(start + 2)], 16)?;
+    let g = u8::from_str_radix(&hex[(start + 2)..(start + 4)], 16)?;
+    let b = u8::from_str_radix(&hex[(start + 4)..(start + 6)], 16)?;
     Ok([r, g, b])
 }
 
