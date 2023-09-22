@@ -4,7 +4,6 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.72"
-thiserror = "1.0.44"
-
 terra-core = { path = "../terra-core" }
+anyhow = { workspace = true }
+thiserror = { workspace = true }

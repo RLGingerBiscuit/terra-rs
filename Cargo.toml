@@ -5,3 +5,10 @@ default-members = ["terra-core", "terra-gui"]
 
 [profile.release]
 opt-level = 2
+
+[workspace.dependencies]
+anyhow = "1.0.75"
+thiserror = "1.0.48"
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.103"
+image = { version = "0.24.6", features = ["png"] }
