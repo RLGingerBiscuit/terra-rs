@@ -19,7 +19,7 @@ pub fn get_terraria_dir() -> PathBuf {
         "windows" => get_data_dir().join("My Games"),
         _ => get_data_dir(),
     }
-        .join("Terraria")
+    .join("Terraria")
 }
 
 pub fn get_player_dir() -> PathBuf {

@@ -3,7 +3,10 @@ use std::fmt::Display;
 use egui::{ComboBox, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
 
-use terra_core::{meta::Meta, utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, INVENTORY_STRIDE, LOADOUT_COUNT, HAIR_STYLE_COUNT, SKIN_VARIANT_COUNT, HAIR_DYE_COUNT};
+use terra_core::{
+    meta::Meta, utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE,
+    HAIR_DYE_COUNT, HAIR_STYLE_COUNT, INVENTORY_STRIDE, LOADOUT_COUNT, SKIN_VARIANT_COUNT,
+};
 
 use crate::{
     app::inventory::item_slot::{self, ItemSlotIcon},
@@ -63,7 +66,7 @@ impl Display for Tabs {
 
 impl Tabs {
     #[inline]
-    pub fn iter() -> impl Iterator<Item=Self> {
+    pub fn iter() -> impl Iterator<Item = Self> {
         [
             Tabs::LoadSave,
             Tabs::Stats,
@@ -79,7 +82,7 @@ impl Tabs {
             Tabs::Equipment,
             Tabs::Research,
         ]
-            .into_iter()
+        .into_iter()
     }
 }
 
@@ -98,7 +101,11 @@ pub fn default_ui() -> Tree<Tabs> {
             Tabs::Equipment,
         ],
     );
-    let [load_save, stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Appearance, Tabs::Bonuses]);
+    let [load_save, stats] = tree.split_right(
+        load_save,
+        0.15,
+        vec![Tabs::Stats, Tabs::Appearance, Tabs::Bonuses],
+    );
     let [_stats, _selected] = tree.split_right(stats, 0.6, vec![Tabs::Selected, Tabs::Research]);
 
     tree.set_focused_node(load_save);
@@ -381,8 +388,8 @@ impl App {
                                 .prefix_meta(PrefixMeta::get(&prefix_meta, ammo.prefix.id)),
                         ),
                     ]
-                        .into_iter()
-                        .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+                    .into_iter()
+                    .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
                     self.render_item_slots(ui, options);
                 }
@@ -580,11 +587,11 @@ impl App {
                                     vanity_accessory,
                                     ItemGroup::VanityAccessories,
                                 )
-                                    .icon(Some(ItemSlotIcon::VanityAccessory))
-                                    .prefix_meta(PrefixMeta::get(
-                                        &prefix_meta,
-                                        vanity_accessory.prefix.id,
-                                    )),
+                                .icon(Some(ItemSlotIcon::VanityAccessory))
+                                .prefix_meta(PrefixMeta::get(
+                                    &prefix_meta,
+                                    vanity_accessory.prefix.id,
+                                )),
                             ),
                             (
                                 i,
@@ -596,8 +603,8 @@ impl App {
                                     )),
                             ),
                         ]
-                            .into_iter()
-                            .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+                        .into_iter()
+                        .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
                         self.render_item_slots(ui, options);
 
@@ -622,10 +629,10 @@ impl App {
                                         vanity_armor,
                                         ItemGroup::VanityArmor,
                                     )
-                                        .icon(Some(VANITY_ARMOR_ICONS[i]))
-                                        .prefix_meta(
-                                            PrefixMeta::get(&prefix_meta, vanity_armor.prefix.id),
-                                        ),
+                                    .icon(Some(VANITY_ARMOR_ICONS[i]))
+                                    .prefix_meta(
+                                        PrefixMeta::get(&prefix_meta, vanity_armor.prefix.id),
+                                    ),
                                 ),
                                 (
                                     i,
@@ -637,8 +644,8 @@ impl App {
                                         )),
                                 ),
                             ]
-                                .into_iter()
-                                .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+                            .into_iter()
+                            .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
                             self.render_item_slots(ui, slots);
                         } else {
@@ -657,10 +664,10 @@ impl App {
                                         accessory_dye,
                                         ItemGroup::AccessoryDyes,
                                     )
-                                        .icon(Some(ItemSlotIcon::Dye))
-                                        .prefix_meta(
-                                            PrefixMeta::get(&prefix_meta, accessory_dye.prefix.id),
-                                        ),
+                                    .icon(Some(ItemSlotIcon::Dye))
+                                    .prefix_meta(
+                                        PrefixMeta::get(&prefix_meta, accessory_dye.prefix.id),
+                                    ),
                                 ),
                                 (
                                     i,
@@ -668,10 +675,10 @@ impl App {
                                         vanity_accessory,
                                         ItemGroup::VanityAccessories,
                                     )
-                                        .icon(Some(ItemSlotIcon::VanityAccessory))
-                                        .prefix_meta(
-                                            PrefixMeta::get(&prefix_meta, vanity_accessory.prefix.id),
-                                        ),
+                                    .icon(Some(ItemSlotIcon::VanityAccessory))
+                                    .prefix_meta(
+                                        PrefixMeta::get(&prefix_meta, vanity_accessory.prefix.id),
+                                    ),
                                 ),
                                 (
                                     i,
@@ -683,8 +690,8 @@ impl App {
                                         )),
                                 ),
                             ]
-                                .into_iter()
-                                .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+                            .into_iter()
+                            .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
                             self.render_item_slots(ui, options);
                         }

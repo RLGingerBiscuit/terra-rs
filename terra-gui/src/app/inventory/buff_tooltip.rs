@@ -1,4 +1,4 @@
-use egui::{Vec2, Widget, Ui, Response};
+use egui::{Response, Ui, Vec2, Widget};
 use terra_core::BuffMeta;
 
 use super::{buff_name, buff_slot::BuffSlotOptions};
