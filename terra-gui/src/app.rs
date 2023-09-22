@@ -120,8 +120,8 @@ impl App {
         let (theme, tree, closed_tabs) = match cc.storage {
             Some(s) => (
                 eframe::get_value::<visuals::Theme>(s, THEME_KEY).unwrap_or_default(),
-                eframe::get_value(s, TREE_KEY).unwrap_or_else(tabs::default_ui),
-                eframe::get_value(s, CLOSED_TABS_KEY).unwrap_or_default(),
+                eframe::get_value::<Tree<Tabs>>(s, TREE_KEY).unwrap_or_else(tabs::default_ui),
+                eframe::get_value::<FxHashMap<Tabs, NodeIndex>>(s, CLOSED_TABS_KEY).unwrap_or_default(),
             ),
             None => (Default::default(), Default::default(), Default::default()),
         };
@@ -185,7 +185,7 @@ impl App {
                 Ok(msg) => msg,
                 Err(err) => Message::ShowError(err),
             })
-            .unwrap();
+                .unwrap();
 
             *busy.write() = false;
         });

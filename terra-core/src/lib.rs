@@ -56,6 +56,11 @@ pub const STRANGE_BREW_MAX_HEAL: i32 = 120;
 
 pub const FEMALE_SKIN_VARIANTS: [i32; 4] = [5, 6, 9, 11];
 pub const MALE_SKIN_VARIANTS: [i32; 6] = [0, 1, 2, 3, 8, 10];
+// TODO: skin variant 7 should be saved as skin variant 9 (I think)
+pub const SKIN_VARIANT_COUNT: u8 = 11;
+
+pub const HAIR_STYLE_COUNT: i32 = 165;
+pub const HAIR_DYE_COUNT: u8 = 13;
 
 pub const BUFF_SPRITE_SIZE: usize = 16;
 

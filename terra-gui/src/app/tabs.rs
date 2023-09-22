@@ -3,10 +3,7 @@ use std::fmt::Display;
 use egui::{ComboBox, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
 
-use terra_core::{
-    meta::Meta, utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE,
-    INVENTORY_STRIDE, LOADOUT_COUNT,
-};
+use terra_core::{meta::Meta, utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, INVENTORY_STRIDE, LOADOUT_COUNT, HAIR_STYLE_COUNT, SKIN_VARIANT_COUNT, HAIR_DYE_COUNT};
 
 use crate::{
     app::inventory::item_slot::{self, ItemSlotIcon},
@@ -27,6 +24,7 @@ use super::{
 pub enum Tabs {
     Stats,
     LoadSave,
+    Appearance,
     Bonuses,
     Selected,
     Inventory,
@@ -47,6 +45,7 @@ impl Display for Tabs {
             match self {
                 Tabs::LoadSave => "Load & Save",
                 Tabs::Stats => "Stats",
+                Tabs::Appearance => "Appearance",
                 Tabs::Bonuses => "Permanent Bonuses",
                 Tabs::Selected => "Selected",
                 Tabs::Inventory => "Inventory",
@@ -64,10 +63,11 @@ impl Display for Tabs {
 
 impl Tabs {
     #[inline]
-    pub fn iter() -> impl Iterator<Item = Self> {
+    pub fn iter() -> impl Iterator<Item=Self> {
         [
             Tabs::LoadSave,
             Tabs::Stats,
+            Tabs::Appearance,
             Tabs::Bonuses,
             Tabs::Selected,
             Tabs::Inventory,
@@ -79,7 +79,7 @@ impl Tabs {
             Tabs::Equipment,
             Tabs::Research,
         ]
-        .into_iter()
+            .into_iter()
     }
 }
 
@@ -98,7 +98,7 @@ pub fn default_ui() -> Tree<Tabs> {
             Tabs::Equipment,
         ],
     );
-    let [load_save, stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Bonuses]);
+    let [load_save, stats] = tree.split_right(load_save, 0.15, vec![Tabs::Stats, Tabs::Appearance, Tabs::Bonuses]);
     let [_stats, _selected] = tree.split_right(stats, 0.6, vec![Tabs::Selected, Tabs::Research]);
 
     tree.set_focused_node(load_save);
@@ -139,6 +139,49 @@ impl App {
             if ui.button("Reset Player").clicked() {
                 self.do_update(Message::ResetPlayer);
             }
+        });
+    }
+
+    fn render_appearance_tab(&mut self, ui: &mut Ui) {
+        let mut player = self.player.write();
+
+        egui::Grid::new("appearanec").num_columns(6).show(ui, |ui| {
+            ui.label("Hair style:");
+            ui.drag_value_with_buttons(&mut player.hair_style, 1., 0..=HAIR_STYLE_COUNT);
+            ui.end_row();
+
+            ui.label("Hair dye:");
+            ui.drag_value_with_buttons(&mut player.hair_dye, 1., 0..=HAIR_DYE_COUNT);
+            ui.end_row();
+
+            ui.label("Skin variant:");
+            ui.drag_value_with_buttons(&mut player.skin_variant, 1., 0..=SKIN_VARIANT_COUNT);
+            ui.end_row();
+
+            ui.label("Hair color");
+            ui.color_edit_button_srgb(&mut player.hair_color);
+
+            ui.label("Skin color");
+            ui.color_edit_button_srgb(&mut player.skin_color);
+            ui.end_row();
+
+            ui.label("Eye color");
+            ui.color_edit_button_srgb(&mut player.eye_color);
+
+            ui.label("Shirt color");
+            ui.color_edit_button_srgb(&mut player.shirt_color);
+            ui.end_row();
+
+            ui.label("Undershirt color");
+            ui.color_edit_button_srgb(&mut player.undershirt_color);
+
+            ui.label("Pants color");
+            ui.color_edit_button_srgb(&mut player.pants_color);
+            ui.end_row();
+
+            ui.label("Shoe color");
+            ui.color_edit_button_srgb(&mut player.shoe_color);
+            ui.end_row();
         });
     }
 
@@ -338,8 +381,8 @@ impl App {
                                 .prefix_meta(PrefixMeta::get(&prefix_meta, ammo.prefix.id)),
                         ),
                     ]
-                    .into_iter()
-                    .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+                        .into_iter()
+                        .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
                     self.render_item_slots(ui, options);
                 }
@@ -537,11 +580,11 @@ impl App {
                                     vanity_accessory,
                                     ItemGroup::VanityAccessories,
                                 )
-                                .icon(Some(ItemSlotIcon::VanityAccessory))
-                                .prefix_meta(PrefixMeta::get(
-                                    &prefix_meta,
-                                    vanity_accessory.prefix.id,
-                                )),
+                                    .icon(Some(ItemSlotIcon::VanityAccessory))
+                                    .prefix_meta(PrefixMeta::get(
+                                        &prefix_meta,
+                                        vanity_accessory.prefix.id,
+                                    )),
                             ),
                             (
                                 i,
@@ -553,8 +596,8 @@ impl App {
                                     )),
                             ),
                         ]
-                        .into_iter()
-                        .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+                            .into_iter()
+                            .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
                         self.render_item_slots(ui, options);
 
@@ -579,10 +622,10 @@ impl App {
                                         vanity_armor,
                                         ItemGroup::VanityArmor,
                                     )
-                                    .icon(Some(VANITY_ARMOR_ICONS[i]))
-                                    .prefix_meta(
-                                        PrefixMeta::get(&prefix_meta, vanity_armor.prefix.id),
-                                    ),
+                                        .icon(Some(VANITY_ARMOR_ICONS[i]))
+                                        .prefix_meta(
+                                            PrefixMeta::get(&prefix_meta, vanity_armor.prefix.id),
+                                        ),
                                 ),
                                 (
                                     i,
@@ -594,8 +637,8 @@ impl App {
                                         )),
                                 ),
                             ]
-                            .into_iter()
-                            .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+                                .into_iter()
+                                .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
                             self.render_item_slots(ui, slots);
                         } else {
@@ -614,10 +657,10 @@ impl App {
                                         accessory_dye,
                                         ItemGroup::AccessoryDyes,
                                     )
-                                    .icon(Some(ItemSlotIcon::Dye))
-                                    .prefix_meta(
-                                        PrefixMeta::get(&prefix_meta, accessory_dye.prefix.id),
-                                    ),
+                                        .icon(Some(ItemSlotIcon::Dye))
+                                        .prefix_meta(
+                                            PrefixMeta::get(&prefix_meta, accessory_dye.prefix.id),
+                                        ),
                                 ),
                                 (
                                     i,
@@ -625,10 +668,10 @@ impl App {
                                         vanity_accessory,
                                         ItemGroup::VanityAccessories,
                                     )
-                                    .icon(Some(ItemSlotIcon::VanityAccessory))
-                                    .prefix_meta(
-                                        PrefixMeta::get(&prefix_meta, vanity_accessory.prefix.id),
-                                    ),
+                                        .icon(Some(ItemSlotIcon::VanityAccessory))
+                                        .prefix_meta(
+                                            PrefixMeta::get(&prefix_meta, vanity_accessory.prefix.id),
+                                        ),
                                 ),
                                 (
                                     i,
@@ -640,8 +683,8 @@ impl App {
                                         )),
                                 ),
                             ]
-                            .into_iter()
-                            .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+                                .into_iter()
+                                .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
                             self.render_item_slots(ui, options);
                         }
@@ -688,20 +731,12 @@ impl App {
 impl TabViewer for App {
     type Tab = Tabs;
 
-    fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
-        tab.to_string().into()
-    }
-
-    fn on_close(&mut self, tab: &mut Self::Tab) -> bool {
-        self.closed_tabs.insert(*tab, NodeIndex::root());
-        true
-    }
-
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
         ui.set_enabled(!self.is_modal_open());
 
         match tab {
             Tabs::LoadSave => self.render_load_save_tab(ui),
+            Tabs::Appearance => self.render_appearance_tab(ui),
             Tabs::Stats => self.render_stats_tab(ui),
             Tabs::Bonuses => self.render_bonuses_tab(ui),
             Tabs::Selected => self.render_selected_tab(ui),
@@ -714,5 +749,14 @@ impl TabViewer for App {
             Tabs::Equipment => self.render_equipment_tab(ui),
             Tabs::Research => self.render_research_tab(ui),
         }
+    }
+
+    fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
+        tab.to_string().into()
+    }
+
+    fn on_close(&mut self, tab: &mut Self::Tab) -> bool {
+        self.closed_tabs.insert(*tab, NodeIndex::root());
+        true
     }
 }
