@@ -16,6 +16,9 @@ use rlua::{Lua, Table};
 
 use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, ItemType, PrefixMeta};
 
+mod truthy;
+use truthy::TruthyOption;
+
 const ITEM_DATA_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/data";
 const BUFF_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Buff_IDs";
 const PREFIX_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Prefix_IDs";
@@ -264,7 +267,7 @@ fn forbidden_items() -> Vec<i32> {
 }
 
 fn expand_templates(
-    s: String,
+    s: &str,
     template: &Regex,
     game: &serde_json::Value,
     items: &serde_json::Value,
@@ -300,7 +303,7 @@ fn expand_templates(
         .to_string();
 
     if expanded.contains(r"{$}") {
-        expand_templates(expanded, template, game, items, npcs)
+        expand_templates(&expanded, template, game, items, npcs)
     } else {
         expanded
             .replace("<right>", "Right Click")
@@ -404,31 +407,33 @@ fn get_item_meta(
 
             if let rlua::Value::Table(lua_item) = val {
                 let id = i32::from_str(key.to_str()?)?;
-                let name = lua_item.get("name").unwrap_or(String::new());
                 let internal_name = lua_item.get("internalName").unwrap_or(String::new());
+                let name = items["ItemName"][&internal_name]
+                    .as_str()
+                    .unwrap_or_else(|| &internal_name);
+                let name = expand_templates(name, template, game, items, npcs);
                 let max_stack = lua_item.get("maxStack").unwrap_or(1);
                 let value = lua_item.get("value").unwrap_or(0);
-                let rarity = ItemRarity::from(lua_item.get("rarity").unwrap_or(0));
-                let use_time = lua_item.get("useTime").ok();
-                let damage = lua_item.get("damage").ok();
-                let crit_chance = lua_item.get("crit").ok();
-                let knockback = lua_item.get("knockBack").ok();
-                let defense = lua_item.get("defense").ok();
-                let use_ammo = lua_item.get("useAmmo").ok();
-                let mana_cost = lua_item.get("mana").ok();
-                let heal_life = lua_item.get("healLife").ok();
-                let heal_mana = lua_item.get("healMana").ok();
-                let pickaxe_power = lua_item.get("pick").ok();
-                let axe_power = lua_item.get("axe").ok();
-                let hammer_power = lua_item.get("hammer").ok();
-                let fishing_power = lua_item.get("fishingPole").ok();
-                let fishing_bait = lua_item.get("bait").ok();
-                let range_boost = lua_item.get("tileBoost").ok();
+                let use_time = lua_item.get("useTime").truthy_option();
+                let damage = lua_item.get("damage").truthy_option();
+                let crit_chance = lua_item.get("crit").truthy_option();
+                let knockback = lua_item.get("knockBack").truthy_option();
+                let defense = lua_item.get("defense").truthy_option();
+                let use_ammo = lua_item.get("useAmmo").truthy_option();
+                let mana_cost = lua_item.get("mana").truthy_option();
+                let heal_life = lua_item.get("healLife").truthy_option();
+                let heal_mana = lua_item.get("healMana").truthy_option();
+                let pickaxe_power = lua_item.get("pick").truthy_option();
+                let axe_power = lua_item.get("axe").truthy_option();
+                let hammer_power = lua_item.get("hammer").truthy_option();
+                let fishing_power = lua_item.get("fishingPole").truthy_option();
+                let fishing_bait = lua_item.get("bait").truthy_option();
+                let range_boost = lua_item.get("tileBoost").truthy_option();
                 let sacrifices = lua_item.get("sacrifices").unwrap_or(1);
 
                 let tooltip = items["ItemTooltip"][&internal_name].as_str().map(|tt| {
                     tt.lines()
-                        .map(|s| expand_templates(s.to_owned(), &template, &game, &items, &npcs))
+                        .map(|s| expand_templates(&s, &template, &game, &items, &npcs))
                         .collect::<Vec<_>>()
                 });
 
@@ -438,14 +443,22 @@ fn get_item_meta(
                     None
                 };
 
-                let consumes_tile = lua_item.get("tileWand").ok();
+                let consumes_tile = lua_item.get("tileWand").truthy_option();
 
                 let item_type = get_item_type(&lua_item);
 
-                let is_material = lua_item.get("material").ok();
-                let is_consumable = lua_item.get("consumable").ok();
-                let is_quest_item = lua_item.get("questItem").ok();
-                let is_expert = lua_item.get("expert").ok();
+                let is_material = lua_item.get("material").truthy_option();
+                let is_consumable = lua_item.get("consumable").truthy_option();
+                let is_quest_item = lua_item.get("questItem").truthy_option();
+                let is_expert = lua_item.get("expert").truthy_option();
+
+                let rarity = if is_expert.is_some_and(|e| e) {
+                    ItemRarity::Expert
+                } else if let Ok(rarity) = lua_item.get::<&str, i32>("rarity") {
+                    ItemRarity::from(rarity)
+                } else {
+                    ItemRarity::from(lua_item.get("rare").unwrap_or(0))
+                };
 
                 let [x, y, width, height] = offsets.get(&id).unwrap_or(&[-1, -1, 0, 0]);
                 let x = x.to_owned();
@@ -574,7 +587,7 @@ fn get_buff_meta(
 
             let tooltip = game["BuffDescription"][&internal_name].as_str().map(|tt| {
                 tt.lines()
-                    .map(|s| expand_templates(s.to_owned(), template, game, items, npcs))
+                    .map(|s| expand_templates(&s, template, game, items, npcs))
                     .collect::<Vec<_>>()
             });
 
@@ -923,16 +936,19 @@ fn main() -> Result<()> {
     let npc_localization: serde_json::Value = serde_json::from_reader(npc_localization_file)?;
     let game_localization: serde_json::Value = serde_json::from_reader(game_localization_file)?;
 
-    let template = Regex::new(r"\{\$([A-z\d]+)\.([A-z\d]+)\}")?;
+    let template = Regex::new(r"\{\$([A-z\d]+)\.([A-z\d]+)}")?;
 
     // We output to css so that they can also be used with Terrasavr (which as of August 3rd 2023 doesn't have correct sprites)
     let item_offset_filepath = gen_fol.join("items.css");
     let buff_offset_filepath = gen_fol.join("buffs.css");
 
+    println!("Generating item spritesheet");
     let item_spritesheet =
         generate_spritesheet(&items_fol, &res_fol, "slot", 2560, &item_offset_filepath)?;
+    println!("Generating buff spritesheet");
     let buff_spritesheet =
         generate_spritesheet(&buffs_fol, &res_fol, "buff", 512, &buff_offset_filepath)?;
+    println!("Generating icon spritesheet");
     let icon_spritesheet = {
         let sheet = image::open(res_fol.join("other").join("Extra_54.png"))?;
         sheet.resize(
@@ -942,6 +958,7 @@ fn main() -> Result<()> {
         )
     };
 
+    println!("Getting item meta");
     let item_meta = get_item_meta(
         &template,
         &game_localization,
@@ -949,6 +966,7 @@ fn main() -> Result<()> {
         &npc_localization,
         &item_offset_filepath,
     )?;
+    println!("Getting buff meta");
     let buff_meta = get_buff_meta(
         &template,
         &game_localization,
@@ -956,6 +974,7 @@ fn main() -> Result<()> {
         &npc_localization,
         &buff_offset_filepath,
     )?;
+    println!("Getting prefix meta");
     let prefix_meta = get_prefix_meta(
         &template,
         &game_localization,
@@ -966,6 +985,8 @@ fn main() -> Result<()> {
     // Pretty scuffed but works for now
     let mut build_type = String::new();
     File::open("./terra-res/build_type.txt")?.read_to_string(&mut build_type)?;
+
+    println!("Writing to disk");
 
     if build_type == "debug" {
         serde_json::to_writer_pretty(item_writer, &item_meta)?;
