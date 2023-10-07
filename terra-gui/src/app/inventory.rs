@@ -1,7 +1,5 @@
-use egui::{Rect, Response, TextureHandle, Ui, Vec2, Widget};
+use egui::{Response, Ui, Vec2, Widget};
 use terra_core::{meta::Meta, Buff, BuffMeta, Item, ItemMeta, Player, PrefixMeta};
-
-use crate::ui::{ClickableFrame, UiExt};
 
 use self::{
     buff_slot::{BuffSlot, BuffSlotOptions},
@@ -11,8 +9,8 @@ use self::{
     prefix_tooltip::{PrefixTooltip, PrefixTooltipOptions},
     slot::Slot,
 };
-
 use super::{App, Message};
+use crate::ui::{ClickableFrame, UiExt};
 
 pub mod buff_slot;
 pub mod buff_tooltip;
@@ -126,14 +124,6 @@ pub fn buff_name(name: &str, time: Option<i32>) -> String {
     } else {
         name.to_owned()
     }
-}
-
-fn calculate_uv(sheet: &TextureHandle, sprite_rect: Rect) -> Rect {
-    let sheet_size = sheet.size_vec2();
-    let min = (sprite_rect.min.to_vec2() / sheet_size).to_pos2();
-    let size = sprite_rect.size() / sheet_size;
-
-    Rect::from_min_size(min, size)
 }
 
 impl App {

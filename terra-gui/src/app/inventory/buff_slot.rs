@@ -1,7 +1,9 @@
-use egui::{pos2, vec2, Image, Margin, Rect, Response, Sense, TextureHandle, Ui, Vec2, Widget};
+use egui::{pos2, Margin, Rect, Response, Sense, TextureHandle, Ui, Vec2, Widget};
 use terra_core::{Buff, BuffMeta, BUFF_SPRITE_SIZE};
 
-use super::{calculate_uv, slot::Slot};
+use super::slot::{
+    Slot, {calc_uv_size_padding, render_padded_sprite},
+};
 
 pub const SLOT_SIZE: Vec2 = Vec2::splat(32.);
 pub const MARGIN: Margin = Margin {
@@ -105,45 +107,10 @@ impl<'a> Widget for BuffSlot<'a> {
                 response
             }
             Some(sheet) => {
-                let uv = calculate_uv(sheet, self.sprite_rect());
-                let mut size = vec2(
-                    self.sprite_rect().size().x * self.scale().x,
-                    self.sprite_rect().size().y * self.scale().y,
-                );
+                let (uv, size, padding) =
+                    calc_uv_size_padding(sheet, self.sprite_rect(), self.scale(), self.slot_size());
 
-                if size.x > self.slot_size().x || size.y > self.slot_size().y {
-                    if size.x >= size.y {
-                        // Landscape
-                        size *= self.slot_size().x / size.x;
-                    } else {
-                        // Portrait
-                        size *= self.slot_size().y / size.y;
-                    }
-                }
-
-                let padding = vec2(
-                    if size.x < self.slot_size().x {
-                        (self.slot_size().x - size.x) / 2.
-                    } else {
-                        0.
-                    },
-                    if size.y < self.slot_size().y {
-                        (self.slot_size().y - size.y) / 2.
-                    } else {
-                        0.
-                    },
-                );
-
-                ui.allocate_ui(self.slot_size(), |ui| {
-                    ui.add_space(padding.x);
-                    ui.vertical(|ui| {
-                        ui.add_space(padding.y);
-                        ui.add(Image::new(sheet, size).uv(uv));
-                        ui.add_space(padding.y);
-                    });
-                    ui.add_space(padding.x);
-                })
-                .response
+                render_padded_sprite(ui, sheet, uv, self.slot_size(), size, padding)
             }
         }
     }
