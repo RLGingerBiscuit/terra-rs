@@ -1,3 +1,10 @@
+mod inventory;
+mod menus;
+mod modals;
+mod tabs;
+mod tasks;
+mod visuals;
+
 use std::{ops::DerefMut, path::PathBuf, sync::Arc, thread, time::Duration};
 
 use eframe::CreationContext;
@@ -13,13 +20,6 @@ use terra_core::{
     utils::{self, AsTicks},
     BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem,
 };
-
-mod inventory;
-mod menus;
-mod modals;
-mod tabs;
-mod tasks;
-mod visuals;
 
 use self::{
     inventory::{

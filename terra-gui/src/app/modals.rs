@@ -2,8 +2,6 @@ use egui::{
     vec2, Align2, CollapsingHeader, Grid, RichText, ScrollArea, TextStyle, Ui, Vec2, WidgetText,
 };
 
-use crate::ui::UiExt;
-
 use super::{
     inventory::{
         buff_slot::{self, BuffSlotOptions},
@@ -13,6 +11,7 @@ use super::{
     },
     App, Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,
 };
+use crate::ui::UiExt;
 
 #[allow(dead_code)]
 #[derive(Debug)]

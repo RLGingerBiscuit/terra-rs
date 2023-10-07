@@ -1,3 +1,10 @@
+pub mod buff_slot;
+pub mod buff_tooltip;
+pub mod item_slot;
+pub mod item_tooltip;
+pub mod prefix_tooltip;
+pub mod slot;
+
 use egui::{Response, Ui, Vec2, Widget};
 use terra_core::{meta::Meta, Buff, BuffMeta, Item, ItemMeta, Player, PrefixMeta};
 
@@ -11,13 +18,6 @@ use self::{
 };
 use super::{App, Message};
 use crate::ui::{ClickableFrame, UiExt};
-
-pub mod buff_slot;
-pub mod buff_tooltip;
-pub mod item_slot;
-pub mod item_tooltip;
-pub mod prefix_tooltip;
-pub mod slot;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ItemGroup {

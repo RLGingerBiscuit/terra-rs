@@ -1,9 +1,8 @@
 use egui::Ui;
 use egui_dock::{Node, NodeIndex};
 
-use crate::ui::UiExt;
-
 use super::{tabs::Tabs, visuals, App, Message, SHORTCUT_EXIT, SHORTCUT_LOAD, SHORTCUT_SAVE};
+use crate::ui::UiExt;
 
 impl App {
     pub fn render_menu(&mut self, ctx: &egui::Context) {

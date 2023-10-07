@@ -8,12 +8,6 @@ use terra_core::{
     HAIR_DYE_COUNT, HAIR_STYLE_COUNT, INVENTORY_STRIDE, LOADOUT_COUNT, SKIN_VARIANT_COUNT,
 };
 
-use crate::{
-    app::inventory::item_slot::{self, ItemSlotIcon},
-    enum_selectable_value,
-    ui::UiExt,
-};
-
 use super::{
     inventory::{
         buff_slot::{self, BuffSlotOptions},
@@ -21,6 +15,11 @@ use super::{
         ItemGroup,
     },
     App, Message,
+};
+use crate::{
+    app::inventory::item_slot::{self, ItemSlotIcon},
+    enum_selectable_value,
+    ui::UiExt,
 };
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
