@@ -147,7 +147,10 @@ impl App {
                         let meta = &self.item_meta.read();
                         let filtered = meta
                             .iter()
-                            .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower));
+                            .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower))
+                            .filter(|meta| {
+                                meta.forbidden.is_none() || meta.forbidden.is_some_and(|f| !f)
+                            });
 
                         let total_rows = ((filtered.clone().count() as f32)
                             / (ITEM_BROWSER_COLS as f32))
