@@ -92,7 +92,7 @@ pub fn default_ui() -> Tree<Tabs> {
     let mut tree = Tree::new(vec![Tabs::LoadSave]);
     let [load_save, _inventory] = tree.split_below(
         0.into(),
-        0.4,
+        0.41,
         vec![
             Tabs::Inventory,
             Tabs::Bank,
