@@ -6,7 +6,7 @@ pub mod prefix_tooltip;
 pub mod slot;
 
 use egui::{Response, Ui, Vec2, Widget};
-use terra_core::{meta::Meta, Buff, BuffMeta, Item, ItemMeta, Player, PrefixMeta};
+use terra_core::{meta::Meta, utils, Buff, BuffMeta, Item, ItemMeta, Player, PrefixMeta};
 
 use self::{
     buff_slot::{BuffSlot, BuffSlotOptions},
@@ -102,25 +102,8 @@ pub fn item_name(name: &str, prefix_meta: Option<&PrefixMeta>) -> String {
 }
 
 pub fn buff_name(name: &str, time: Option<i32>) -> String {
-    const FRAMES_PER_SECOND: i32 = 60;
-    const FRAMES_PER_MINUTE: i32 = FRAMES_PER_SECOND * 60;
-    const FRAMES_PER_HOUR: i32 = FRAMES_PER_MINUTE * 60;
-    const FRAMES_PER_THOUSAND_HOURS: i32 = FRAMES_PER_HOUR * 1000;
-
     if let Some(time) = time {
-        let time = if time < FRAMES_PER_SECOND {
-            format!("({}f)", time)
-        } else if time < FRAMES_PER_MINUTE {
-            format!("({}s)", time / FRAMES_PER_SECOND)
-        } else if time < FRAMES_PER_HOUR {
-            format!("({}m)", time / FRAMES_PER_MINUTE)
-        } else if time < FRAMES_PER_THOUSAND_HOURS {
-            format!("({}h)", time / FRAMES_PER_HOUR)
-        } else {
-            "(∞)".to_owned()
-        };
-
-        format!("{} {}", name, time)
+        format!("{} ({})", name, utils::ticks_to_string(time))
     } else {
         name.to_owned()
     }
@@ -156,6 +139,14 @@ impl App {
             self.do_update(Message::LoadItemSpritesheet);
         }
 
+        // FIXME: Lifetime stuff means ::from_slot_options doesn't work
+        // let tooltip_options = ItemTooltipOptions::from_slot_options(&options);
+        let tooltip_options = ItemTooltipOptions::new()
+            .id(options.id)
+            .favourited(options.favourited)
+            .prefix_meta(options.prefix_meta);
+        let tooltip_on_hover = options.tooltip_on_hover;
+
         let meta = ItemMeta::get_or_default(&item_meta, options.id);
         let slot = ItemSlot::new(
             options,
@@ -165,10 +156,8 @@ impl App {
         );
         let response = self.render_slot(ui, slot);
 
-        if meta.id != 0 && options.tooltip_on_hover {
-            response.on_hover_ui(|ui| {
-                self.render_item_tooltip(ui, ItemTooltipOptions::from_slot_options(&options))
-            })
+        if meta.id != 0 && tooltip_on_hover {
+            response.on_hover_ui(|ui| self.render_item_tooltip(ui, tooltip_options))
         } else {
             response
         }
@@ -253,12 +242,16 @@ impl App {
             self.do_update(Message::LoadBuffSpritesheet);
         }
 
+        let tooltip_options = BuffTooltipOptions::from_slot_options(&options);
+        let tooltip_on_hover = options.tooltip_on_hover;
+
         let meta = BuffMeta::get_or_default(&buff_meta, options.id);
         let slot = BuffSlot::new(options, meta, buff_spritesheet.as_ref());
         let response = self.render_slot(ui, slot);
-        if meta.id != 0 && options.tooltip_on_hover {
+
+        if meta.id != 0 && tooltip_on_hover {
             response.on_hover_ui(|ui| {
-                self.render_buff_tooltip(ui, BuffTooltipOptions::from_slot_options(&options));
+                self.render_buff_tooltip(ui, tooltip_options);
             })
         } else {
             response

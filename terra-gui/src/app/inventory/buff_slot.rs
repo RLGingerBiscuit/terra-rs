@@ -1,9 +1,7 @@
 use egui::{pos2, Margin, Rect, Response, Sense, TextureHandle, Ui, Vec2, Widget};
 use terra_core::{Buff, BuffMeta, BUFF_SPRITE_SIZE};
 
-use super::slot::{
-    Slot, {calc_uv_size_padding, render_padded_sprite},
-};
+use super::slot::{calc_uv_size_padding, render_padded_sprite, Slot, SlotText};
 
 pub const SLOT_SIZE: Vec2 = Vec2::splat(32.);
 pub const MARGIN: Margin = Margin {
@@ -16,12 +14,13 @@ pub const MARGIN: Margin = Margin {
 pub const SPRITE_SIZE: Vec2 = Vec2::splat(BUFF_SPRITE_SIZE as f32);
 pub const SPRITE_SCALE: Vec2 = Vec2::splat(2.);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct BuffSlotOptions {
     pub id: i32,
     pub selected: bool,
     pub tooltip_on_hover: bool,
     pub time: Option<i32>,
+    pub texts: Vec<SlotText>,
 }
 
 #[allow(dead_code)]
@@ -32,6 +31,7 @@ impl BuffSlotOptions {
             selected: false,
             tooltip_on_hover: false,
             time: None,
+            texts: Vec::new(),
         }
     }
 
@@ -68,12 +68,17 @@ impl BuffSlotOptions {
         self.time = time;
         self
     }
+
+    pub fn texts(mut self, texts: &[SlotText]) -> Self {
+        self.texts = texts.to_owned();
+        self
+    }
 }
 
 pub(super) struct BuffSlot<'a> {
     options: BuffSlotOptions,
     meta: &'a BuffMeta,
-    sheet: Option<&'a TextureHandle>,
+    buff_sheet: Option<&'a TextureHandle>,
 }
 
 #[allow(dead_code)]
@@ -86,7 +91,7 @@ impl<'a> BuffSlot<'a> {
         BuffSlot {
             options,
             meta,
-            sheet: spritesheet,
+            buff_sheet: spritesheet,
         }
     }
 
@@ -101,18 +106,20 @@ impl<'a> BuffSlot<'a> {
 
 impl<'a> Widget for BuffSlot<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
-        match self.sheet {
-            None => {
-                let (_, response) = ui.allocate_exact_size(self.slot_size(), Sense::hover());
-                response
-            }
-            Some(sheet) => {
+        let (rect, response) = ui.allocate_exact_size(SLOT_SIZE, Sense::hover());
+
+        {
+            let mut ui = ui.child_ui(rect, *ui.layout());
+
+            if let Some(sheet) = self.buff_sheet {
                 let (uv, size, padding) =
                     calc_uv_size_padding(sheet, self.sprite_rect(), self.scale(), self.slot_size());
 
-                render_padded_sprite(ui, sheet, uv, self.slot_size(), size, padding)
+                render_padded_sprite(&mut ui, sheet, uv, size, padding);
             }
         }
+
+        response
     }
 }
 

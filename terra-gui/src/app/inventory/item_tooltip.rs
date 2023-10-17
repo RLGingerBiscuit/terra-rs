@@ -261,7 +261,7 @@ impl<'a> Widget for ItemTooltip<'a> {
 
             ui.label(format!("{} Max Stack", item.max_stack));
 
-            ui.label(format!("Worth {}", utils::coins_lookup(item.value)));
+            ui.label(format!("Worth {}", utils::coins_to_string(item.value)));
 
             // TODO: Maybe prefix values?
         })

@@ -1,4 +1,25 @@
-use egui::{vec2, Image, Margin, Rect, Response, TextureHandle, Ui, Vec2, Widget};
+use egui::{
+    vec2, Align, Align2, Color32, FontId, Image, Margin, Rect, TextureHandle, Ui, Vec2, Widget,
+};
+
+#[derive(Debug, Clone)]
+pub struct SlotText {
+    pub alignment: Align2,
+    pub text: String,
+    pub font_id: FontId,
+    pub text_color: Color32,
+}
+
+impl SlotText {
+    pub fn new(alignment: Align2, text: String, font_id: FontId, text_color: Color32) -> Self {
+        Self {
+            alignment,
+            text,
+            font_id,
+            text_color,
+        }
+    }
+}
 
 pub(super) trait Slot<W: Widget = Self> {
     fn slot_size(&self) -> Vec2;
@@ -7,6 +28,33 @@ pub(super) trait Slot<W: Widget = Self> {
     fn margin(&self) -> Margin;
     fn selected(&self) -> bool;
     fn tooltip_on_hover(&self) -> bool;
+}
+
+pub(super) fn paint_texts(ui: &mut Ui, rect: Rect, texts: &[SlotText]) {
+    let painter = ui.painter();
+    let rect = rect;
+
+    for text in texts.iter() {
+        let pos = match text.alignment.0 {
+            [Align::Min, Align::Max] => rect.left_bottom(),
+            [Align::Min, Align::Center] => rect.left_center(),
+            [Align::Min, Align::Min] => rect.left_top(),
+
+            [Align::Center, Align::Max] => rect.center_bottom(),
+            [Align::Center, Align::Center] => rect.center(),
+            [Align::Center, Align::Min] => rect.center_top(),
+
+            [Align::Max, Align::Max] => rect.right_bottom(),
+            [Align::Max, Align::Center] => rect.right_center(),
+            [Align::Max, Align::Min] => rect.right_top(),
+        };
+        let anchor = text.alignment;
+        let font_id = text.font_id.clone();
+        let text_color = text.text_color;
+        let text = text.text.as_str();
+
+        painter.text(pos, anchor, text, font_id, text_color);
+    }
 }
 
 pub(super) fn calc_uv_size_padding(
@@ -52,18 +100,14 @@ pub(super) fn render_padded_sprite(
     ui: &mut Ui,
     sheet: &TextureHandle,
     uv: Rect,
-    slot_size: Vec2,
     size: Vec2,
     padding: Vec2,
-) -> Response {
-    ui.allocate_ui(slot_size, |ui| {
-        ui.add_space(padding.x);
-        ui.vertical(|ui| {
-            ui.add_space(padding.y);
-            ui.add(Image::new(sheet, size).uv(uv));
-            ui.add_space(padding.y);
-        });
-        ui.add_space(padding.x);
-    })
-    .response
+) {
+    ui.add_space(padding.x);
+    ui.vertical(|ui| {
+        ui.add_space(padding.y);
+        ui.add(Image::new(sheet, size).uv(uv));
+        ui.add_space(padding.y);
+    });
+    ui.add_space(padding.x);
 }

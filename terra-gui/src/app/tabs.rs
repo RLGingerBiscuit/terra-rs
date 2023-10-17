@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use egui::{ComboBox, Ui, WidgetText};
+use egui::{Align2, ComboBox, TextStyle, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer, Tree};
 
 use terra_core::{
@@ -17,7 +17,10 @@ use super::{
     App, Message,
 };
 use crate::{
-    app::inventory::item_slot::{self, ItemSlotIcon},
+    app::inventory::{
+        item_slot::{self, ItemSlotIcon},
+        slot::SlotText,
+    },
     enum_selectable_value,
     ui::UiExt,
 };
@@ -378,7 +381,6 @@ impl App {
                         (
                             row,
                             ItemSlotOptions::from_item(coins, ItemGroup::Coins)
-                                .icon(Some(ItemSlotIcon::Coins))
                                 .prefix_meta(PrefixMeta::get(&prefix_meta, coins.prefix.id)),
                         ),
                         (
@@ -544,6 +546,8 @@ impl App {
                 .num_columns(9)
                 .show(ui, |ui| {
                     let current_loadout = &player.loadouts[self.selected_loadout.0];
+                    let font_id = TextStyle::Body.resolve(&ui.style());
+                    let text_color = ui.visuals().text_color();
 
                     for i in 0..5 {
                         let equipment_dye = &player.equipment_dyes[i];
@@ -612,7 +616,7 @@ impl App {
                             let vanity_armor = &current_loadout.vanity_armor[i];
                             let armor = &current_loadout.armor[i];
 
-                            let slots = [
+                            let options = [
                                 (
                                     i,
                                     ItemSlotOptions::from_item(armor_dye, ItemGroup::ArmorDyes)
@@ -646,15 +650,13 @@ impl App {
                             .into_iter()
                             .map(|(i, o)| (i, o.tooltip_on_hover(true)));
 
-                            self.render_item_slots(ui, slots);
+                            self.render_item_slots(ui, options);
                         } else {
-                            let accessory_dye =
-                                &current_loadout.accessory_dyes[ARMOR_COUNT - 1 + i];
-                            let vanity_accessory =
-                                &current_loadout.vanity_accessories[ARMOR_COUNT - 1 + i];
-                            let accessory = &current_loadout.accessories[ARMOR_COUNT - 1 + i];
-
                             let i = ARMOR_COUNT - 1 + i;
+
+                            let accessory_dye = &current_loadout.accessory_dyes[i];
+                            let vanity_accessory = &current_loadout.vanity_accessories[i];
+                            let accessory = &current_loadout.accessories[i];
 
                             let options = [
                                 (
@@ -690,7 +692,22 @@ impl App {
                                 ),
                             ]
                             .into_iter()
-                            .map(|(i, o)| (i, o.tooltip_on_hover(true)));
+                            .map(|(i, o)| (i, o.tooltip_on_hover(true)))
+                            .map(|(i, o)| {
+                                (
+                                    i,
+                                    o.add_text(SlotText::new(
+                                        Align2::LEFT_TOP,
+                                        match i {
+                                            5 => "E".to_string(), // Export
+                                            6 => "M".to_string(), // Master
+                                            _ => panic!("What?"),
+                                        },
+                                        font_id.clone(),
+                                        text_color,
+                                    )),
+                                )
+                            });
 
                             self.render_item_slots(ui, options);
                         }

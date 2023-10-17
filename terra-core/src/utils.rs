@@ -194,7 +194,26 @@ pub fn knockback_lookup(knockback: f32) -> &'static str {
     }
 }
 
-pub fn coins_lookup(value: i32) -> String {
+pub fn ticks_to_string(ticks: i32) -> String {
+    const FRAMES_PER_SECOND: i32 = 60;
+    const FRAMES_PER_MINUTE: i32 = FRAMES_PER_SECOND * 60;
+    const FRAMES_PER_HOUR: i32 = FRAMES_PER_MINUTE * 60;
+    const FRAMES_PER_THOUSAND_HOURS: i32 = FRAMES_PER_HOUR * 1000;
+
+    if ticks < FRAMES_PER_SECOND {
+        format!("{}f", ticks)
+    } else if ticks < FRAMES_PER_MINUTE {
+        format!("{}s", ticks / FRAMES_PER_SECOND)
+    } else if ticks < FRAMES_PER_HOUR {
+        format!("{}m", ticks / FRAMES_PER_MINUTE)
+    } else if ticks < FRAMES_PER_THOUSAND_HOURS {
+        format!("{}h", ticks / FRAMES_PER_HOUR)
+    } else {
+        "∞".to_owned()
+    }
+}
+
+pub fn coins_to_string(value: i32) -> String {
     if value <= 0 {
         return "Nothing".to_owned();
     }

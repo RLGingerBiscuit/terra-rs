@@ -5,7 +5,7 @@ use egui::{
 use terra_core::{Item, ItemMeta, PrefixMeta};
 
 use super::{
-    slot::{calc_uv_size_padding, render_padded_sprite, Slot},
+    slot::{calc_uv_size_padding, paint_texts, render_padded_sprite, Slot, SlotText},
     ItemGroup,
 };
 
@@ -44,10 +44,10 @@ pub enum ItemSlotIcon {
     LightPet,
     //
     // TODO: Coins icon
-    Coins,
+    // Coins,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct ItemSlotOptions<'a> {
     pub id: i32,
     pub group: ItemGroup,
@@ -57,6 +57,7 @@ pub struct ItemSlotOptions<'a> {
     pub favourited: bool,
     pub tooltip_on_hover: bool,
     pub stack: Option<i32>,
+    pub texts: Vec<SlotText>,
 }
 
 #[allow(dead_code)]
@@ -71,6 +72,7 @@ impl<'a> ItemSlotOptions<'a> {
             favourited: false,
             tooltip_on_hover: false,
             stack: None,
+            texts: Vec::new(),
         }
     }
 
@@ -125,6 +127,16 @@ impl<'a> ItemSlotOptions<'a> {
 
     pub fn stack(mut self, stack: Option<i32>) -> Self {
         self.stack = stack;
+        self
+    }
+
+    pub fn texts(mut self, texts: &[SlotText]) -> Self {
+        self.texts = texts.to_owned();
+        self
+    }
+
+    pub fn add_text(mut self, text: SlotText) -> Self {
+        self.texts.push(text);
         self
     }
 }
@@ -185,7 +197,6 @@ impl<'a> ItemSlot<'a> {
             ItemSlotIcon::VanityAccessory => vec2(2., 0.),
             ItemSlotIcon::Accessory => vec2(2., 3.),
             ItemSlotIcon::LightPet => vec2(2., 5.),
-            ItemSlotIcon::Coins => todo!(),
         };
 
         let sheet_size = sheet.size_vec2();
@@ -216,53 +227,31 @@ impl<'a> ItemSlot<'a> {
 }
 
 impl<'a> Widget for ItemSlot<'a> {
-    fn ui(self, ui: &mut Ui) -> Response {
-        let allocate_size = |ui: &mut Ui| {
-            let (_, response) = ui.allocate_exact_size(self.slot_size(), Sense::hover());
-            response
-        };
+    fn ui(mut self, ui: &mut Ui) -> Response {
+        let (rect, response) = ui.allocate_exact_size(SLOT_SIZE, Sense::hover());
 
-        let try_render_icon = |ui: &mut Ui| match self.options.icon {
-            None => allocate_size(ui),
-            Some(icon) => {
-                // TODO: Coins icon
-                if icon == ItemSlotIcon::Coins {
-                    allocate_size(ui)
-                } else {
-                    match self.icon_sheet {
-                        None => allocate_size(ui),
-                        Some(sheet) => self.render_item_slot_icon(ui, icon, sheet),
-                    }
-                }
-            }
-        };
+        {
+            let mut ui = ui.child_ui(rect, *ui.layout());
 
-        let response = if self.meta.id == 0 {
-            try_render_icon(ui)
-        } else {
-            match self.item_sheet {
-                None => try_render_icon(ui),
-                Some(sheet) => {
-                    let (uv, size, padding) = calc_uv_size_padding(
-                        sheet,
-                        self.sprite_rect(),
-                        self.scale(),
-                        self.slot_size(),
-                    );
+            if let (true, Some(sheet)) = (self.meta.id != 0, self.item_sheet) {
+                let (uv, size, padding) =
+                    calc_uv_size_padding(sheet, self.sprite_rect(), self.scale(), self.slot_size());
 
-                    render_padded_sprite(ui, sheet, uv, self.slot_size(), size, padding)
-                }
-            }
-        };
+                render_padded_sprite(&mut ui, sheet, uv, size, padding);
+            } else if let (Some(icon), Some(sheet)) = (self.options.icon, self.icon_sheet) {
+                self.render_item_slot_icon(&mut ui, icon, sheet);
+            };
+        }
 
         if let Some(stack) = self.options.stack {
-            ui.painter().text(
-                response.rect.max,
-                Align2::RIGHT_BOTTOM,
-                stack.to_string(),
-                TextStyle::Body.resolve(ui.style()),
-                ui.style().visuals.text_color(),
-            );
+            let font_id = TextStyle::Body.resolve(&ui.style());
+            let text_color = ui.visuals().text_color();
+            let text = SlotText::new(Align2::RIGHT_BOTTOM, stack.to_string(), font_id, text_color);
+            self.options.texts.push(text);
+        }
+
+        if !self.options.texts.is_empty() {
+            paint_texts(ui, rect, &self.options.texts);
         }
 
         response
