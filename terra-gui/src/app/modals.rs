@@ -120,10 +120,10 @@ impl App {
     }
 
     pub fn render_item_browser(&mut self, ctx: &egui::Context) {
-        let mut search_term = self.search_term.clone();
-        let mut term_changed = false;
-
         if self.show_item_browser {
+            let mut search_term = self.search_term.clone();
+            let mut term_changed = false;
+
             self.render_modal(
                 ctx,
                 "Item Browser",
@@ -199,18 +199,18 @@ impl App {
                     });
                 },
             );
-        }
 
-        if term_changed {
-            self.search_term = search_term;
+            if term_changed {
+                self.search_term = search_term;
+            }
         }
     }
 
     pub fn render_buff_browser(&mut self, ctx: &egui::Context) {
-        let mut search_term = self.search_term.clone();
-        let mut term_changed = false;
-
         if self.show_buff_browser {
+            let mut search_term = self.search_term.clone();
+            let mut term_changed = false;
+
             self.render_modal(
                 ctx,
                 "Buff Browser",
@@ -279,20 +279,20 @@ impl App {
                     });
                 },
             );
-        }
 
-        if term_changed {
-            self.search_term = search_term;
+            if term_changed {
+                self.search_term = search_term;
+            }
         }
     }
 
     // TODO: Add a toggle to show only class-specific prefixes
     //       (and the Terrarian variant of Legendary)
     pub fn render_prefix_browser(&mut self, ctx: &egui::Context) {
-        let mut search_term = self.search_term.clone();
-        let mut term_changed = false;
-
         if self.show_prefix_browser {
+            let mut search_term = self.search_term.clone();
+            let mut term_changed = false;
+
             self.render_modal(
                 ctx,
                 "Prefix Browser",
@@ -373,10 +373,10 @@ impl App {
                     });
                 },
             );
-        }
 
-        if term_changed {
-            self.search_term = search_term;
+            if term_changed {
+                self.search_term = search_term;
+            }
         }
     }
 }
