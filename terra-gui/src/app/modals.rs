@@ -30,6 +30,33 @@ const ITEM_BROWSER_COLS: usize = 6;
 const BUFF_BROWSER_COLS: usize = 8;
 const PREFIX_BROWSER_COLS: usize = 4;
 
+#[inline]
+fn item_browser_sizing(ctx: &egui::Context) -> Sizing {
+    Sizing::Fixed(vec2(
+        item_slot::SLOT_SIZE.x * (ITEM_BROWSER_COLS + 1) as f32
+            + ctx.style().spacing.item_spacing.x * (ITEM_BROWSER_COLS * 2) as f32
+            - ctx.style().spacing.scroll_bar_width,
+        DEFAULT_MODAL_HEIGHT * 2.,
+    ))
+}
+
+#[inline]
+fn buff_browser_sizing(ctx: &egui::Context) -> Sizing {
+    Sizing::Fixed(vec2(
+        buff_slot::SLOT_SIZE.x * (BUFF_BROWSER_COLS) as f32
+            + ctx.style().spacing.item_spacing.x * (BUFF_BROWSER_COLS * 2) as f32,
+        DEFAULT_MODAL_HEIGHT * 2.,
+    ))
+}
+
+#[inline]
+fn prefix_browser_sizing(ctx: &egui::Context) -> Sizing {
+    Sizing::Fixed(vec2(
+        DEFAULT_MODAL_WIDTH + ctx.style().spacing.item_spacing.x,
+        DEFAULT_MODAL_HEIGHT * 2.,
+    ))
+}
+
 impl App {
     fn render_modal<R>(
         &self,
@@ -124,62 +151,47 @@ impl App {
             let mut search_term = self.search_term.clone();
             let mut term_changed = false;
 
-            self.render_modal(
-                ctx,
-                "Item Browser",
-                false,
-                Sizing::Fixed(vec2(
-                    item_slot::SLOT_SIZE.x * (ITEM_BROWSER_COLS + 1) as f32
-                        + ctx.style().spacing.item_spacing.x * (ITEM_BROWSER_COLS * 2) as f32
-                        - ctx.style().spacing.scroll_bar_width,
-                    DEFAULT_MODAL_HEIGHT * 2.,
-                )),
-                |ui| {
-                    ui.spacing_mut().item_spacing.y = 8.;
+            self.render_modal(ctx, "Item Browser", false, item_browser_sizing(ctx), |ui| {
+                ui.spacing_mut().item_spacing.y = 8.;
 
-                    ui.vertical_centered_justified(|ui| {
-                        term_changed = ui.text_edit_singleline(&mut search_term).changed();
-                    });
+                ui.vertical_centered_justified(|ui| {
+                    term_changed = ui.text_edit_singleline(&mut search_term).changed();
+                });
 
-                    if !search_term.is_empty() {
-                        let search_term_lower = search_term.to_lowercase();
-                        let meta = &self.item_meta.read();
-                        let filtered = meta
-                            .iter()
-                            .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower))
-                            .filter(|meta| {
-                                meta.forbidden.is_none() || meta.forbidden.is_some_and(|f| !f)
-                            });
+                if !search_term.is_empty() {
+                    let search_term_lower = search_term.to_lowercase();
+                    let meta = &self.item_meta.read();
+                    let filtered = meta
+                        .iter()
+                        .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower))
+                        .filter(|meta| {
+                            meta.forbidden.is_none() || meta.forbidden.is_some_and(|f| !f)
+                        });
 
-                        let total_rows = ((filtered.clone().count() as f32)
-                            / (ITEM_BROWSER_COLS as f32))
-                            .ceil() as usize;
+                    let total_rows = ((filtered.clone().count() as f32)
+                        / (ITEM_BROWSER_COLS as f32))
+                        .ceil() as usize;
 
-                        ScrollArea::new([false, true])
-                            .id_source("item_browser_scrollarea")
-                            .show_rows(ui, item_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
-                                Grid::new("item_browser_grid")
-                                    .num_columns(ITEM_BROWSER_COLS)
-                                    .show(ui, |ui| {
-                                        let mut filtered =
-                                            filtered.skip(row_range.start * ITEM_BROWSER_COLS);
+                    ScrollArea::new([false, true])
+                        .id_source("item_browser_scrollarea")
+                        .show_rows(ui, item_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
+                            Grid::new("item_browser_grid")
+                                .num_columns(ITEM_BROWSER_COLS)
+                                .show(ui, |ui| {
+                                    let mut filtered =
+                                        filtered.skip(row_range.start * ITEM_BROWSER_COLS);
 
-                                        for i in (row_range.start * ITEM_BROWSER_COLS)
-                                            ..(row_range.end * ITEM_BROWSER_COLS)
-                                        {
-                                            let meta = filtered.next();
-                                            if meta.is_none() {
-                                                break;
-                                            }
-                                            let meta = meta.unwrap();
-
+                                    for i in (row_range.start * ITEM_BROWSER_COLS)
+                                        ..(row_range.end * ITEM_BROWSER_COLS)
+                                    {
+                                        if let Some(meta) = filtered.next() {
                                             let options = ItemSlotOptions::from_meta(
                                                 meta,
                                                 ItemGroup::ItemBrowser,
                                             )
                                             .tooltip_on_hover(true);
-                                            let response = self.render_item_slot(ui, options);
 
+                                            let response = self.render_item_slot(ui, options);
                                             if response.clicked() {
                                                 self.do_update(Message::SetCurrentItemId(meta.id));
                                             }
@@ -188,17 +200,17 @@ impl App {
                                                 ui.end_row();
                                             }
                                         }
-                                    });
-                            });
-                    }
+                                    }
+                                });
+                        });
+                }
 
-                    ui.vertical_right_justified(|ui| {
-                        if ui.button("Close").clicked() {
-                            self.do_update(Message::CloseItemBrowser);
-                        }
-                    });
-                },
-            );
+                ui.vertical_right_justified(|ui| {
+                    if ui.button("Close").clicked() {
+                        self.do_update(Message::CloseItemBrowser);
+                    }
+                });
+            });
 
             if term_changed {
                 self.search_term = search_term;
@@ -211,55 +223,41 @@ impl App {
             let mut search_term = self.search_term.clone();
             let mut term_changed = false;
 
-            self.render_modal(
-                ctx,
-                "Buff Browser",
-                false,
-                Sizing::Fixed(vec2(
-                    buff_slot::SLOT_SIZE.x * (BUFF_BROWSER_COLS) as f32
-                        + ctx.style().spacing.item_spacing.x * (BUFF_BROWSER_COLS * 2) as f32,
-                    DEFAULT_MODAL_HEIGHT * 2.,
-                )),
-                |ui| {
-                    ui.spacing_mut().item_spacing.y = 8.;
+            self.render_modal(ctx, "Buff Browser", false, buff_browser_sizing(ctx), |ui| {
+                ui.spacing_mut().item_spacing.y = 8.;
 
-                    ui.vertical_centered_justified(|ui| {
-                        term_changed = ui.text_edit_singleline(&mut search_term).changed();
-                    });
+                ui.vertical_centered_justified(|ui| {
+                    term_changed = ui.text_edit_singleline(&mut search_term).changed();
+                });
 
-                    if !search_term.is_empty() {
-                        let search_term_lower = search_term.to_lowercase();
-                        let meta = &self.buff_meta.read();
-                        let filtered = meta
-                            .iter()
-                            .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower));
+                if !search_term.is_empty() {
+                    let search_term_lower = search_term.to_lowercase();
+                    let meta = &self.buff_meta.read();
+                    let filtered = meta
+                        .iter()
+                        .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower));
 
-                        let total_rows = ((filtered.clone().count() as f32)
-                            / (BUFF_BROWSER_COLS as f32))
-                            .ceil() as usize;
+                    let total_rows = ((filtered.clone().count() as f32)
+                        / (BUFF_BROWSER_COLS as f32))
+                        .ceil() as usize;
 
-                        ScrollArea::new([false, true])
-                            .id_source("buff_browser_scrollarea")
-                            .show_rows(ui, buff_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
-                                Grid::new("buff_browser_grid")
-                                    .num_columns(BUFF_BROWSER_COLS)
-                                    .show(ui, |ui| {
-                                        let mut filtered =
-                                            filtered.skip(row_range.start * BUFF_BROWSER_COLS);
+                    ScrollArea::new([false, true])
+                        .id_source("buff_browser_scrollarea")
+                        .show_rows(ui, buff_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
+                            Grid::new("buff_browser_grid")
+                                .num_columns(BUFF_BROWSER_COLS)
+                                .show(ui, |ui| {
+                                    let mut filtered =
+                                        filtered.skip(row_range.start * BUFF_BROWSER_COLS);
 
-                                        for i in (row_range.start * BUFF_BROWSER_COLS)
-                                            ..(row_range.end * BUFF_BROWSER_COLS)
-                                        {
-                                            let meta = filtered.next();
-                                            if meta.is_none() {
-                                                break;
-                                            }
-                                            let meta = meta.unwrap();
-
+                                    for i in (row_range.start * BUFF_BROWSER_COLS)
+                                        ..(row_range.end * BUFF_BROWSER_COLS)
+                                    {
+                                        if let Some(meta) = filtered.next() {
                                             let options = BuffSlotOptions::from_meta(meta)
                                                 .tooltip_on_hover(true);
-                                            let response = self.render_buff_slot(ui, options);
 
+                                            let response = self.render_buff_slot(ui, options);
                                             if response.clicked() {
                                                 self.do_update(Message::SetCurrentBuffId(meta.id));
                                             }
@@ -268,17 +266,17 @@ impl App {
                                                 ui.end_row();
                                             }
                                         }
-                                    });
-                            });
-                    }
+                                    }
+                                });
+                        });
+                }
 
-                    ui.vertical_right_justified(|ui| {
-                        if ui.button("Close").clicked() {
-                            self.do_update(Message::CloseBuffBrowser);
-                        }
-                    });
-                },
-            );
+                ui.vertical_right_justified(|ui| {
+                    if ui.button("Close").clicked() {
+                        self.do_update(Message::CloseBuffBrowser);
+                    }
+                });
+            });
 
             if term_changed {
                 self.search_term = search_term;
@@ -297,10 +295,7 @@ impl App {
                 ctx,
                 "Prefix Browser",
                 false,
-                Sizing::Fixed(vec2(
-                    DEFAULT_MODAL_WIDTH + ctx.style().spacing.item_spacing.x,
-                    DEFAULT_MODAL_HEIGHT * 2.,
-                )),
+                prefix_browser_sizing(ctx),
                 |ui| {
                     ui.spacing_mut().item_spacing.y = 8.;
 
@@ -335,30 +330,26 @@ impl App {
                                             for i in (row_range.start * PREFIX_BROWSER_COLS)
                                                 ..(row_range.end * PREFIX_BROWSER_COLS)
                                             {
-                                                let meta = filtered.next();
-                                                if meta.is_none() {
-                                                    break;
-                                                }
-                                                let meta = meta.unwrap();
+                                                if let Some(meta) = filtered.next() {
+                                                    let response = ui.button(&meta.name);
 
-                                                let response = ui.button(&meta.name);
+                                                    if response.clicked() {
+                                                        self.do_update(
+                                                            Message::SetCurrentPrefixId(meta.id),
+                                                        );
+                                                    }
 
-                                                if response.clicked() {
-                                                    self.do_update(Message::SetCurrentPrefixId(
-                                                        meta.id,
-                                                    ));
-                                                }
+                                                    response.on_hover_ui(|ui| {
+                                                        let options =
+                                                            PrefixTooltipOptions::new().id(meta.id);
+                                                        self.render_prefix_tooltip(ui, options);
+                                                    });
 
-                                                response.on_hover_ui(|ui| {
-                                                    let options =
-                                                        PrefixTooltipOptions::new().id(meta.id);
-                                                    self.render_prefix_tooltip(ui, options);
-                                                });
-
-                                                if i % PREFIX_BROWSER_COLS
-                                                    == PREFIX_BROWSER_COLS - 1
-                                                {
-                                                    ui.end_row();
+                                                    if i % PREFIX_BROWSER_COLS
+                                                        == PREFIX_BROWSER_COLS - 1
+                                                    {
+                                                        ui.end_row();
+                                                    }
                                                 }
                                             }
                                         });
@@ -369,6 +360,95 @@ impl App {
                     ui.vertical_right_justified(|ui| {
                         if ui.button("Close").clicked() {
                             self.do_update(Message::ClosePrefixBrowser);
+                        }
+                    });
+                },
+            );
+
+            if term_changed {
+                self.search_term = search_term;
+            }
+        }
+    }
+
+    pub fn render_research_browser(&mut self, ctx: &egui::Context) {
+        if self.show_research_browser {
+            let mut search_term = self.search_term.clone();
+            let mut term_changed = false;
+
+            self.render_modal(
+                ctx,
+                "Research Browser",
+                false,
+                item_browser_sizing(ctx),
+                |ui| {
+                    ui.spacing_mut().item_spacing.y = 8.;
+
+                    ui.vertical_centered_justified(|ui| {
+                        term_changed = ui.text_edit_singleline(&mut search_term).changed();
+                    });
+
+                    let search_term_lower = search_term.to_lowercase();
+                    let meta = &self.item_meta.read();
+                    let filtered = meta
+                        .iter()
+                        .filter(|meta| {
+                            search_term_lower.is_empty()
+                                || meta.name.to_lowercase().contains(&search_term_lower)
+                        })
+                        .filter(|meta| {
+                            meta.forbidden.is_none() || meta.forbidden.is_some_and(|f| !f)
+                        });
+
+                    let total_rows = ((filtered.clone().count() as f32)
+                        / (ITEM_BROWSER_COLS as f32))
+                        .ceil() as usize;
+
+                    ScrollArea::new([false, true])
+                        .id_source("research_browser_scrollarea")
+                        .show_rows(ui, item_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
+                            Grid::new("research_browser_grid")
+                                .num_columns(ITEM_BROWSER_COLS)
+                                .show(ui, |ui| {
+                                    let mut filtered =
+                                        filtered.skip(row_range.start * ITEM_BROWSER_COLS);
+
+                                    let player = self.player.read();
+
+                                    for i in (row_range.start * ITEM_BROWSER_COLS)
+                                        ..(row_range.end * ITEM_BROWSER_COLS)
+                                    {
+                                        if let Some(meta) = filtered.next() {
+                                            let options = ItemSlotOptions::from_meta(
+                                                meta,
+                                                ItemGroup::ResearchBrowser,
+                                            )
+                                            .highlighted(
+                                                player
+                                                    .research
+                                                    .iter()
+                                                    .any(|i| i.internal_name == meta.internal_name),
+                                            )
+                                            .tooltip_on_hover(true);
+
+                                            let response = self.render_item_slot(ui, options);
+                                            if response.clicked() {
+                                                self.do_update(Message::ToggleResearchItem(
+                                                    meta.id,
+                                                ));
+                                            }
+
+                                            if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
+                                                ui.end_row();
+                                            }
+                                        }
+                                    }
+                                });
+                        });
+
+                    ui.vertical_right_justified(|ui| {
+                        if ui.button("Close").clicked() {
+                            self.do_update(Message::CloseResearchBrowser);
                         }
                     });
                 },

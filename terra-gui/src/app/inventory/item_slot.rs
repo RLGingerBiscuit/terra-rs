@@ -54,6 +54,7 @@ pub struct ItemSlotOptions<'a> {
     pub icon: Option<ItemSlotIcon>,
     pub prefix_meta: Option<&'a PrefixMeta>,
     pub selected: bool,
+    pub highlighted: bool,
     pub favourited: bool,
     pub tooltip_on_hover: bool,
     pub stack: Option<i32>,
@@ -69,6 +70,7 @@ impl<'a> ItemSlotOptions<'a> {
             icon: None,
             prefix_meta: None,
             selected: false,
+            highlighted: false,
             favourited: false,
             tooltip_on_hover: false,
             stack: None,
@@ -112,6 +114,11 @@ impl<'a> ItemSlotOptions<'a> {
 
     pub fn selected(mut self, selected: bool) -> Self {
         self.selected = selected;
+        self
+    }
+
+    pub fn highlighted(mut self, highlighted: bool) -> Self {
+        self.highlighted = highlighted;
         self
     }
 
@@ -279,6 +286,10 @@ impl<'a> Slot for ItemSlot<'a> {
 
     fn selected(&self) -> bool {
         self.options.selected
+    }
+
+    fn highlighted(&self) -> bool {
+        self.options.highlighted
     }
 
     fn tooltip_on_hover(&self) -> bool {

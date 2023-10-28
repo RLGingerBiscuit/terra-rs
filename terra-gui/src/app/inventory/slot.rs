@@ -27,6 +27,7 @@ pub(super) trait Slot<W: Widget = Self> {
     fn scale(&self) -> Vec2;
     fn margin(&self) -> Margin;
     fn selected(&self) -> bool;
+    fn highlighted(&self) -> bool;
     fn tooltip_on_hover(&self) -> bool;
 }
 

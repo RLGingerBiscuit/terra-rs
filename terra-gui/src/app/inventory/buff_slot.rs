@@ -18,6 +18,7 @@ pub const SPRITE_SCALE: Vec2 = Vec2::splat(2.);
 pub struct BuffSlotOptions {
     pub id: i32,
     pub selected: bool,
+    pub highlighted: bool,
     pub tooltip_on_hover: bool,
     pub time: Option<i32>,
     pub texts: Vec<SlotText>,
@@ -29,6 +30,7 @@ impl BuffSlotOptions {
         Self {
             id: 0,
             selected: false,
+            highlighted: false,
             tooltip_on_hover: false,
             time: None,
             texts: Vec::new(),
@@ -56,6 +58,11 @@ impl BuffSlotOptions {
 
     pub fn selected(mut self, selected: bool) -> Self {
         self.selected = selected;
+        self
+    }
+
+    pub fn highlighted(mut self, highlighted: bool) -> Self {
+        self.highlighted = highlighted;
         self
     }
 
@@ -143,6 +150,10 @@ impl<'a> Slot for BuffSlot<'a> {
 
     fn selected(&self) -> bool {
         self.options.selected
+    }
+
+    fn highlighted(&self) -> bool {
+        self.options.highlighted
     }
 
     fn tooltip_on_hover(&self) -> bool {

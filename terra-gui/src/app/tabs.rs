@@ -732,20 +732,24 @@ impl App {
     }
 
     fn render_research_tab(&mut self, ui: &mut Ui) {
-        let player = self.player.write();
-        let entry_text = if player.research.len() == 1 {
-            "entry"
-        } else {
-            "entries"
-        };
+        let player = self.player.read();
 
-        ui.label(format!("{} research {}", player.research.len(), entry_text));
+        let mut label = format!("{} researched item", player.research.len());
+        if player.research.len() != 1 {
+            label += "s";
+        }
+
+        ui.label(label);
+
         ui.horizontal(|ui| {
             if ui.button("Clear all").clicked() {
                 self.do_update(Message::RemoveAllResearch);
             }
             if ui.button("Unlock all").clicked() {
                 self.do_update(Message::AddAllResearch);
+            }
+            if ui.button("\u{1f50e}").clicked() {
+                self.do_update(Message::OpenResearchBrowser);
             }
         });
     }

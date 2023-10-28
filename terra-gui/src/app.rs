@@ -64,14 +64,17 @@ pub enum Message {
     SelectLoadout(SelectedLoadout),
     SelectItem(SelectedItem),
     SelectBuff(SelectedBuff),
-    RemoveAllResearch,
     AddAllResearch,
+    RemoveAllResearch,
+    ToggleResearchItem(i32),
     OpenItemBrowser,
     CloseItemBrowser,
     OpenBuffBrowser,
     CloseBuffBrowser,
     OpenPrefixBrowser,
     ClosePrefixBrowser,
+    OpenResearchBrowser,
+    CloseResearchBrowser,
     SetCurrentItemId(i32),
     SetCurrentBuffId(i32),
     SetCurrentPrefixId(u8),
@@ -103,10 +106,12 @@ pub struct App {
 
     error: Option<anyhow::Error>,
     busy: Arc<RwLock<bool>>,
+
     show_about: bool,
     show_item_browser: bool,
     show_buff_browser: bool,
     show_prefix_browser: bool,
+    show_research_browser: bool,
 }
 
 impl App {
@@ -154,10 +159,12 @@ impl App {
 
             error: None,
             busy: Arc::new(RwLock::new(false)),
+
             show_about: false,
             show_item_browser: false,
             show_buff_browser: false,
             show_prefix_browser: false,
+            show_research_browser: false,
         }
     }
 
@@ -172,6 +179,7 @@ impl App {
             || self.show_item_browser
             || self.show_buff_browser
             || self.show_prefix_browser
+            || self.show_research_browser
     }
 
     fn do_task(&mut self, task: impl 'static + Send + Sync + FnOnce() -> anyhow::Result<Message>) {
@@ -320,10 +328,6 @@ impl App {
                 Message::SelectLoadout(selection) => self.selected_loadout = selection,
                 Message::SelectItem(selection) => self.selected_item = selection,
                 Message::SelectBuff(selection) => self.selected_buff = selection,
-                Message::RemoveAllResearch => {
-                    let mut player = self.player.write();
-                    player.research.clear();
-                }
                 Message::AddAllResearch => {
                     let mut player = self.player.write();
                     let item_meta = self.item_meta.read();
@@ -335,6 +339,29 @@ impl App {
                             player.research.push(ResearchItem {
                                 internal_name: item.internal_name.to_owned(),
                                 stack: item.sacrifices,
+                            });
+                        }
+                    }
+                }
+                Message::RemoveAllResearch => {
+                    let mut player = self.player.write();
+                    player.research.clear();
+                }
+                Message::ToggleResearchItem(id) => {
+                    let mut player = self.player.write();
+
+                    // TODO: Maybe add `id` onto ResearchItem?
+                    if let Some(meta) = self.item_meta.read().iter().filter(|i| i.id == id).next() {
+                        if let Some(index) = player
+                            .research
+                            .iter()
+                            .position(|i| i.internal_name == meta.internal_name)
+                        {
+                            player.research.remove(index);
+                        } else {
+                            player.research.push(ResearchItem {
+                                internal_name: meta.internal_name.to_owned(),
+                                stack: meta.sacrifices,
                             });
                         }
                     }
@@ -353,6 +380,11 @@ impl App {
                 Message::ClosePrefixBrowser => {
                     self.search_term.clear();
                     self.show_prefix_browser = false;
+                }
+                Message::OpenResearchBrowser => self.show_research_browser = true,
+                Message::CloseResearchBrowser => {
+                    self.search_term.clear();
+                    self.show_research_browser = false;
                 }
                 Message::SetCurrentItemId(id) => {
                     let player = &mut *self.player.write();
@@ -409,6 +441,7 @@ impl App {
                     self.show_item_browser = false;
                     self.show_buff_browser = false;
                     self.show_prefix_browser = false;
+                    self.show_research_browser = false;
                     self.search_term.clear();
                 }
             } else {
@@ -445,6 +478,7 @@ impl eframe::App for App {
         self.render_item_browser(ctx);
         self.render_buff_browser(ctx);
         self.render_prefix_browser(ctx);
+        self.render_research_browser(ctx);
 
         let layer_id = LayerId::background();
         let max_rect = ctx.available_rect();

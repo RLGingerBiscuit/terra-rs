@@ -37,6 +37,7 @@ pub enum ItemGroup {
     VanityAccessories,
     AccessoryDyes,
     ItemBrowser,
+    ResearchBrowser,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -81,8 +82,8 @@ pub fn selected_item(
         ItemGroup::VanityAccessories => &mut player.loadouts[loadout.0].vanity_accessories[item.1],
         ItemGroup::Accessories => &mut player.loadouts[loadout.0].accessories[item.1],
         ItemGroup::AccessoryDyes => &mut player.loadouts[loadout.0].accessory_dyes[item.1],
-        ItemGroup::ItemBrowser => {
-            panic!("You should never try to get the selected item of an item browser")
+        ItemGroup::ResearchBrowser | ItemGroup::ItemBrowser => {
+            panic!("You should never try to get the selected item of a browser")
         }
     }
 }
@@ -116,6 +117,8 @@ impl App {
     {
         let group = if slot.selected() {
             ClickableFrame::group(ui.style()).fill(ui.visuals().code_bg_color)
+        } else if slot.highlighted() {
+            ClickableFrame::group(ui.style()).fill(ui.visuals().faint_bg_color)
         } else {
             ClickableFrame::group(ui.style())
         }
