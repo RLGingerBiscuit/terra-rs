@@ -68,8 +68,7 @@ pub trait TerraReadExt: io::Read {
     fn read_lpstring(&mut self) -> IOResult<String> {
         let length = self.read_uleb128_usize()?;
 
-        let mut buf = Vec::new();
-        buf.resize(length, 0);
+        let mut buf = vec![0; length];
 
         let mut read = self.read(&mut buf)?;
 

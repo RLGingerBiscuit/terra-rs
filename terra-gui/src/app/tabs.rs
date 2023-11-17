@@ -546,7 +546,7 @@ impl App {
                 .num_columns(9)
                 .show(ui, |ui| {
                     let current_loadout = &player.loadouts[self.selected_loadout.0];
-                    let font_id = TextStyle::Body.resolve(&ui.style());
+                    let font_id = TextStyle::Body.resolve(ui.style());
                     let text_color = ui.visuals().text_color();
 
                     for i in 0..5 {

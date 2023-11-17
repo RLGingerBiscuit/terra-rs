@@ -251,7 +251,7 @@ impl<'a> Widget for ItemSlot<'a> {
         }
 
         if let Some(stack) = self.options.stack {
-            let font_id = TextStyle::Body.resolve(&ui.style());
+            let font_id = TextStyle::Body.resolve(ui.style());
             let text_color = ui.visuals().text_color();
             let text = SlotText::new(Align2::RIGHT_BOTTOM, stack.to_string(), font_id, text_color);
             self.options.texts.push(text);

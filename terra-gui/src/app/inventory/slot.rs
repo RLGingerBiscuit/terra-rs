@@ -33,7 +33,6 @@ pub(super) trait Slot<W: Widget = Self> {
 
 pub(super) fn paint_texts(ui: &mut Ui, rect: Rect, texts: &[SlotText]) {
     let painter = ui.painter();
-    let rect = rect;
 
     for text in texts.iter() {
         let pos = match text.alignment.0 {

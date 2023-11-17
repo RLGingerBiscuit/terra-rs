@@ -351,7 +351,7 @@ impl App {
                     let mut player = self.player.write();
 
                     // TODO: Maybe add `id` onto ResearchItem?
-                    if let Some(meta) = self.item_meta.read().iter().filter(|i| i.id == id).next() {
+                    if let Some(meta) = self.item_meta.read().iter().find(|i| i.id == id) {
                         if let Some(index) = player
                             .research
                             .iter()
