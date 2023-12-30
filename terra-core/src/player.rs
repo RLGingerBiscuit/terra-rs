@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::{ErrorKind, Read, Write},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use aesstream::{AesReader, AesWriter};
@@ -21,20 +21,20 @@ use crate::{
 
 #[derive(thiserror::Error, Debug)]
 pub enum PlayerError {
-    #[error("Unknown error with file '{0}.")]
-    Failure(PathBuf),
-    #[error("The file '{0}' cannot be read by the user.")]
-    AccessDenied(PathBuf),
-    #[error("The file '{0}' was not found.")]
-    FileNotFound(PathBuf),
-    #[error("The file '{0}' is for a newer version of Terraria ({1}) than terra-rs supports (<= {CURRENT_VERSION}).")]
-    PostDated(PathBuf, i32),
-    #[error("The file '{0}' is corrupted.")]
-    Corrupted(PathBuf),
-    #[error("Expected Re-Logic file format in '{0}'.")]
-    IncorrectFormat(PathBuf),
-    #[error("Found incorrect file type in '{0}'.")]
-    IncorrectFileType(PathBuf),
+    #[error("Unknown error with file .")]
+    Failure,
+    #[error("The file cannot be read by the user.")]
+    AccessDenied,
+    #[error("The file was not found.")]
+    FileNotFound,
+    #[error("The file is for a newer version of Terraria ({0}) than terra-rs supports (<= {CURRENT_VERSION}).")]
+    PostDated(i32),
+    #[error("The file is corrupted.")]
+    Corrupted,
+    #[error("Expected Re-Logic file format.")]
+    IncorrectFormat,
+    #[error("Found incorrect file type.")]
+    IncorrectFileType,
 }
 
 #[derive(Debug, Clone)]
@@ -255,51 +255,42 @@ impl Default for Player {
     }
 }
 
+fn map_io_error(e: std::io::Error) -> PlayerError {
+    match e.kind() {
+        ErrorKind::NotFound => PlayerError::FileNotFound,
+        ErrorKind::PermissionDenied => PlayerError::AccessDenied,
+        _ => PlayerError::Failure,
+    }
+}
+
 fn open_file(filepath: &Path) -> Result<File, PlayerError> {
-    File::open(filepath).map_err(|e| match e.kind() {
-        ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
-        ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath.to_path_buf()),
-        _ => PlayerError::Failure(filepath.to_path_buf()),
-    })
+    File::open(filepath).map_err(map_io_error)
 }
 
 fn create_file(filepath: &Path) -> Result<File, PlayerError> {
-    File::create(filepath).map_err(|e| match e.kind() {
-        ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
-        ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath.to_path_buf()),
-        _ => PlayerError::Failure(filepath.to_path_buf()),
-    })
+    File::create(filepath).map_err(map_io_error)
 }
 
-fn decryptor_reader<R: Read>(
-    filepath: &Path,
-    reader: R,
-) -> Result<AesReader<AesSafe128Decryptor, R>, PlayerError> {
+fn decryptor_reader<R: Read>(reader: R) -> Result<AesReader<AesSafe128Decryptor, R>, PlayerError> {
     let dec = AesSafe128Decryptor::new(ENCRYPTION_BYTES);
-    AesReader::new_with_iv(reader, dec, ENCRYPTION_BYTES)
-        .map_err(|_| PlayerError::Failure(filepath.to_path_buf()))
+    AesReader::new_with_iv(reader, dec, ENCRYPTION_BYTES).map_err(|_| PlayerError::Failure)
 }
 
-fn encryptor_writer<W: Write>(
-    filepath: &Path,
-    writer: W,
-) -> Result<AesWriter<AesSafe128Encryptor, W>, PlayerError> {
+fn encryptor_writer<W: Write>(writer: W) -> Result<AesWriter<AesSafe128Encryptor, W>, PlayerError> {
     let enc = AesSafe128Encryptor::new(ENCRYPTION_BYTES);
-    AesWriter::new_with_iv(writer, enc, ENCRYPTION_BYTES)
-        .map_err(|_| PlayerError::Failure(filepath.to_path_buf()))
+    AesWriter::new_with_iv(writer, enc, ENCRYPTION_BYTES).map_err(|_| PlayerError::Failure)
 }
 
 impl Player {
     fn load_from_reader(
         &mut self,
         item_meta: &[ItemMeta],
-        filepath: &Path,
         reader: &mut dyn Read,
     ) -> anyhow::Result<()> {
         self.version = reader.read_i32::<LE>()?;
 
         if self.version > CURRENT_VERSION {
-            return Err(PlayerError::PostDated(filepath.to_path_buf(), self.version).into());
+            return Err(PlayerError::PostDated(self.version).into());
         }
 
         if self.version >= 135 {
@@ -308,11 +299,11 @@ impl Player {
 
             // Both MAGIC_MASK and MAGIC_NUMBER were taken directly from Terraria's exe
             if magic_num & MAGIC_MASK != MAGIC_NUMBER {
-                return Err(PlayerError::IncorrectFormat(filepath.to_path_buf()).into());
+                return Err(PlayerError::IncorrectFormat.into());
             }
 
             if ((magic_num >> 56) as u8) != FileType::Player {
-                return Err(PlayerError::IncorrectFileType(filepath.to_path_buf()).into());
+                return Err(PlayerError::IncorrectFileType.into());
             }
 
             // This u32 is a 'revision' field, that is only used for type 1 files (Map)
@@ -681,8 +672,8 @@ impl Player {
 
     pub fn load(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
         let file = open_file(filepath)?;
-        let mut reader = decryptor_reader(filepath, file)?;
-        self.load_from_reader(item_meta, filepath, &mut reader)
+        let mut reader = decryptor_reader(file)?;
+        self.load_from_reader(item_meta, &mut reader)
     }
 
     pub fn load_decrypted(
@@ -691,7 +682,7 @@ impl Player {
         filepath: &Path,
     ) -> anyhow::Result<()> {
         let mut file = open_file(filepath)?;
-        self.load_from_reader(item_meta, filepath, &mut file)
+        self.load_from_reader(item_meta, &mut file)
     }
 
     fn save_to_writer(&self, item_meta: &[ItemMeta], writer: &mut dyn Write) -> anyhow::Result<()> {
@@ -1032,7 +1023,7 @@ impl Player {
 
     pub fn save(&self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
         let file = create_file(filepath)?;
-        let mut writer = encryptor_writer(filepath, file)?;
+        let mut writer = encryptor_writer(file)?;
         self.save_to_writer(item_meta, &mut writer)
     }
 
@@ -1044,7 +1035,7 @@ impl Player {
     pub fn decrypt_file(original_filepath: &Path, decrypted_filepath: &Path) -> anyhow::Result<()> {
         let original_file = File::open(original_filepath)?;
         let mut decrypted_file = File::create(decrypted_filepath)?;
-        let mut reader = decryptor_reader(original_filepath, original_file)?;
+        let mut reader = decryptor_reader(original_file)?;
         std::io::copy(&mut reader, &mut decrypted_file)?;
         Ok(())
     }
