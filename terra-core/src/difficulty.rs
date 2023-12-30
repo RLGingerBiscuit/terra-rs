@@ -1,11 +1,9 @@
 use std::fmt::Display;
 
-use serde_repr::{Deserialize_repr, Serialize_repr};
-
 #[repr(u8)]
-#[derive(
-    Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize_repr, Deserialize_repr,
-)]
+#[derive(Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum Difficulty {
     #[default]
     Classic = 0,

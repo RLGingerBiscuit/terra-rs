@@ -3,10 +3,10 @@
 
 use std::ops::Shl;
 
-use serde_repr::{Deserialize_repr, Serialize_repr};
-
 #[repr(u8)]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize_repr, Deserialize_repr)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum FileType {
     Map = 1,
     World = 2,

@@ -8,7 +8,6 @@ use aesstream::{AesReader, AesWriter};
 use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 use crypto::aessafe::{AesSafe128Decryptor, AesSafe128Encryptor};
-use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
 use crate::{
@@ -39,7 +38,9 @@ pub enum PlayerError {
     IncorrectFileType(PathBuf),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct Player {
     pub version: i32,
     pub revision: u32,

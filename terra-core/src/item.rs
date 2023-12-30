@@ -4,14 +4,14 @@ mod item_data;
 mod item_meta;
 mod research_item;
 
-use serde_repr::{Deserialize_repr, Serialize_repr};
-
 pub use item_data::{Item, ItemError};
 pub use item_meta::{ItemMeta, ItemType};
 pub use research_item::ResearchItem;
 
 #[repr(i32)]
-#[derive(Default, Clone, Debug, Serialize_repr, Deserialize_repr)]
+#[derive(Default, Clone, Debug)]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum ItemRarity {
     Gray = -1,
     #[default]

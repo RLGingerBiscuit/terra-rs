@@ -2,14 +2,15 @@ use std::io::{Read, Write};
 
 use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt};
-use serde::{Deserialize, Serialize};
 
 use crate::{
     ext::{TerraReadExt, TerraWriteExt},
     utils, BoolByte, Item, ItemMeta, ACCESSORY_COUNT, ARMOR_COUNT, HIDDEN_VISUAL_COUNT,
 };
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct Loadout {
     pub hide_visual: [bool; HIDDEN_VISUAL_COUNT],
 

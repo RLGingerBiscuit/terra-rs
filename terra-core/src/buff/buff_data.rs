@@ -2,9 +2,10 @@ use std::io::{Read, Write};
 
 use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
-use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug)]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct Buff {
     pub id: i32,
     pub time: i32,

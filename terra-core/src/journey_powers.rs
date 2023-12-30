@@ -2,15 +2,15 @@ use std::io::{Read, Write};
 
 use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
-use serde::{Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use crate::{
     ext::{TerraReadExt, TerraWriteExt},
     Difficulty,
 };
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct JourneyPowers {
     pub godmode: bool,
     pub far_placement: bool,
@@ -18,7 +18,9 @@ pub struct JourneyPowers {
 }
 
 #[repr(u16)]
-#[derive(Clone, Debug, Serialize_repr, Deserialize_repr)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "deserialize", derive(serde_repr::Deserialize_repr))]
+#[cfg_attr(feature = "serialize", derive(serde_repr::Serialize_repr))]
 pub enum JourneyPowerId {
     Godmode = 5,
     FarPlacement = 11,

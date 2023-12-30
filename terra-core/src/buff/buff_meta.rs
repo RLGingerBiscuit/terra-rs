@@ -1,11 +1,12 @@
 use std::{fs::File, io::BufReader};
 
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
 
 use crate::{meta::Meta, BuffType};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct BuffMeta {
     pub id: i32,
     pub name: String,

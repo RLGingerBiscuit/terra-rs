@@ -1,11 +1,12 @@
 use std::{fs::File, io::BufReader};
 
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
 
 use crate::meta::Meta;
 
-#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug)]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct PrefixMeta {
     pub id: u8,
     pub name: String,

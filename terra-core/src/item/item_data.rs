@@ -2,7 +2,6 @@ use std::io::{Read, Write};
 
 use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
-use serde::{Deserialize, Serialize};
 
 use crate::{
     ext::{TerraReadExt, TerraWriteExt},
@@ -16,7 +15,9 @@ pub enum ItemError {
     OnlyIdOrInternalName,
 }
 
-#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug)]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct Item {
     pub id: i32,
     pub stack: i32,
