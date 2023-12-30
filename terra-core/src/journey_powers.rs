@@ -1,6 +1,5 @@
 use std::io::{Read, Write};
 
-use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 
 use crate::{
@@ -61,7 +60,7 @@ impl Default for JourneyPowers {
 }
 
 impl JourneyPowers {
-    pub fn load(&mut self, reader: &mut dyn Read) -> Result<()> {
+    pub fn load(&mut self, reader: &mut dyn Read) -> anyhow::Result<()> {
         while reader.read_bool()? {
             match JourneyPowerId::from(reader.read_u16::<LE>()?) {
                 JourneyPowerId::Godmode => self.godmode = reader.read_bool()?,
@@ -74,7 +73,7 @@ impl JourneyPowers {
         Ok(())
     }
 
-    pub fn save(&self, writer: &mut dyn Write, difficulty: &Difficulty) -> Result<()> {
+    pub fn save(&self, writer: &mut dyn Write, difficulty: &Difficulty) -> anyhow::Result<()> {
         if difficulty == &Difficulty::Journey {
             writer.write_bool(true)?;
             writer.write_u16::<LE>(u16::from(JourneyPowerId::Godmode))?;

@@ -1,5 +1,3 @@
-use anyhow::Result;
-
 pub trait Meta {
     type Id: PartialOrd;
 
@@ -7,7 +5,7 @@ pub trait Meta {
     fn name(&self) -> &str;
     fn internal_name(&self) -> &str;
 
-    fn load() -> Result<Vec<Self>>
+    fn load() -> anyhow::Result<Vec<Self>>
     where
         Self: Sized;
 

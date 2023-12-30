@@ -1,6 +1,5 @@
 use std::io::{Read, Write};
 
-use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
 #[derive(Clone, Default, Debug)]
@@ -11,19 +10,19 @@ pub struct Prefix {
 }
 
 impl Prefix {
-    pub fn load(&mut self, reader: &mut dyn Read) -> Result<()> {
+    pub fn load(&mut self, reader: &mut dyn Read) -> anyhow::Result<()> {
         self.id = reader.read_u8()?;
 
         Ok(())
     }
 
-    pub fn skip(reader: &mut dyn Read) -> Result<()> {
+    pub fn skip(reader: &mut dyn Read) -> anyhow::Result<()> {
         let _ = reader.read_u8()?;
 
         Ok(())
     }
 
-    pub fn save(&self, writer: &mut dyn Write) -> Result<()> {
+    pub fn save(&self, writer: &mut dyn Write) -> anyhow::Result<()> {
         writer.write_u8(self.id)?;
 
         Ok(())

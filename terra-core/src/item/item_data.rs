@@ -1,6 +1,5 @@
 use std::io::{Read, Write};
 
-use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 
 use crate::{
@@ -111,7 +110,7 @@ impl Item {
         stack: bool,
         prefix: bool,
         favourited: bool,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         if !id && !internal_name || id && internal_name {
             return Err(ItemError::OnlyIdOrInternalName.into());
         }
@@ -149,7 +148,7 @@ impl Item {
         item_meta: &[ItemMeta],
         version: i32,
         stack: bool,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         let legacy_name = reader.read_lpstring()?;
         let name = Self::legacy_lookup(version, &legacy_name);
 
@@ -177,7 +176,7 @@ impl Item {
         stack: bool,
         prefix: bool,
         favourited: bool,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         if !id && !internal_name || id && internal_name {
             return Err(ItemError::OnlyIdOrInternalName.into());
         }
@@ -201,7 +200,7 @@ impl Item {
         Ok(())
     }
 
-    pub fn skip_legacy_name(reader: &mut dyn Read, stack: bool) -> Result<()> {
+    pub fn skip_legacy_name(reader: &mut dyn Read, stack: bool) -> anyhow::Result<()> {
         let _ = reader.read_lpstring()?;
 
         if stack {
@@ -220,7 +219,7 @@ impl Item {
         stack: bool,
         prefix: bool,
         favourited: bool,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         if !id && !internal_name || id && internal_name {
             return Err(ItemError::OnlyIdOrInternalName.into());
         }
@@ -254,7 +253,7 @@ impl Item {
         item_meta: &[ItemMeta],
         version: i32,
         stack: bool,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         if let Some(item) = ItemMeta::get(item_meta, self.id) {
             let name = Self::reverse_legacy_lookup(version, &item.name);
             writer.write_lpstring(name)?;

@@ -1,7 +1,5 @@
 use std::{fs::File, io::BufReader};
 
-use anyhow::Result;
-
 use crate::{meta::Meta, BuffType};
 
 #[derive(Clone, Debug)]
@@ -32,7 +30,7 @@ impl Meta for BuffMeta {
         &self.internal_name
     }
 
-    fn load() -> Result<Vec<Self>>
+    fn load() -> anyhow::Result<Vec<Self>>
     where
         Self: Sized,
     {

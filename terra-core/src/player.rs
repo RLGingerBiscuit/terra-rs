@@ -5,7 +5,6 @@ use std::{
 };
 
 use aesstream::{AesReader, AesWriter};
-use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 use crypto::aessafe::{AesSafe128Decryptor, AesSafe128Encryptor};
 use serde_big_array::BigArray;
@@ -262,7 +261,7 @@ impl Player {
         item_meta: &[ItemMeta],
         filepath: &Path,
         reader: &mut dyn Read,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         self.version = reader.read_i32::<LE>()?;
 
         if self.version > CURRENT_VERSION {
@@ -646,7 +645,7 @@ impl Player {
         Ok(())
     }
 
-    pub fn load(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> Result<()> {
+    pub fn load(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
         let file = match File::open(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -670,7 +669,7 @@ impl Player {
         self._load(item_meta, filepath, &mut reader)
     }
 
-    pub fn load_decrypted(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> Result<()> {
+    pub fn load_decrypted(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
         let mut file = match File::open(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -688,7 +687,7 @@ impl Player {
         self._load(item_meta, filepath, &mut file)
     }
 
-    fn _save(&self, item_meta: &[ItemMeta], writer: &mut dyn Write) -> Result<()> {
+    fn _save(&self, item_meta: &[ItemMeta], writer: &mut dyn Write) -> anyhow::Result<()> {
         writer.write_i32::<LE>(self.version)?;
 
         if self.version >= 135 {
@@ -1024,7 +1023,7 @@ impl Player {
         Ok(())
     }
 
-    pub fn save(&self, item_meta: &[ItemMeta], filepath: &Path) -> Result<()> {
+    pub fn save(&self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
         let file = match File::create(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -1048,7 +1047,7 @@ impl Player {
         self._save(item_meta, &mut writer)
     }
 
-    pub fn save_decrypted(&self, item_meta: &[ItemMeta], filepath: &Path) -> Result<()> {
+    pub fn save_decrypted(&self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
         let mut file = match File::create(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -1066,7 +1065,7 @@ impl Player {
         self._save(item_meta, &mut file)
     }
 
-    pub fn decrypt_file(original_filepath: &Path, decrypted_filepath: &Path) -> Result<()> {
+    pub fn decrypt_file(original_filepath: &Path, decrypted_filepath: &Path) -> anyhow::Result<()> {
         let original_file = File::open(original_filepath)?;
         let mut decrypted_file = File::create(decrypted_filepath)?;
 

@@ -3,7 +3,6 @@
 
 use std::{fs::File, io::BufReader};
 
-use anyhow::Result;
 use serde_with::skip_serializing_none;
 
 use crate::{meta::Meta, ItemRarity};
@@ -86,7 +85,7 @@ impl Meta for ItemMeta {
         &self.internal_name
     }
 
-    fn load() -> Result<Vec<Self>>
+    fn load() -> anyhow::Result<Vec<Self>>
     where
         Self: Sized,
     {

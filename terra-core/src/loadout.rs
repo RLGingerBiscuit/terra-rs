@@ -1,6 +1,5 @@
 use std::io::{Read, Write};
 
-use anyhow::Result;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
 use crate::{
@@ -47,7 +46,7 @@ impl Loadout {
         version: i32,
         stack: bool,
         prefix: bool,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         let accessory_count = if version >= 124 { 7 } else { 5 };
 
         for armor in self.armor.iter_mut() {
@@ -104,7 +103,7 @@ impl Loadout {
         reader: &mut dyn Read,
         version: i32,
         use_boolbyte: bool,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         if use_boolbyte {
             let mut bb = BoolByte::from(reader.read_u8()?);
 
@@ -129,7 +128,7 @@ impl Loadout {
         Ok(())
     }
 
-    pub fn skip(reader: &mut dyn Read, version: i32, stack: bool, prefix: bool) -> Result<()> {
+    pub fn skip(reader: &mut dyn Read, version: i32, stack: bool, prefix: bool) -> anyhow::Result<()> {
         let accessory_count = if version >= 124 { 7 } else { 5 };
 
         for _ in 0..ARMOR_COUNT {
@@ -180,7 +179,7 @@ impl Loadout {
         Ok(())
     }
 
-    pub fn skip_visuals(reader: &mut dyn Read, version: i32, use_boolbyte: bool) -> Result<()> {
+    pub fn skip_visuals(reader: &mut dyn Read, version: i32, use_boolbyte: bool) -> anyhow::Result<()> {
         if use_boolbyte {
             let _ = BoolByte::from(reader.read_u8()?);
             if version >= 124 {
@@ -203,7 +202,7 @@ impl Loadout {
         version: i32,
         stack: bool,
         prefix: bool,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         let accessory_count = if version >= 124 { 7 } else { 5 };
 
         for armor in self.armor.iter() {
@@ -260,7 +259,7 @@ impl Loadout {
         writer: &mut dyn Write,
         version: i32,
         use_boolbyte: bool,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         if use_boolbyte {
             let mut bb = BoolByte::default();
 

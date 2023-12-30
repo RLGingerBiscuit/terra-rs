@@ -271,7 +271,7 @@ impl AsTicks for chrono::Duration {
     }
 }
 
-pub fn from_hex(hex: &str) -> Result<Color, ParseIntError> {
+pub fn from_hex(hex: &str) -> anyhow::Result<Color, ParseIntError> {
     let start = if hex.starts_with('#') { 1 } else { 0 };
     let r = u8::from_str_radix(&hex[start..(start + 2)], 16)?;
     let g = u8::from_str_radix(&hex[(start + 2)..(start + 4)], 16)?;

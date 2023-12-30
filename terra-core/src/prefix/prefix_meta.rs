@@ -1,7 +1,5 @@
 use std::{fs::File, io::BufReader};
 
-use anyhow::Result;
-
 use crate::meta::Meta;
 
 #[derive(Clone, Default, Debug)]
@@ -28,7 +26,7 @@ impl Meta for PrefixMeta {
         &self.internal_name
     }
 
-    fn load() -> Result<Vec<Self>> {
+    fn load() -> anyhow::Result<Vec<Self>> {
         let file = File::open(
             std::env::current_exe()?
                 .parent()

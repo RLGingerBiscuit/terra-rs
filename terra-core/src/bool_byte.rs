@@ -36,7 +36,7 @@ impl From<&BoolByte> for u8 {
 }
 
 impl BoolByte {
-    fn check_index(&self, index: u8) -> Result<(), BoolByteError> {
+    fn check_index(&self, index: u8) -> anyhow::Result<(), BoolByteError> {
         if index >= 8 {
             Err(BoolByteError::InvalidIndex(index))
         } else {
@@ -52,24 +52,24 @@ impl BoolByte {
         self.value = u8::MAX
     }
 
-    pub fn get(&self, index: u8) -> Result<bool, BoolByteError> {
+    pub fn get(&self, index: u8) -> anyhow::Result<bool, BoolByteError> {
         self.check_index(index)?;
         Ok(self.value & (1 << index) != 0)
     }
 
-    pub fn on(&mut self, index: u8) -> Result<(), BoolByteError> {
+    pub fn on(&mut self, index: u8) -> anyhow::Result<(), BoolByteError> {
         self.check_index(index)?;
         self.value |= 1 << index;
         Ok(())
     }
 
-    pub fn off(&mut self, index: u8) -> Result<(), BoolByteError> {
+    pub fn off(&mut self, index: u8) -> anyhow::Result<(), BoolByteError> {
         self.check_index(index)?;
         self.value &= (1 << index).swap_bits();
         Ok(())
     }
 
-    pub fn set(&mut self, index: u8, value: bool) -> Result<(), BoolByteError> {
+    pub fn set(&mut self, index: u8, value: bool) -> anyhow::Result<(), BoolByteError> {
         if value {
             self.on(index)
         } else {
@@ -77,7 +77,7 @@ impl BoolByte {
         }
     }
 
-    pub fn toggle(&mut self, index: u8) -> Result<(), BoolByteError> {
+    pub fn toggle(&mut self, index: u8) -> anyhow::Result<(), BoolByteError> {
         if self.get(index)? {
             self.off(index)
         } else {
