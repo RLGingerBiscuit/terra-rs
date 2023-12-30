@@ -255,8 +255,42 @@ impl Default for Player {
     }
 }
 
+fn open_file(filepath: &Path) -> Result<File, PlayerError> {
+    File::open(filepath).map_err(|e| match e.kind() {
+        ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
+        ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath.to_path_buf()),
+        _ => PlayerError::Failure(filepath.to_path_buf()),
+    })
+}
+
+fn create_file(filepath: &Path) -> Result<File, PlayerError> {
+    File::create(filepath).map_err(|e| match e.kind() {
+        ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
+        ErrorKind::PermissionDenied => PlayerError::AccessDenied(filepath.to_path_buf()),
+        _ => PlayerError::Failure(filepath.to_path_buf()),
+    })
+}
+
+fn decryptor_reader<R: Read>(
+    filepath: &Path,
+    reader: R,
+) -> Result<AesReader<AesSafe128Decryptor, R>, PlayerError> {
+    let dec = AesSafe128Decryptor::new(ENCRYPTION_BYTES);
+    AesReader::new_with_iv(reader, dec, ENCRYPTION_BYTES)
+        .map_err(|_| PlayerError::Failure(filepath.to_path_buf()))
+}
+
+fn encryptor_writer<W: Write>(
+    filepath: &Path,
+    writer: W,
+) -> Result<AesWriter<AesSafe128Encryptor, W>, PlayerError> {
+    let enc = AesSafe128Encryptor::new(ENCRYPTION_BYTES);
+    AesWriter::new_with_iv(writer, enc, ENCRYPTION_BYTES)
+        .map_err(|_| PlayerError::Failure(filepath.to_path_buf()))
+}
+
 impl Player {
-    fn _load(
+    fn load_from_reader(
         &mut self,
         item_meta: &[ItemMeta],
         filepath: &Path,
@@ -646,27 +680,9 @@ impl Player {
     }
 
     pub fn load(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
-        let file = match File::open(filepath) {
-            Ok(f) => f,
-            Err(e) => {
-                return Err(match e.kind() {
-                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
-                    ErrorKind::PermissionDenied => {
-                        PlayerError::AccessDenied(filepath.to_path_buf())
-                    }
-                    _ => PlayerError::Failure(filepath.to_path_buf()),
-                }
-                .into())
-            }
-        };
-
-        let decryptor = AesSafe128Decryptor::new(ENCRYPTION_BYTES);
-        let mut reader = match AesReader::new_with_iv(file, decryptor, ENCRYPTION_BYTES) {
-            Ok(r) => r,
-            Err(_) => return Err(PlayerError::Failure(filepath.to_path_buf()).into()),
-        };
-
-        self._load(item_meta, filepath, &mut reader)
+        let file = open_file(filepath)?;
+        let mut reader = decryptor_reader(filepath, file)?;
+        self.load_from_reader(item_meta, filepath, &mut reader)
     }
 
     pub fn load_decrypted(
@@ -674,24 +690,11 @@ impl Player {
         item_meta: &[ItemMeta],
         filepath: &Path,
     ) -> anyhow::Result<()> {
-        let mut file = match File::open(filepath) {
-            Ok(f) => f,
-            Err(e) => {
-                return Err(match e.kind() {
-                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
-                    ErrorKind::PermissionDenied => {
-                        PlayerError::AccessDenied(filepath.to_path_buf())
-                    }
-                    _ => PlayerError::Failure(filepath.to_path_buf()),
-                }
-                .into())
-            }
-        };
-
-        self._load(item_meta, filepath, &mut file)
+        let mut file = open_file(filepath)?;
+        self.load_from_reader(item_meta, filepath, &mut file)
     }
 
-    fn _save(&self, item_meta: &[ItemMeta], writer: &mut dyn Write) -> anyhow::Result<()> {
+    fn save_to_writer(&self, item_meta: &[ItemMeta], writer: &mut dyn Write) -> anyhow::Result<()> {
         writer.write_i32::<LE>(self.version)?;
 
         if self.version >= 135 {
@@ -1028,56 +1031,21 @@ impl Player {
     }
 
     pub fn save(&self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
-        let file = match File::create(filepath) {
-            Ok(f) => f,
-            Err(e) => {
-                return Err(match e.kind() {
-                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
-                    ErrorKind::PermissionDenied => {
-                        PlayerError::AccessDenied(filepath.to_path_buf())
-                    }
-                    _ => PlayerError::Failure(filepath.to_path_buf()),
-                }
-                .into())
-            }
-        };
-
-        let encryptor = AesSafe128Encryptor::new(ENCRYPTION_BYTES);
-        let mut writer = match AesWriter::new_with_iv(file, encryptor, ENCRYPTION_BYTES) {
-            Ok(r) => r,
-            Err(_) => return Err(PlayerError::Failure(filepath.to_path_buf()).into()),
-        };
-
-        self._save(item_meta, &mut writer)
+        let file = create_file(filepath)?;
+        let mut writer = encryptor_writer(filepath, file)?;
+        self.save_to_writer(item_meta, &mut writer)
     }
 
     pub fn save_decrypted(&self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
-        let mut file = match File::create(filepath) {
-            Ok(f) => f,
-            Err(e) => {
-                return Err(match e.kind() {
-                    ErrorKind::NotFound => PlayerError::FileNotFound(filepath.to_path_buf()),
-                    ErrorKind::PermissionDenied => {
-                        PlayerError::AccessDenied(filepath.to_path_buf())
-                    }
-                    _ => PlayerError::Failure(filepath.to_path_buf()),
-                }
-                .into())
-            }
-        };
-
-        self._save(item_meta, &mut file)
+        let mut file = create_file(filepath)?;
+        self.save_to_writer(item_meta, &mut file)
     }
 
     pub fn decrypt_file(original_filepath: &Path, decrypted_filepath: &Path) -> anyhow::Result<()> {
         let original_file = File::open(original_filepath)?;
         let mut decrypted_file = File::create(decrypted_filepath)?;
-
-        let decryptor = AesSafe128Decryptor::new(ENCRYPTION_BYTES);
-        let mut reader = AesReader::new_with_iv(original_file, decryptor, ENCRYPTION_BYTES)?;
-
+        let mut reader = decryptor_reader(original_filepath, original_file)?;
         std::io::copy(&mut reader, &mut decrypted_file)?;
-
         Ok(())
     }
 
