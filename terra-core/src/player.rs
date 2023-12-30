@@ -669,7 +669,11 @@ impl Player {
         self._load(item_meta, filepath, &mut reader)
     }
 
-    pub fn load_decrypted(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
+    pub fn load_decrypted(
+        &mut self,
+        item_meta: &[ItemMeta],
+        filepath: &Path,
+    ) -> anyhow::Result<()> {
         let mut file = match File::open(filepath) {
             Ok(f) => f,
             Err(e) => {
@@ -700,7 +704,7 @@ impl Player {
 
         if self.version >= 10 {
             if self.version >= 17 {
-                writer.write_u8(self.difficulty.clone().into())?;
+                writer.write_u8(self.difficulty.into())?;
             } else {
                 writer.write_bool(self.difficulty == Difficulty::Hardcore)?;
             }

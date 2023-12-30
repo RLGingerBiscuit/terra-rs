@@ -7,7 +7,7 @@ pub use buff_data::Buff;
 pub use buff_meta::BuffMeta;
 
 #[repr(u8)]
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum BuffType {

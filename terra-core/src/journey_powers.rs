@@ -7,7 +7,7 @@ use crate::{
     Difficulty,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct JourneyPowers {
@@ -17,7 +17,7 @@ pub struct JourneyPowers {
 }
 
 #[repr(u16)]
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "deserialize", derive(serde_repr::Deserialize_repr))]
 #[cfg_attr(feature = "serialize", derive(serde_repr::Serialize_repr))]
 pub enum JourneyPowerId {

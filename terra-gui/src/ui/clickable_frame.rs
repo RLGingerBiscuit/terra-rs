@@ -6,7 +6,7 @@ use egui::{
     Stroke, Style, Ui,
 };
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
 #[must_use = "You should call .show()"]
 #[allow(dead_code)]
 pub struct ClickableFrame {

@@ -6,7 +6,7 @@ pub enum BoolByteError {
     InvalidIndex(u8),
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct BoolByte {
     value: u8,
 }

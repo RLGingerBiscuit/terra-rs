@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 #[repr(u8)]
-#[derive(Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum Difficulty {
@@ -14,8 +14,8 @@ pub enum Difficulty {
 }
 
 impl From<u8> for Difficulty {
-    fn from(u: u8) -> Self {
-        match u {
+    fn from(value: u8) -> Self {
+        match value {
             0 => Difficulty::Classic,
             1 => Difficulty::Mediumcore,
             2 => Difficulty::Hardcore,
@@ -25,9 +25,15 @@ impl From<u8> for Difficulty {
     }
 }
 
+impl From<&u8> for Difficulty {
+    fn from(value: &u8) -> Self {
+        Difficulty::from(*value)
+    }
+}
+
 impl From<Difficulty> for u8 {
-    fn from(d: Difficulty) -> Self {
-        match d {
+    fn from(value: Difficulty) -> Self {
+        match value {
             Difficulty::Classic => 0,
             Difficulty::Mediumcore => 1,
             Difficulty::Hardcore => 2,
@@ -37,15 +43,21 @@ impl From<Difficulty> for u8 {
     }
 }
 
+impl From<&Difficulty> for u8 {
+    fn from(value: &Difficulty) -> Self {
+        u8::from(*value)
+    }
+}
+
 impl PartialEq<u8> for Difficulty {
     fn eq(&self, other: &u8) -> bool {
-        &u8::from(self.clone()) == other
+        u8::from(self) == *other
     }
 }
 
 impl PartialEq<Difficulty> for u8 {
     fn eq(&self, other: &Difficulty) -> bool {
-        self == &u8::from(other.clone())
+        *self == u8::from(other)
     }
 }
 

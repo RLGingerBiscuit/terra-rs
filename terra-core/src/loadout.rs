@@ -7,7 +7,7 @@ use crate::{
     utils, BoolByte, Item, ItemMeta, ACCESSORY_COUNT, ARMOR_COUNT, HIDDEN_VISUAL_COUNT,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct Loadout {
@@ -128,7 +128,12 @@ impl Loadout {
         Ok(())
     }
 
-    pub fn skip(reader: &mut dyn Read, version: i32, stack: bool, prefix: bool) -> anyhow::Result<()> {
+    pub fn skip(
+        reader: &mut dyn Read,
+        version: i32,
+        stack: bool,
+        prefix: bool,
+    ) -> anyhow::Result<()> {
         let accessory_count = if version >= 124 { 7 } else { 5 };
 
         for _ in 0..ARMOR_COUNT {
@@ -179,7 +184,11 @@ impl Loadout {
         Ok(())
     }
 
-    pub fn skip_visuals(reader: &mut dyn Read, version: i32, use_boolbyte: bool) -> anyhow::Result<()> {
+    pub fn skip_visuals(
+        reader: &mut dyn Read,
+        version: i32,
+        use_boolbyte: bool,
+    ) -> anyhow::Result<()> {
         if use_boolbyte {
             let _ = BoolByte::from(reader.read_u8()?);
             if version >= 124 {

@@ -8,7 +8,7 @@ use serde_with::skip_serializing_none;
 use crate::{meta::Meta, ItemRarity};
 
 #[repr(u8)]
-#[derive(Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "deserialize", derive(serde_repr::Deserialize_repr))]
 #[cfg_attr(feature = "serialize", derive(serde_repr::Serialize_repr))]
 // NOTE: Will there be any conflicts here?
@@ -29,7 +29,7 @@ pub enum ItemType {
     Other,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[skip_serializing_none]

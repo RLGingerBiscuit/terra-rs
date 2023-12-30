@@ -4,7 +4,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 
 use crate::ext::{TerraReadExt, TerraWriteExt};
 
-#[derive(Clone, Default, Debug)]
+#[derive(Default, Debug, Clone)]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct ResearchItem {

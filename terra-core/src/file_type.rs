@@ -4,7 +4,7 @@
 use std::ops::Shl;
 
 #[repr(u8)]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum FileType {
@@ -15,8 +15,8 @@ pub enum FileType {
 }
 
 impl From<u8> for FileType {
-    fn from(u: u8) -> Self {
-        match u {
+    fn from(value: u8) -> Self {
+        match value {
             1 => FileType::Map,
             2 => FileType::World,
             3 => FileType::Player,
@@ -25,9 +25,15 @@ impl From<u8> for FileType {
     }
 }
 
+impl From<&u8> for FileType {
+    fn from(value: &u8) -> Self {
+        FileType::from(*value)
+    }
+}
+
 impl From<FileType> for u8 {
-    fn from(d: FileType) -> Self {
-        match d {
+    fn from(value: FileType) -> Self {
+        match value {
             FileType::Map => 1,
             FileType::World => 2,
             FileType::Player => 3,
@@ -36,15 +42,21 @@ impl From<FileType> for u8 {
     }
 }
 
+impl From<&FileType> for u8 {
+    fn from(value: &FileType) -> Self {
+        u8::from(*value)
+    }
+}
+
 impl PartialEq<u8> for FileType {
     fn eq(&self, other: &u8) -> bool {
-        u8::from(self.clone()) == *other
+        u8::from(self) == *other
     }
 }
 
 impl PartialEq<FileType> for u8 {
     fn eq(&self, other: &FileType) -> bool {
-        *self == u8::from(other.clone())
+        *self == u8::from(other)
     }
 }
 

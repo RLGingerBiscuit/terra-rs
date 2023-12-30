@@ -14,7 +14,7 @@ use super::{
 use crate::ui::UiExt;
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Sizing {
     Auto,
     Fixed(Vec2),
