@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use egui::{ColorImage, TextureHandle, TextureOptions};
-use parking_lot::RwLock;
+use egui::{mutex::RwLock, ColorImage, TextureHandle, TextureOptions};
 
 use super::{App, Message};
 

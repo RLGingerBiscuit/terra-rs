@@ -8,11 +8,12 @@ mod visuals;
 use std::{ops::DerefMut, path::PathBuf, sync::Arc, thread, time::Duration};
 
 use eframe::CreationContext;
-use egui::{self, Id, Key, KeyboardShortcut, LayerId, Modifiers, TextureHandle, Ui, Vec2};
+use egui::{
+    self, mutex::RwLock, Id, Key, KeyboardShortcut, LayerId, Modifiers, TextureHandle, Ui, Vec2,
+};
 use egui_dock::{DockArea, NodeIndex, Tree};
 use flume::{Receiver, Sender};
 use once_cell::sync::Lazy;
-use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 
 use terra_core::{

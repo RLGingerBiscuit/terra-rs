@@ -3539,7 +3539,6 @@ dependencies = [
  "image",
  "once_cell",
  "open",
- "parking_lot",
  "rfd",
  "rustc-hash",
  "serde",
