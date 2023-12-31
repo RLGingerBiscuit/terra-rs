@@ -26,6 +26,9 @@ const DEFAULT_MODAL_HEIGHT: f32 = 240.;
 const ABOUT_MODAL_WIDTH: f32 = 300.;
 const ABOUT_MODAL_HEIGHT: f32 = DEFAULT_MODAL_HEIGHT;
 
+const ERROR_MODAL_WIDTH: f32 = DEFAULT_MODAL_WIDTH * 2.;
+const ERROR_MODAL_HEIGHT: f32 = DEFAULT_MODAL_HEIGHT * 2.;
+
 const ITEM_BROWSER_COLS: usize = 6;
 const BUFF_BROWSER_COLS: usize = 8;
 const PREFIX_BROWSER_COLS: usize = 4;
@@ -124,7 +127,7 @@ impl App {
                 ctx,
                 "Error",
                 false,
-                Sizing::Fixed(vec2(DEFAULT_MODAL_WIDTH * 2., DEFAULT_MODAL_WIDTH * 2.)),
+                Sizing::Fixed(vec2(ERROR_MODAL_WIDTH, ERROR_MODAL_HEIGHT)),
                 |ui| {
                     ui.spacing_mut().item_spacing.y = 8.;
 
