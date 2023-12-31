@@ -383,10 +383,11 @@ fn get_item_meta(
         .unwrap()
         .as_str()
         .unwrap()
-        .split(" require 'mw.ext.LuaCache")
+        .split("---------------------------------------- DATA END")
         .next()
         .unwrap()
-        .replace("local cache =", "return info");
+        .to_string()
+        + "}\nreturn info";
 
     let mut item_meta: Vec<ItemMeta> = Vec::new();
 
