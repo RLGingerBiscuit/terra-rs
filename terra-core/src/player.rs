@@ -38,8 +38,8 @@ pub enum PlayerError {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct Player {
     pub version: i32,
     pub revision: u32,

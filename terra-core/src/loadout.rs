@@ -8,8 +8,8 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct Loadout {
     pub hide_visual: [bool; HIDDEN_VISUAL_COUNT],
 

@@ -15,8 +15,8 @@ pub enum ItemError {
 }
 
 #[derive(Default, Debug, Clone)]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct Item {
     pub id: i32,
     pub stack: i32,

@@ -8,8 +8,8 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct JourneyPowers {
     pub godmode: bool,
     pub far_placement: bool,
@@ -18,8 +18,8 @@ pub struct JourneyPowers {
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "deserialize", derive(serde_repr::Deserialize_repr))]
 #[cfg_attr(feature = "serialize", derive(serde_repr::Serialize_repr))]
+#[cfg_attr(feature = "deserialize", derive(serde_repr::Deserialize_repr))]
 pub enum JourneyPowerId {
     Godmode = 5,
     FarPlacement = 11,

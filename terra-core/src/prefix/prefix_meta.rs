@@ -3,8 +3,8 @@ use std::{fs::File, io::BufReader};
 use crate::meta::Meta;
 
 #[derive(Default, Debug, Clone)]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct PrefixMeta {
     pub id: u8,
     pub name: String,

@@ -3,14 +3,12 @@
 
 use std::{fs::File, io::BufReader};
 
-use serde_with::skip_serializing_none;
-
 use crate::{meta::Meta, ItemRarity};
 
 #[repr(u8)]
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "deserialize", derive(serde_repr::Deserialize_repr))]
 #[cfg_attr(feature = "serialize", derive(serde_repr::Serialize_repr))]
+#[cfg_attr(feature = "deserialize", derive(serde_repr::Deserialize_repr))]
 // NOTE: Will there be any conflicts here?
 pub enum ItemType {
     Tile,
@@ -30,9 +28,12 @@ pub enum ItemType {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(
+    feature = "serialize",
+    serde_with::skip_serializing_none,
+    derive(serde::Serialize)
+)]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-#[skip_serializing_none]
 pub struct ItemMeta {
     pub id: i32,
     pub name: String,

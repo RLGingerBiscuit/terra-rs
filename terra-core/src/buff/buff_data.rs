@@ -3,8 +3,8 @@ use std::io::{Read, Write};
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 
 #[derive(Default, Debug, Clone)]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct Buff {
     pub id: i32,
     pub time: i32,

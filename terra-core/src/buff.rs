@@ -8,8 +8,8 @@ pub use buff_meta::BuffMeta;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub enum BuffType {
     Buff = 0,
     Debuff = 1,
