@@ -138,7 +138,7 @@ impl ItemTabOptions {
 impl App {
     fn render_load_save_tab(&mut self, ui: &mut Ui) {
         ui.vertical_centered_justified(|ui| {
-            ui.spacing_mut().item_spacing = [16., 16.].into();
+            ui.spacing_mut().item_spacing = [8.; 2].into();
             if ui.button("Load Player").clicked() {
                 self.do_update(Message::LoadPlayer);
             }
