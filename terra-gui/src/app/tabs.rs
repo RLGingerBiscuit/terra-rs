@@ -733,13 +733,13 @@ impl App {
 
     fn render_research_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
+        let entry_text = if player.research.len() == 1 {
+            "item"
+        } else {
+            "items"
+        };
 
-        let mut label = format!("{} researched item", player.research.len());
-        if player.research.len() != 1 {
-            label += "s";
-        }
-
-        ui.label(label);
+        ui.label(format!("{} researched {}", player.research.len(), entry_text));
 
         ui.horizontal(|ui| {
             if ui.button("Clear all").clicked() {
