@@ -191,11 +191,7 @@ impl App {
         thread::spawn(move || {
             *busy.write() = true;
 
-            tx.send(match task() {
-                Ok(msg) => msg,
-                Err(err) => Message::ShowError(err),
-            })
-            .unwrap();
+            tx.send(task().unwrap_or_else(Message::ShowError)).unwrap();
 
             *busy.write() = false;
         });

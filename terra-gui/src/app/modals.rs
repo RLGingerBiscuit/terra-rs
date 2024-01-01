@@ -46,7 +46,7 @@ fn item_browser_sizing(ctx: &egui::Context) -> Sizing {
 #[inline]
 fn buff_browser_sizing(ctx: &egui::Context) -> Sizing {
     Sizing::Fixed(vec2(
-        buff_slot::SLOT_SIZE.x * (BUFF_BROWSER_COLS) as f32
+        buff_slot::SLOT_SIZE.x * BUFF_BROWSER_COLS as f32
             + ctx.style().spacing.item_spacing.x * (BUFF_BROWSER_COLS * 2) as f32,
         DEFAULT_MODAL_HEIGHT * 2.,
     ))
