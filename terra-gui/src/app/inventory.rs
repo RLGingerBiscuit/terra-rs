@@ -19,7 +19,7 @@ use self::{
 use super::{App, Message};
 use crate::ui::{ClickableFrame, UiExt};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ItemGroup {
     Inventory,
     Coins,
@@ -40,7 +40,7 @@ pub enum ItemGroup {
     ResearchBrowser,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct SelectedItem(pub ItemGroup, pub usize);
 
 impl SelectedItem {
@@ -49,7 +49,7 @@ impl SelectedItem {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct SelectedBuff(pub usize);
 
 impl SelectedBuff {
@@ -58,7 +58,7 @@ impl SelectedBuff {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct SelectedLoadout(pub usize);
 
 pub fn selected_item(
