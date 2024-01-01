@@ -30,12 +30,12 @@ pub enum ItemGroup {
     Void,
     Equipment,
     EquipmentDyes,
-    Armor,
-    VanityArmor,
-    ArmorDyes,
-    Accessories,
-    VanityAccessories,
-    AccessoryDyes,
+    Armor(SelectedLoadout),
+    VanityArmor(SelectedLoadout),
+    ArmorDyes(SelectedLoadout),
+    Accessories(SelectedLoadout),
+    VanityAccessories(SelectedLoadout),
+    AccessoryDyes(SelectedLoadout),
     ItemBrowser,
     ResearchBrowser,
 }
@@ -61,11 +61,7 @@ impl SelectedBuff {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct SelectedLoadout(pub usize);
 
-pub fn selected_item(
-    item: SelectedItem,
-    loadout: SelectedLoadout,
-    player: &mut Player,
-) -> &mut Item {
+pub fn selected_item(item: SelectedItem, player: &mut Player) -> &mut Item {
     match item.0 {
         ItemGroup::Inventory => &mut player.inventory[item.1],
         ItemGroup::Coins => &mut player.coins[item.1],
@@ -76,12 +72,14 @@ pub fn selected_item(
         ItemGroup::Void => &mut player.void_vault[item.1],
         ItemGroup::Equipment => &mut player.equipment[item.1],
         ItemGroup::EquipmentDyes => &mut player.equipment_dyes[item.1],
-        ItemGroup::VanityArmor => &mut player.loadouts[loadout.0].vanity_armor[item.1],
-        ItemGroup::Armor => &mut player.loadouts[loadout.0].armor[item.1],
-        ItemGroup::ArmorDyes => &mut player.loadouts[loadout.0].armor_dyes[item.1],
-        ItemGroup::VanityAccessories => &mut player.loadouts[loadout.0].vanity_accessories[item.1],
-        ItemGroup::Accessories => &mut player.loadouts[loadout.0].accessories[item.1],
-        ItemGroup::AccessoryDyes => &mut player.loadouts[loadout.0].accessory_dyes[item.1],
+        ItemGroup::VanityArmor(loadout) => &mut player.loadouts[loadout.0].vanity_armor[item.1],
+        ItemGroup::Armor(loadout) => &mut player.loadouts[loadout.0].armor[item.1],
+        ItemGroup::ArmorDyes(loadout) => &mut player.loadouts[loadout.0].armor_dyes[item.1],
+        ItemGroup::VanityAccessories(loadout) => {
+            &mut player.loadouts[loadout.0].vanity_accessories[item.1]
+        }
+        ItemGroup::Accessories(loadout) => &mut player.loadouts[loadout.0].accessories[item.1],
+        ItemGroup::AccessoryDyes(loadout) => &mut player.loadouts[loadout.0].accessory_dyes[item.1],
         ItemGroup::ResearchBrowser | ItemGroup::ItemBrowser => {
             panic!("You should never try to get the selected item of a browser")
         }
@@ -182,7 +180,7 @@ impl App {
 
     pub fn render_selected_item(&mut self, ui: &mut Ui) {
         let player = &mut *self.player.write();
-        let item = selected_item(self.selected_item, self.selected_loadout, player);
+        let item = selected_item(self.selected_item, player);
 
         let item_meta = self.item_meta.read();
         let prefix_meta = self.prefix_meta.read();

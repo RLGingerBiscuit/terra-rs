@@ -577,18 +577,21 @@ impl App {
                             ),
                             (
                                 i,
-                                ItemSlotOptions::from_item(accessory_dye, ItemGroup::AccessoryDyes)
-                                    .icon(Some(ItemSlotIcon::Dye))
-                                    .prefix_meta(PrefixMeta::get(
-                                        &prefix_meta,
-                                        accessory_dye.prefix.id,
-                                    )),
+                                ItemSlotOptions::from_item(
+                                    accessory_dye,
+                                    ItemGroup::AccessoryDyes(self.selected_loadout),
+                                )
+                                .icon(Some(ItemSlotIcon::Dye))
+                                .prefix_meta(PrefixMeta::get(
+                                    &prefix_meta,
+                                    accessory_dye.prefix.id,
+                                )),
                             ),
                             (
                                 i,
                                 ItemSlotOptions::from_item(
                                     vanity_accessory,
-                                    ItemGroup::VanityAccessories,
+                                    ItemGroup::VanityAccessories(self.selected_loadout),
                                 )
                                 .icon(Some(ItemSlotIcon::VanityAccessory))
                                 .prefix_meta(PrefixMeta::get(
@@ -598,12 +601,12 @@ impl App {
                             ),
                             (
                                 i,
-                                ItemSlotOptions::from_item(accessory, ItemGroup::Accessories)
-                                    .icon(Some(ItemSlotIcon::Accessory))
-                                    .prefix_meta(PrefixMeta::get(
-                                        &prefix_meta,
-                                        accessory.prefix.id,
-                                    )),
+                                ItemSlotOptions::from_item(
+                                    accessory,
+                                    ItemGroup::Accessories(self.selected_loadout),
+                                )
+                                .icon(Some(ItemSlotIcon::Accessory))
+                                .prefix_meta(PrefixMeta::get(&prefix_meta, accessory.prefix.id)),
                             ),
                         ]
                         .into_iter()
@@ -619,18 +622,20 @@ impl App {
                             let options = [
                                 (
                                     i,
-                                    ItemSlotOptions::from_item(armor_dye, ItemGroup::ArmorDyes)
-                                        .icon(Some(ItemSlotIcon::Dye))
-                                        .prefix_meta(PrefixMeta::get(
-                                            &prefix_meta,
-                                            armor_dye.prefix.id,
-                                        )),
+                                    ItemSlotOptions::from_item(
+                                        armor_dye,
+                                        ItemGroup::ArmorDyes(self.selected_loadout),
+                                    )
+                                    .icon(Some(ItemSlotIcon::Dye))
+                                    .prefix_meta(
+                                        PrefixMeta::get(&prefix_meta, armor_dye.prefix.id),
+                                    ),
                                 ),
                                 (
                                     i,
                                     ItemSlotOptions::from_item(
                                         vanity_armor,
-                                        ItemGroup::VanityArmor,
+                                        ItemGroup::VanityArmor(self.selected_loadout),
                                     )
                                     .icon(Some(VANITY_ARMOR_ICONS[i]))
                                     .prefix_meta(
@@ -639,12 +644,12 @@ impl App {
                                 ),
                                 (
                                     i,
-                                    ItemSlotOptions::from_item(armor, ItemGroup::Armor)
-                                        .icon(Some(ARMOR_ICONS[i]))
-                                        .prefix_meta(PrefixMeta::get(
-                                            &prefix_meta,
-                                            armor.prefix.id,
-                                        )),
+                                    ItemSlotOptions::from_item(
+                                        armor,
+                                        ItemGroup::Armor(self.selected_loadout),
+                                    )
+                                    .icon(Some(ARMOR_ICONS[i]))
+                                    .prefix_meta(PrefixMeta::get(&prefix_meta, armor.prefix.id)),
                                 ),
                             ]
                             .into_iter()
@@ -663,7 +668,7 @@ impl App {
                                     i,
                                     ItemSlotOptions::from_item(
                                         accessory_dye,
-                                        ItemGroup::AccessoryDyes,
+                                        ItemGroup::AccessoryDyes(self.selected_loadout),
                                     )
                                     .icon(Some(ItemSlotIcon::Dye))
                                     .prefix_meta(
@@ -674,7 +679,7 @@ impl App {
                                     i,
                                     ItemSlotOptions::from_item(
                                         vanity_accessory,
-                                        ItemGroup::VanityAccessories,
+                                        ItemGroup::VanityAccessories(self.selected_loadout),
                                     )
                                     .icon(Some(ItemSlotIcon::VanityAccessory))
                                     .prefix_meta(
@@ -683,12 +688,14 @@ impl App {
                                 ),
                                 (
                                     i,
-                                    ItemSlotOptions::from_item(accessory, ItemGroup::Accessories)
-                                        .icon(Some(ItemSlotIcon::Accessory))
-                                        .prefix_meta(PrefixMeta::get(
-                                            &prefix_meta,
-                                            accessory.prefix.id,
-                                        )),
+                                    ItemSlotOptions::from_item(
+                                        accessory,
+                                        ItemGroup::Accessories(self.selected_loadout),
+                                    )
+                                    .icon(Some(ItemSlotIcon::Accessory))
+                                    .prefix_meta(
+                                        PrefixMeta::get(&prefix_meta, accessory.prefix.id),
+                                    ),
                                 ),
                             ]
                             .into_iter()
@@ -739,7 +746,11 @@ impl App {
             "items"
         };
 
-        ui.label(format!("{} researched {}", player.research.len(), entry_text));
+        ui.label(format!(
+            "{} researched {}",
+            player.research.len(),
+            entry_text
+        ));
 
         ui.horizontal(|ui| {
             if ui.button("Clear all").clicked() {
