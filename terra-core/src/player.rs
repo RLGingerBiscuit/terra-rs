@@ -1,21 +1,20 @@
 use std::{
     fs::File,
-    io::{ErrorKind, Read, Write},
+    io::{Cursor, ErrorKind, Read, Write},
     path::Path,
 };
 
-use aesstream::{AesReader, AesWriter};
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
-use crypto::aessafe::{AesSafe128Decryptor, AesSafe128Encryptor};
 use serde_big_array::BigArray;
 
 use crate::{
+    aes::{decrypt_from_reader, encrypt_to_writer},
     ext::{TerraReadExt, TerraWriteExt},
     utils, BoolByte, Buff, Color, Difficulty, FileType, Item, ItemMeta, JourneyPowers, Loadout,
     ResearchItem, Spawnpoint, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
-    CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, ENCRYPTION_BYTES,
-    EQUIPMENT_COUNT, FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK,
-    MAGIC_NUMBER, MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT,
+    CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, EQUIPMENT_COUNT,
+    FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
+    MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT,
     TICKS_PER_MICROSECOND,
 };
 
@@ -269,16 +268,6 @@ fn open_file(filepath: &Path) -> Result<File, PlayerError> {
 
 fn create_file(filepath: &Path) -> Result<File, PlayerError> {
     File::create(filepath).map_err(map_io_error)
-}
-
-fn decryptor_reader<R: Read>(reader: R) -> Result<AesReader<AesSafe128Decryptor, R>, PlayerError> {
-    let dec = AesSafe128Decryptor::new(ENCRYPTION_BYTES);
-    AesReader::new_with_iv(reader, dec, ENCRYPTION_BYTES).map_err(|_| PlayerError::Failure)
-}
-
-fn encryptor_writer<W: Write>(writer: W) -> Result<AesWriter<AesSafe128Encryptor, W>, PlayerError> {
-    let enc = AesSafe128Encryptor::new(ENCRYPTION_BYTES);
-    AesWriter::new_with_iv(writer, enc, ENCRYPTION_BYTES).map_err(|_| PlayerError::Failure)
 }
 
 impl Player {
@@ -671,8 +660,9 @@ impl Player {
     }
 
     pub fn load(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
-        let file = open_file(filepath)?;
-        let mut reader = decryptor_reader(file)?;
+        let mut file = open_file(filepath)?;
+        let buf = decrypt_from_reader(&mut file)?;
+        let mut reader = Cursor::new(buf);
         self.load_from_reader(item_meta, &mut reader)
     }
 
@@ -1022,9 +1012,10 @@ impl Player {
     }
 
     pub fn save(&self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
-        let file = create_file(filepath)?;
-        let mut writer = encryptor_writer(file)?;
-        self.save_to_writer(item_meta, &mut writer)
+        let mut file = create_file(filepath)?;
+        let mut buf = Vec::new();
+        self.save_to_writer(item_meta, &mut buf)?;
+        encrypt_to_writer(&mut file, &buf)
     }
 
     pub fn save_decrypted(&self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
@@ -1035,8 +1026,8 @@ impl Player {
     pub fn decrypt_file(original_filepath: &Path, decrypted_filepath: &Path) -> anyhow::Result<()> {
         let original_file = File::open(original_filepath)?;
         let mut decrypted_file = File::create(decrypted_filepath)?;
-        let mut reader = decryptor_reader(original_file)?;
-        std::io::copy(&mut reader, &mut decrypted_file)?;
+        let buf = decrypt_from_reader(original_file)?;
+        decrypted_file.write_all(&buf)?;
         Ok(())
     }
 

@@ -6,7 +6,6 @@ on:
     paths:
       - 'data/resources.zip'
       - '.github/workflows/**'
-      - 'aes-stream/**/*.rs'
       - 'terra-*/**/*.rs'
       - '**/Cargo.*'
   pull_request:
@@ -38,7 +37,6 @@ jobs:
             files:
               - '.github/workflows/**'
               - 'data/resources.zip'
-              - 'aes-stream/**/'
               - 'terra-*/**'
               - '**/Cargo.*'
 

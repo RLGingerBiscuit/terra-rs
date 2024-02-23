@@ -11,6 +11,7 @@ pub mod player;
 pub mod prefix;
 pub mod spawnpoint;
 pub mod utils;
+mod aes;
 
 pub const MAGIC_MASK: u64 = 0xFFFFFFFFFFFFFF;
 pub const MAGIC_NUMBER: u64 = 0x6369676F6C6572;
