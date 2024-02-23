@@ -901,10 +901,14 @@ fn generate_spritesheet(
 }
 
 fn main() -> Result<()> {
+    // Pretty scuffed but works for now
+    let mut build_type = String::new();
+    File::open("./terra-res/build_type.txt")?.read_to_string(&mut build_type)?;
+
     let res_fol = PathBuf::from_str("./terra-res/resources")?;
     let items_fol = res_fol.join("items");
     let buffs_fol = res_fol.join("buffs");
-    let gen_fol = PathBuf::from_str("./terra-res/generated")?;
+    let gen_fol = PathBuf::from_str("./terra-res/generated")?.join(&build_type);
 
     create_dir(&gen_fol, true)?;
 
@@ -982,10 +986,6 @@ fn main() -> Result<()> {
         &item_localization,
         &npc_localization,
     )?;
-
-    // Pretty scuffed but works for now
-    let mut build_type = String::new();
-    File::open("./terra-res/build_type.txt")?.read_to_string(&mut build_type)?;
 
     println!("Writing to disk");
 

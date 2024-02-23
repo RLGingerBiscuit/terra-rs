@@ -8,6 +8,7 @@ on:
       - '.github/workflows/**'
       - 'terra-*/**/*.rs'
       - '**/Cargo.*'
+      - '!terra-res/'
   pull_request:
     branches: ['master']
 
@@ -38,6 +39,7 @@ jobs:
               - 'data/resources.zip'
               - 'terra-*/**'
               - '**/Cargo.*'
+              - '!terra-res/'
 
   build:
     strategy:
