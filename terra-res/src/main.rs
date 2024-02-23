@@ -19,7 +19,7 @@ use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, ItemType, PrefixMeta}
 mod truthy;
 use truthy::TruthyOption;
 
-const ITEM_DATA_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/data";
+const ITEM_DATA_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/luadata";
 const BUFF_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Buff_IDs";
 const PREFIX_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Prefix_IDs";
 const TRAPPED_CHEST_DOT: &str = "trapped_chest_dot.png";
@@ -369,7 +369,7 @@ fn get_item_meta(
         .unwrap()
         .get("pages")
         .unwrap()
-        .get("18021")
+        .get("65908")
         .unwrap()
         .get("revisions")
         .unwrap()
@@ -387,7 +387,7 @@ fn get_item_meta(
         .next()
         .unwrap()
         .to_string()
-        + "}\nreturn info";
+        + "}";
 
     let mut item_meta: Vec<ItemMeta> = Vec::new();
 
