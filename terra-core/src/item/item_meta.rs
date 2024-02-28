@@ -1,6 +1,4 @@
-// NOTE: This is for serde_repr
-#![allow(non_camel_case_types)]
-
+#[cfg(feature = "deserialize")]
 use std::{fs::File, io::BufReader};
 
 use crate::{meta::Meta, ItemRarity};
@@ -86,6 +84,7 @@ impl Meta for ItemMeta {
         &self.internal_name
     }
 
+    #[cfg(feature = "deserialize")]
     fn load() -> anyhow::Result<Vec<Self>>
     where
         Self: Sized,

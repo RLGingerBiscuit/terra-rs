@@ -1,3 +1,4 @@
+#[cfg(feature = "deserialize")]
 use std::{fs::File, io::BufReader};
 
 use crate::meta::Meta;
@@ -26,6 +27,7 @@ impl Meta for PrefixMeta {
         &self.internal_name
     }
 
+    #[cfg(feature = "deserialize")]
     fn load() -> anyhow::Result<Vec<Self>> {
         let file = File::open(
             std::env::current_exe()?

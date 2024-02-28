@@ -4,7 +4,9 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-terra-core = { path = "../terra-core", features = ["serialize"] }
+terra-core = { path = "../terra-core", default-features = false, features = [
+    "serialize",
+] }
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -5,6 +5,7 @@ pub trait Meta {
     fn name(&self) -> &str;
     fn internal_name(&self) -> &str;
 
+    #[cfg(feature = "deserialize")]
     fn load() -> anyhow::Result<Vec<Self>>
     where
         Self: Sized;

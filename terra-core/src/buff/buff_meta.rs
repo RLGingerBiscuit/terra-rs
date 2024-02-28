@@ -1,3 +1,4 @@
+#[cfg(feature = "deserialize")]
 use std::{fs::File, io::BufReader};
 
 use crate::{meta::Meta, BuffType};
@@ -34,6 +35,7 @@ impl Meta for BuffMeta {
         &self.internal_name
     }
 
+    #[cfg(feature = "deserialize")]
     fn load() -> anyhow::Result<Vec<Self>>
     where
         Self: Sized,

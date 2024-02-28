@@ -1,12 +1,9 @@
-// NOTE: This is for serde_repr
-#![allow(non_camel_case_types)]
-
 use std::ops::Shl;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(serde_repr::Serialize_repr))]
+#[cfg_attr(feature = "deserialize", derive(serde_repr::Deserialize_repr))]
 pub enum FileType {
     Map = 1,
     World = 2,
