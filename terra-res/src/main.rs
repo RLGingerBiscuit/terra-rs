@@ -11,8 +11,8 @@ use fs_extra::dir::{copy as copy_dir, create as create_dir, CopyOptions as DirCo
 use anyhow::Result;
 use image::{DynamicImage, GenericImage, GenericImageView};
 use itertools::Itertools;
+use mlua::Lua;
 use regex::{Captures, Regex};
-use rlua::{Lua, Table};
 
 use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, ItemType, PrefixMeta};
 
@@ -311,7 +311,7 @@ fn expand_templates(
     }
 }
 
-fn get_item_type(lua_item: &Table<'_>) -> Option<ItemType> {
+fn get_item_type(lua_item: &mlua::Table<'_>) -> Option<ItemType> {
     for (name, item_type) in [
         ("ammo", ItemType::Ammo),
         ("melee", ItemType::Melee),
@@ -395,121 +395,115 @@ fn get_item_meta(
     let forbidden_items = forbidden_items();
 
     let lua = Lua::new();
+    let info: mlua::Table = lua
+        .load(lua_str.as_str())
+        .set_name("Iteminfo_data")
+        .eval()?;
 
-    lua.context(|ctx| -> Result<()> {
-        let info: Table = ctx
-            .load(lua_str.as_str())
-            .set_name("Iteminfo_data")
-            .unwrap()
-            .eval()?;
+    for pair in info.pairs::<mlua::String, mlua::Value>() {
+        let (key, val) = pair?;
 
-        for pair in info.pairs::<rlua::String, rlua::Value>() {
-            let (key, val) = pair?;
+        if let mlua::Value::Table(lua_item) = val {
+            let id = i32::from_str(key.to_str()?)?;
+            let internal_name = lua_item.get("internalName").unwrap_or(String::new());
+            let name = items["ItemName"][&internal_name]
+                .as_str()
+                .unwrap_or_else(|| &internal_name);
+            let name = expand_templates(name, template, game, items, npcs);
+            let max_stack = lua_item.get("maxStack").unwrap_or(1);
+            let value = lua_item.get("value").unwrap_or(0);
+            let use_time = lua_item.get("useTime").truthy_option();
+            let damage = lua_item.get("damage").truthy_option();
+            let crit_chance = lua_item.get("crit").truthy_option();
+            let knockback = lua_item.get("knockBack").truthy_option();
+            let defense = lua_item.get("defense").truthy_option();
+            let use_ammo = lua_item.get("useAmmo").truthy_option();
+            let mana_cost = lua_item.get("mana").truthy_option();
+            let heal_life = lua_item.get("healLife").truthy_option();
+            let heal_mana = lua_item.get("healMana").truthy_option();
+            let pickaxe_power = lua_item.get("pick").truthy_option();
+            let axe_power = lua_item.get("axe").truthy_option();
+            let hammer_power = lua_item.get("hammer").truthy_option();
+            let fishing_power = lua_item.get("fishingPole").truthy_option();
+            let fishing_bait = lua_item.get("bait").truthy_option();
+            let range_boost = lua_item.get("tileBoost").truthy_option();
+            let sacrifices = lua_item.get("sacrifices").unwrap_or(1);
 
-            if let rlua::Value::Table(lua_item) = val {
-                let id = i32::from_str(key.to_str()?)?;
-                let internal_name = lua_item.get("internalName").unwrap_or(String::new());
-                let name = items["ItemName"][&internal_name]
-                    .as_str()
-                    .unwrap_or_else(|| &internal_name);
-                let name = expand_templates(name, template, game, items, npcs);
-                let max_stack = lua_item.get("maxStack").unwrap_or(1);
-                let value = lua_item.get("value").unwrap_or(0);
-                let use_time = lua_item.get("useTime").truthy_option();
-                let damage = lua_item.get("damage").truthy_option();
-                let crit_chance = lua_item.get("crit").truthy_option();
-                let knockback = lua_item.get("knockBack").truthy_option();
-                let defense = lua_item.get("defense").truthy_option();
-                let use_ammo = lua_item.get("useAmmo").truthy_option();
-                let mana_cost = lua_item.get("mana").truthy_option();
-                let heal_life = lua_item.get("healLife").truthy_option();
-                let heal_mana = lua_item.get("healMana").truthy_option();
-                let pickaxe_power = lua_item.get("pick").truthy_option();
-                let axe_power = lua_item.get("axe").truthy_option();
-                let hammer_power = lua_item.get("hammer").truthy_option();
-                let fishing_power = lua_item.get("fishingPole").truthy_option();
-                let fishing_bait = lua_item.get("bait").truthy_option();
-                let range_boost = lua_item.get("tileBoost").truthy_option();
-                let sacrifices = lua_item.get("sacrifices").unwrap_or(1);
+            let tooltip = items["ItemTooltip"][&internal_name].as_str().map(|tt| {
+                tt.lines()
+                    .map(|s| expand_templates(&s, &template, &game, &items, &npcs))
+                    .collect::<Vec<_>>()
+            });
 
-                let tooltip = items["ItemTooltip"][&internal_name].as_str().map(|tt| {
-                    tt.lines()
-                        .map(|s| expand_templates(&s, &template, &game, &items, &npcs))
-                        .collect::<Vec<_>>()
-                });
+            let forbidden = if forbidden_items.contains(&id) {
+                Some(true)
+            } else {
+                None
+            };
 
-                let forbidden = if forbidden_items.contains(&id) {
-                    Some(true)
-                } else {
-                    None
-                };
+            let consumes_tile = lua_item.get("tileWand").truthy_option();
 
-                let consumes_tile = lua_item.get("tileWand").truthy_option();
+            let item_type = get_item_type(&lua_item);
 
-                let item_type = get_item_type(&lua_item);
+            let is_material = lua_item.get("material").truthy_option();
+            let is_consumable = lua_item.get("consumable").truthy_option();
+            let is_quest_item = lua_item.get("questItem").truthy_option();
+            let is_expert = lua_item.get("expert").truthy_option();
 
-                let is_material = lua_item.get("material").truthy_option();
-                let is_consumable = lua_item.get("consumable").truthy_option();
-                let is_quest_item = lua_item.get("questItem").truthy_option();
-                let is_expert = lua_item.get("expert").truthy_option();
+            let rarity = if is_expert.is_some_and(|e| e) {
+                ItemRarity::Expert
+            } else if let Ok(rarity) = lua_item.get::<&str, i32>("rarity") {
+                ItemRarity::from(rarity)
+            } else {
+                ItemRarity::from(lua_item.get("rare").unwrap_or(0))
+            };
 
-                let rarity = if is_expert.is_some_and(|e| e) {
-                    ItemRarity::Expert
-                } else if let Ok(rarity) = lua_item.get::<&str, i32>("rarity") {
-                    ItemRarity::from(rarity)
-                } else {
-                    ItemRarity::from(lua_item.get("rare").unwrap_or(0))
-                };
+            let [x, y, width, height] = offsets.get(&id).unwrap_or(&[-1, -1, 0, 0]);
+            let x = x.to_owned();
+            let y = y.to_owned();
+            let width = width.to_owned();
+            let height = height.to_owned();
 
-                let [x, y, width, height] = offsets.get(&id).unwrap_or(&[-1, -1, 0, 0]);
-                let x = x.to_owned();
-                let y = y.to_owned();
-                let width = width.to_owned();
-                let height = height.to_owned();
+            let item = ItemMeta {
+                id,
+                internal_name,
+                name,
+                width,
+                height,
+                x,
+                y,
+                max_stack,
+                value,
+                rarity,
+                use_time,
+                damage,
+                crit_chance,
+                knockback,
+                defense,
+                use_ammo,
+                mana_cost,
+                heal_life,
+                heal_mana,
+                pickaxe_power,
+                axe_power,
+                hammer_power,
+                fishing_power,
+                fishing_bait,
+                range_boost,
+                sacrifices,
+                tooltip,
+                forbidden,
+                consumes_tile,
+                is_material,
+                item_type,
+                is_consumable,
+                is_quest_item,
+                is_expert,
+            };
 
-                let item = ItemMeta {
-                    id,
-                    internal_name,
-                    name,
-                    width,
-                    height,
-                    x,
-                    y,
-                    max_stack,
-                    value,
-                    rarity,
-                    use_time,
-                    damage,
-                    crit_chance,
-                    knockback,
-                    defense,
-                    use_ammo,
-                    mana_cost,
-                    heal_life,
-                    heal_mana,
-                    pickaxe_power,
-                    axe_power,
-                    hammer_power,
-                    fishing_power,
-                    fishing_bait,
-                    range_boost,
-                    sacrifices,
-                    tooltip,
-                    forbidden,
-                    consumes_tile,
-                    is_material,
-                    item_type,
-                    is_consumable,
-                    is_quest_item,
-                    is_expert,
-                };
-
-                item_meta.push(item);
-            }
+            item_meta.push(item);
         }
-
-        Ok(())
-    })?;
+    }
 
     item_meta.sort_by_key(|i| i.id);
 

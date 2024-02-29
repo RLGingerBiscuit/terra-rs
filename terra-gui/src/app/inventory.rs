@@ -16,7 +16,7 @@ use self::{
     prefix_tooltip::{PrefixTooltip, PrefixTooltipOptions},
     slot::Slot,
 };
-use super::{App, Message};
+use super::{context::AppContext, Message};
 use crate::ui::{ClickableFrame, UiExt};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -108,7 +108,7 @@ pub fn buff_name(name: &str, time: Option<i32>) -> String {
     }
 }
 
-impl App {
+impl AppContext {
     fn render_slot<S>(&self, ui: &mut Ui, slot: S) -> Response
     where
         S: Slot + Widget,
@@ -133,11 +133,11 @@ impl App {
         let item_meta = self.item_meta.read();
 
         if icon_spritesheet.is_none() && !self.is_busy() {
-            self.do_update(Message::LoadIconSpritesheet);
+            self.send_msg(Message::LoadIconSpritesheet);
         }
 
         if item_spritesheet.is_none() && !self.is_busy() {
-            self.do_update(Message::LoadItemSpritesheet);
+            self.send_msg(Message::LoadItemSpritesheet);
         }
 
         // FIXME: Lifetime stuff means ::from_slot_options doesn't work
@@ -173,7 +173,7 @@ impl App {
             options.selected = self.selected_item.equals(group, index);
 
             if self.render_item_slot(ui, options).clicked() {
-                self.do_update(Message::SelectItem(SelectedItem(group, index)));
+                self.send_msg(Message::SelectItem(SelectedItem(group, index)));
             }
         }
     }
@@ -209,7 +209,7 @@ impl App {
                 ui.label("Id:");
                 ui.drag_value_with_buttons(&mut item.id, 1., 0..=largest_item_id);
                 if ui.button("\u{1f50e}").clicked() {
-                    self.do_update(Message::OpenItemBrowser);
+                    self.send_msg(Message::OpenItemBrowser);
                 }
                 ui.end_row();
 
@@ -223,7 +223,7 @@ impl App {
                 ui.label("Prefix:");
                 ui.drag_value_with_buttons(&mut item.prefix.id, 1., 0..=largest_prefix_id);
                 if ui.button("\u{1f50e}").clicked() {
-                    self.do_update(Message::OpenPrefixBrowser);
+                    self.send_msg(Message::OpenPrefixBrowser);
                 }
                 ui.end_row();
             });
@@ -240,7 +240,7 @@ impl App {
         let buff_meta = self.buff_meta.read();
 
         if buff_spritesheet.is_none() && !self.is_busy() {
-            self.do_update(Message::LoadBuffSpritesheet);
+            self.send_msg(Message::LoadBuffSpritesheet);
         }
 
         let tooltip_options = BuffTooltipOptions::from_slot_options(&options);
@@ -267,7 +267,7 @@ impl App {
             options.selected = self.selected_buff.equals(index);
 
             if self.render_buff_slot(ui, options).clicked() {
-                self.do_update(Message::SelectBuff(SelectedBuff(index)));
+                self.send_msg(Message::SelectBuff(SelectedBuff(index)));
             }
         }
     }
@@ -297,7 +297,7 @@ impl App {
                 ui.label("Id:");
                 ui.drag_value_with_buttons(&mut buff.id, 1., 0..=largest_buff_id);
                 if ui.button("\u{1f50e}").clicked() {
-                    self.do_update(Message::OpenBuffBrowser);
+                    self.send_msg(Message::OpenBuffBrowser);
                 }
                 ui.end_row();
 

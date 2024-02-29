@@ -1,6 +1,6 @@
 use egui::{
-    pos2, vec2, Align2, Color32, Image, Margin, Rect, Response, Sense, TextStyle, TextureHandle,
-    Ui, Vec2, Widget,
+    load::SizedTexture, pos2, vec2, Align2, Color32, Image, ImageSource, Margin, Rect, Response,
+    Sense, TextStyle, TextureHandle, Ui, Vec2, Widget,
 };
 use terra_core::{Item, ItemMeta, PrefixMeta};
 
@@ -224,7 +224,8 @@ impl<'a> ItemSlot<'a> {
             ui.add_space(padding.x);
             ui.vertical(|ui| {
                 ui.add_space(padding.y);
-                ui.add(Image::new(sheet, ICON_DISPLAYED_SIZE).uv(uv).tint(tint));
+                let source = ImageSource::Texture(SizedTexture::new(sheet, ICON_DISPLAYED_SIZE));
+                ui.add(Image::new(source).uv(uv).tint(tint));
                 ui.add_space(padding.y);
             });
             ui.add_space(padding.x);

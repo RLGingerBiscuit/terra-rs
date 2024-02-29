@@ -1,5 +1,6 @@
 use egui::{
-    vec2, Align, Align2, Color32, FontId, Image, Margin, Rect, TextureHandle, Ui, Vec2, Widget,
+    load::SizedTexture, vec2, Align, Align2, Color32, FontId, Image, ImageSource, Margin, Rect,
+    TextureHandle, Ui, Vec2, Widget,
 };
 
 #[derive(Debug, Clone)]
@@ -106,7 +107,8 @@ pub(super) fn render_padded_sprite(
     ui.add_space(padding.x);
     ui.vertical(|ui| {
         ui.add_space(padding.y);
-        ui.add(Image::new(sheet, size).uv(uv));
+        let source = ImageSource::Texture(SizedTexture::new(sheet, size));
+        ui.add(Image::new(source).uv(uv));
         ui.add_space(padding.y);
     });
     ui.add_space(padding.x);

@@ -7,8 +7,10 @@ use egui::vec2;
 use app::App;
 
 fn main() {
+    let viewport = egui::ViewportBuilder::default().with_inner_size(vec2(800., 600.));
+
     let options = eframe::NativeOptions {
-        initial_window_size: Some(vec2(800., 600.)),
+        viewport,
         centered: true,
         follow_system_theme: false,
         default_theme: eframe::Theme::Dark,

@@ -3,13 +3,14 @@ use egui::{
 };
 
 use super::{
+    context::AppContext,
     inventory::{
         buff_slot::{self, BuffSlotOptions},
         item_slot::{self, ItemSlotOptions},
         prefix_tooltip::PrefixTooltipOptions,
         ItemGroup,
     },
-    App, Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,
+    Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,
 };
 use crate::ui::UiExt;
 
@@ -38,7 +39,7 @@ fn item_browser_sizing(ctx: &egui::Context) -> Sizing {
     Sizing::Fixed(vec2(
         item_slot::SLOT_SIZE.x * (ITEM_BROWSER_COLS + 1) as f32
             + ctx.style().spacing.item_spacing.x * (ITEM_BROWSER_COLS * 2) as f32
-            - ctx.style().spacing.scroll_bar_width,
+            - ctx.style().spacing.scroll.bar_width,
         DEFAULT_MODAL_HEIGHT * 2.,
     ))
 }
@@ -60,7 +61,7 @@ fn prefix_browser_sizing(ctx: &egui::Context) -> Sizing {
     ))
 }
 
-impl App {
+impl AppContext {
     fn render_modal<R>(
         &self,
         ctx: &egui::Context,
@@ -113,7 +114,7 @@ impl App {
 
                     ui.vertical_right_justified(|ui| {
                         if ui.button("Ok").clicked() {
-                            self.do_update(Message::CloseAbout);
+                            self.send_msg(Message::CloseAbout);
                         }
                     });
                 },
@@ -141,7 +142,7 @@ impl App {
 
                     ui.vertical_right_justified(|ui| {
                         if ui.button("Ok").clicked() {
-                            self.do_update(Message::CloseError);
+                            self.send_msg(Message::CloseError);
                         }
                     });
                 },
@@ -196,7 +197,7 @@ impl App {
 
                                             let response = self.render_item_slot(ui, options);
                                             if response.clicked() {
-                                                self.do_update(Message::SetCurrentItemId(meta.id));
+                                                self.send_msg(Message::SetCurrentItemId(meta.id));
                                             }
 
                                             if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
@@ -210,7 +211,7 @@ impl App {
 
                 ui.vertical_right_justified(|ui| {
                     if ui.button("Close").clicked() {
-                        self.do_update(Message::CloseItemBrowser);
+                        self.send_msg(Message::CloseItemBrowser);
                     }
                 });
             });
@@ -262,7 +263,7 @@ impl App {
 
                                             let response = self.render_buff_slot(ui, options);
                                             if response.clicked() {
-                                                self.do_update(Message::SetCurrentBuffId(meta.id));
+                                                self.send_msg(Message::SetCurrentBuffId(meta.id));
                                             }
 
                                             if i % BUFF_BROWSER_COLS == BUFF_BROWSER_COLS - 1 {
@@ -276,7 +277,7 @@ impl App {
 
                 ui.vertical_right_justified(|ui| {
                     if ui.button("Close").clicked() {
-                        self.do_update(Message::CloseBuffBrowser);
+                        self.send_msg(Message::CloseBuffBrowser);
                     }
                 });
             });
@@ -337,9 +338,9 @@ impl App {
                                                     let response = ui.button(&meta.name);
 
                                                     if response.clicked() {
-                                                        self.do_update(
-                                                            Message::SetCurrentPrefixId(meta.id),
-                                                        );
+                                                        self.send_msg(Message::SetCurrentPrefixId(
+                                                            meta.id,
+                                                        ));
                                                     }
 
                                                     response.on_hover_ui(|ui| {
@@ -362,7 +363,7 @@ impl App {
 
                     ui.vertical_right_justified(|ui| {
                         if ui.button("Close").clicked() {
-                            self.do_update(Message::ClosePrefixBrowser);
+                            self.send_msg(Message::ClosePrefixBrowser);
                         }
                     });
                 },
@@ -436,9 +437,7 @@ impl App {
 
                                             let response = self.render_item_slot(ui, options);
                                             if response.clicked() {
-                                                self.do_update(Message::ToggleResearchItem(
-                                                    meta.id,
-                                                ));
+                                                self.send_msg(Message::ToggleResearchItem(meta.id));
                                             }
 
                                             if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
@@ -451,7 +450,7 @@ impl App {
 
                     ui.vertical_right_justified(|ui| {
                         if ui.button("Close").clicked() {
-                            self.do_update(Message::CloseResearchBrowser);
+                            self.send_msg(Message::CloseResearchBrowser);
                         }
                     });
                 },

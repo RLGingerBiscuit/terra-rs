@@ -1,26 +1,77 @@
-/// This entire thing is basically word-for-word with the official implementation.
-/// The only change is on line 278, to allow the frame to sense clicks.
-use eframe::epaint::{self, Shadow};
-use egui::{
-    layers::ShapeIdx, Color32, InnerResponse, Margin, Rect, Response, Rounding, Sense, Shape,
-    Stroke, Style, Ui,
-};
+#![allow(unused)]
 
-#[derive(Default, Debug, Clone, Copy, PartialEq)]
+/// This entire thing is copied from the original implementation.
+/// The only change is on line 311, to allow the frame to sense clicks.
+
+use egui::{epaint, layers::ShapeIdx, style::Margin, *};
+use epaint::*;
+
+/// Add a background, frame and/or margin to a rectangular background of a [`Ui`].
+///
+/// ```
+/// # egui::__run_test_ui(|ui| {
+/// egui::Frame::none()
+///     .fill(egui::Color32::RED)
+///     .show(ui, |ui| {
+///         ui.label("Label with red background");
+///     });
+/// # });
+/// ```
+///
+/// ## Dynamic color
+/// If you want to change the color of the frame based on the response of
+/// the widget, you needs to break it up into multiple steps:
+///
+/// ```
+/// # egui::__run_test_ui(|ui| {
+/// let mut frame = egui::Frame::default().inner_margin(4.0).begin(ui);
+/// {
+///     let response = frame.content_ui.label("Inside the frame");
+///     if response.hovered() {
+///         frame.frame.fill = egui::Color32::RED;
+///     }
+/// }
+/// frame.end(ui); // Will "close" the frame.
+/// # });
+/// ```
+///
+/// You can also respond to the hovering of the frame itself:
+///
+/// ```
+/// # egui::__run_test_ui(|ui| {
+/// let mut frame = egui::Frame::default().inner_margin(4.0).begin(ui);
+/// {
+///     frame.content_ui.label("Inside the frame");
+///     frame.content_ui.label("This too");
+/// }
+/// let response = frame.allocate_space(ui);
+/// if response.hovered() {
+///     frame.frame.fill = egui::Color32::RED;
+/// }
+/// frame.paint(ui);
+/// # });
+/// ```
+///
+/// Note that you cannot change the margins after calling `begin`.
+#[doc(alias = "border")]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[must_use = "You should call .show()"]
-#[allow(dead_code)]
 pub struct ClickableFrame {
     /// Margin within the painted frame.
     pub inner_margin: Margin,
+
     /// Margin outside the painted frame.
     pub outer_margin: Margin,
+
     pub rounding: Rounding,
+
     pub shadow: Shadow,
+
     pub fill: Color32,
+
     pub stroke: Stroke,
 }
 
-#[allow(dead_code)]
 impl ClickableFrame {
     pub fn none() -> Self {
         Self::default()
@@ -108,7 +159,6 @@ impl ClickableFrame {
     }
 }
 
-#[allow(dead_code)]
 impl ClickableFrame {
     #[inline]
     pub fn fill(mut self, fill: Color32) -> Self {
@@ -117,8 +167,8 @@ impl ClickableFrame {
     }
 
     #[inline]
-    pub fn stroke(mut self, stroke: Stroke) -> Self {
-        self.stroke = stroke;
+    pub fn stroke(mut self, stroke: impl Into<Stroke>) -> Self {
+        self.stroke = stroke.into();
         self
     }
 
@@ -142,18 +192,13 @@ impl ClickableFrame {
         self
     }
 
-    #[deprecated = "Renamed inner_margin in egui 0.18"]
-    #[inline]
-    pub fn margin(self, margin: impl Into<Margin>) -> Self {
-        self.inner_margin(margin)
-    }
-
     #[inline]
     pub fn shadow(mut self, shadow: Shadow) -> Self {
         self.shadow = shadow;
         self
     }
 
+    #[inline]
     pub fn multiply_with_opacity(mut self, opacity: f32) -> Self {
         self.fill = self.fill.linear_multiply(opacity);
         self.stroke.color = self.stroke.color.linear_multiply(opacity);
@@ -162,7 +207,6 @@ impl ClickableFrame {
     }
 }
 
-#[allow(dead_code)]
 impl ClickableFrame {
     /// inner margin plus outer margin.
     #[inline]
@@ -171,22 +215,34 @@ impl ClickableFrame {
     }
 }
 
-#[allow(dead_code)]
-struct Prepared {
+// ----------------------------------------------------------------------------
+
+pub struct Prepared {
+    /// The frame that was prepared.
+    ///
+    /// The margin has already been read and used,
+    /// but the rest of the fields may be modified.
     pub frame: ClickableFrame,
+
+    /// This is where we will insert the frame shape so it ends up behind the content.
     where_to_put_background: ShapeIdx,
+
+    /// Add your widgets to this UI so it ends up within the frame.
     pub content_ui: Ui,
 }
 
-#[allow(dead_code)]
 impl ClickableFrame {
-    fn begin(self, ui: &mut Ui) -> Prepared {
+    /// Begin a dynamically colored frame.
+    ///
+    /// This is a more advanced API.
+    /// Usually you want to use [`Self::show`] instead.
+    ///
+    /// See docs for [`Frame`] for an example.
+    pub fn begin(self, ui: &mut Ui) -> Prepared {
         let where_to_put_background = ui.painter().add(Shape::Noop);
         let outer_rect_bounds = ui.available_rect_before_wrap();
 
-        let mut inner_rect = outer_rect_bounds;
-        inner_rect.min += self.outer_margin.left_top() + self.inner_margin.left_top();
-        inner_rect.max -= self.outer_margin.right_bottom() + self.inner_margin.right_bottom();
+        let mut inner_rect = (self.inner_margin + self.outer_margin).shrink_rect(outer_rect_bounds);
 
         // Make sure we don't shrink to the negative:
         inner_rect.max.x = inner_rect.max.x.max(inner_rect.min.x);
@@ -203,6 +259,7 @@ impl ClickableFrame {
         }
     }
 
+    /// Show the given ui surrounded by this frame.
     pub fn show<R>(self, ui: &mut Ui, add_contents: impl FnOnce(&mut Ui) -> R) -> InnerResponse<R> {
         self.show_dyn(ui, Box::new(add_contents))
     }
@@ -218,6 +275,9 @@ impl ClickableFrame {
         InnerResponse::new(ret, response)
     }
 
+    /// Paint this frame as a shape.
+    ///
+    /// The margin is ignored.
     pub fn paint(&self, outer_rect: Rect) -> Shape {
         let Self {
             inner_margin: _,
@@ -228,12 +288,7 @@ impl ClickableFrame {
             stroke,
         } = *self;
 
-        let frame_shape = Shape::Rect(epaint::RectShape {
-            rect: outer_rect,
-            rounding,
-            fill,
-            stroke,
-        });
+        let frame_shape = Shape::Rect(epaint::RectShape::new(outer_rect, rounding, fill, stroke));
 
         if shadow == Default::default() {
             frame_shape
@@ -245,36 +300,38 @@ impl ClickableFrame {
     }
 }
 
-#[allow(dead_code)]
 impl Prepared {
-    fn paint_rect(&self) -> Rect {
-        let mut rect = self.content_ui.min_rect();
-        rect.min -= self.frame.inner_margin.left_top();
-        rect.max += self.frame.inner_margin.right_bottom();
-        rect
-    }
-
     fn content_with_margin(&self) -> Rect {
-        let mut rect = self.content_ui.min_rect();
-        rect.min -= self.frame.inner_margin.left_top() + self.frame.outer_margin.left_top();
-        rect.max += self.frame.inner_margin.right_bottom() + self.frame.outer_margin.right_bottom();
-        rect
+        (self.frame.inner_margin + self.frame.outer_margin).expand_rect(self.content_ui.min_rect())
     }
 
-    pub fn end(self, ui: &mut Ui) -> Response {
-        let paint_rect = self.paint_rect();
+    /// Allocate the the space that was used by [`Self::content_ui`].
+    ///
+    /// This MUST be called, or the parent ui will not know how much space this widget used.
+    ///
+    /// This can be called before or after [`Self::paint`].
+    pub fn allocate_space(&self, ui: &mut Ui) -> Response {
+        ui.allocate_rect(self.content_with_margin(), Sense::click())
+    }
 
-        let Prepared {
-            frame,
-            where_to_put_background,
-            ..
-        } = self;
+    /// Paint the frame.
+    ///
+    /// This can be called before or after [`Self::allocate_space`].
+    pub fn paint(&self, ui: &Ui) {
+        let paint_rect = self
+            .frame
+            .inner_margin
+            .expand_rect(self.content_ui.min_rect());
 
         if ui.is_rect_visible(paint_rect) {
-            let shape = frame.paint(paint_rect);
-            ui.painter().set(where_to_put_background, shape);
+            let shape = self.frame.paint(paint_rect);
+            ui.painter().set(self.where_to_put_background, shape);
         }
+    }
 
-        ui.allocate_rect(self.content_with_margin(), Sense::click_and_drag())
+    /// Convenience for calling [`Self::allocate_space`] and [`Self::paint`].
+    pub fn end(self, ui: &mut Ui) -> Response {
+        self.paint(ui);
+        self.allocate_space(ui)
     }
 }

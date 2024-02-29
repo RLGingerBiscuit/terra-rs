@@ -2,9 +2,11 @@ use std::sync::Arc;
 
 use egui::{mutex::RwLock, ColorImage, TextureHandle, TextureOptions};
 
-use super::{App, Message};
+use crate::app::context::Message;
 
-impl App {
+use super::context::AppContext;
+
+impl AppContext {
     pub fn load_spritesheet(
         &mut self,
         ctx: &egui::Context,

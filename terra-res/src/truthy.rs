@@ -37,7 +37,7 @@ where
     }
 }
 
-impl<T> TruthyOption<T> for rlua::Result<T>
+impl<T> TruthyOption<T> for mlua::Result<T>
 where
     T: Truthy,
 {

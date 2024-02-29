@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use egui::{Align2, ComboBox, TextStyle, Ui, WidgetText};
-use egui_dock::{NodeIndex, TabViewer, Tree};
+use egui_dock::{DockState, NodeIndex, TabViewer};
 
 use terra_core::{
     meta::Meta, utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE,
@@ -9,12 +9,13 @@ use terra_core::{
 };
 
 use super::{
+    context::AppContext,
     inventory::{
         buff_slot::{self, BuffSlotOptions},
         item_slot::ItemSlotOptions,
         ItemGroup,
     },
-    App, Message,
+    Message,
 };
 use crate::{
     app::inventory::{
@@ -88,9 +89,10 @@ impl Tabs {
     }
 }
 
-pub fn default_ui() -> Tree<Tabs> {
-    let mut tree = Tree::new(vec![Tabs::LoadSave]);
-    let [load_save, _inventory] = tree.split_below(
+pub fn default_ui() -> DockState<Tabs> {
+    let mut state = DockState::new(vec![Tabs::LoadSave]);
+    let main_surface = state.main_surface_mut();
+    let [load_save, _] = main_surface.split_below(
         0.into(),
         0.41,
         vec![
@@ -103,15 +105,16 @@ pub fn default_ui() -> Tree<Tabs> {
             Tabs::Equipment,
         ],
     );
-    let [load_save, stats] = tree.split_right(
+    let [load_save, stats] = main_surface.split_right(
         load_save,
         0.15,
         vec![Tabs::Stats, Tabs::Appearance, Tabs::Bonuses],
     );
-    let [_stats, _selected] = tree.split_right(stats, 0.6, vec![Tabs::Selected, Tabs::Research]);
+    let [_stats, _selected] =
+        main_surface.split_right(stats, 0.6, vec![Tabs::Selected, Tabs::Research]);
 
-    tree.set_focused_node(load_save);
-    tree
+    main_surface.set_focused_node(load_save);
+    state
 }
 
 #[derive(Debug)]
@@ -135,18 +138,18 @@ impl ItemTabOptions {
     }
 }
 
-impl App {
+impl AppContext {
     fn render_load_save_tab(&mut self, ui: &mut Ui) {
         ui.vertical_centered_justified(|ui| {
             ui.spacing_mut().item_spacing = [8.; 2].into();
             if ui.button("Load Player").clicked() {
-                self.do_update(Message::LoadPlayer);
+                self.send_msg(Message::LoadPlayer);
             }
             if ui.button("Save Player").clicked() {
-                self.do_update(Message::SavePlayer);
+                self.send_msg(Message::SavePlayer);
             }
             if ui.button("Reset Player").clicked() {
-                self.do_update(Message::ResetPlayer);
+                self.send_msg(Message::ResetPlayer);
             }
         });
     }
@@ -728,7 +731,7 @@ impl App {
                                 })
                                 .changed()
                             {
-                                self.do_update(Message::SelectLoadout(loadout));
+                                self.send_msg(Message::SelectLoadout(loadout));
                             }
                         }
 
@@ -754,19 +757,19 @@ impl App {
 
         ui.horizontal(|ui| {
             if ui.button("Clear all").clicked() {
-                self.do_update(Message::RemoveAllResearch);
+                self.send_msg(Message::RemoveAllResearch);
             }
             if ui.button("Unlock all").clicked() {
-                self.do_update(Message::AddAllResearch);
+                self.send_msg(Message::AddAllResearch);
             }
             if ui.button("\u{1f50e}").clicked() {
-                self.do_update(Message::OpenResearchBrowser);
+                self.send_msg(Message::OpenResearchBrowser);
             }
         });
     }
 }
 
-impl TabViewer for App {
+impl TabViewer for AppContext {
     type Tab = Tabs;
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
