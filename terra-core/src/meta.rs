@@ -23,7 +23,7 @@ pub trait Meta {
     {
         meta.iter()
             .find(|m| m.id() == id)
-            .unwrap_or(meta.get(0).expect("We really should have a zeroth meta"))
+            .unwrap_or(meta.first().expect("We really should have a zeroth meta"))
     }
 
     fn get_by_name<'a>(meta: &'a [Self], name: &'a str) -> Option<&'a Self>
