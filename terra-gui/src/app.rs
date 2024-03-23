@@ -109,9 +109,15 @@ impl App {
                 self.dock_state = default_ui();
             }
             AppMessage::AddTab(tab, surface, node) => {
-                self.dock_state
-                    .set_focused_node_and_surface((surface, node));
-                self.dock_state.push_to_focused_leaf(tab);
+                if let Some((surface, node, tab)) = self.dock_state.find_tab(&tab) {
+                    self.dock_state
+                        .set_focused_node_and_surface((surface, node));
+                    self.dock_state.set_active_tab((surface, node, tab));
+                } else {
+                    self.dock_state
+                        .set_focused_node_and_surface((surface, node));
+                    self.dock_state.push_to_focused_leaf(tab);
+                }
             }
         }
     }
