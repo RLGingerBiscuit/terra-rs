@@ -7,13 +7,13 @@ edition = "2021"
 terra-core = { path = "../terra-core" }
 anyhow = { workspace = true }
 serde = { workspace = true }
-once_cell = "1.18.0"
+once_cell = "1.19.0"
 flume = "0.11.0"
 rustc-hash = "1.1.0"
 eframe = { version = "0.26.2", features = ["persistence"] }
 egui = { version = "0.26.2", features = ["color-hex"] }
 catppuccin-egui = "5.0.0"
-egui_dock = { version = "0.11.2", features = ["serde"] }
+egui_dock = { version = "0.11.4", features = ["serde"] }
 image = { workspace = true }
-rfd = "0.14.0"
-open = "5.0.0"
+rfd = "0.14.1"
+open = "5.1.2"
