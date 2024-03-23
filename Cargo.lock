@@ -752,7 +752,8 @@ dependencies = [
 [[package]]
 name = "catppuccin-egui"
 version = "5.0.0"
-source = "git+https://github.com/catppuccin/egui.git?tag=v5.0.0#eeebcd38199e2ef3b66d3d300d3581584f043f59"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a099cfd86b29089e39abb6dfca40dd69f3bd76046585f8b3a4efe209bcc1d5ab"
 dependencies = [
  "egui",
 ]
