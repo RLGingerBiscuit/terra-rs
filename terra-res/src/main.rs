@@ -355,8 +355,6 @@ fn get_item_meta(
 ) -> Result<Vec<ItemMeta>> {
     // https://terraria.wiki.gg/wiki/Module:Iteminfo/data
     // API: https://terraria.wiki.gg/api.php?action=query&prop=revisions&titles=Module:Iteminfo/data&rvlimit=1&rvslots=*&rvprop=ids|content&format=json
-    // r[query][pages][18021][revisions][0][slots][main][*]
-    // Split on "local cache = require 'mw.ext.LuaCache'"
 
     let lua_resp = reqwest::blocking::get(ITEM_DATA_URL)?;
     let lua_json: serde_json::Value = lua_resp.json()?;
@@ -382,12 +380,7 @@ fn get_item_meta(
         .get("*")
         .unwrap()
         .as_str()
-        .unwrap()
-        .split("---------------------------------------- DATA END")
-        .next()
-        .unwrap()
-        .to_string()
-        + "}";
+        .unwrap();
 
     let mut item_meta: Vec<ItemMeta> = Vec::new();
 
@@ -395,10 +388,7 @@ fn get_item_meta(
     let forbidden_items = forbidden_items();
 
     let lua = Lua::new();
-    let info: mlua::Table = lua
-        .load(lua_str.as_str())
-        .set_name("Iteminfo_data")
-        .eval()?;
+    let info: mlua::Table = lua.load(lua_str).set_name("Iteminfo_luadata").eval()?;
 
     for pair in info.pairs::<mlua::String, mlua::Value>() {
         let (key, val) = pair?;
