@@ -133,11 +133,11 @@ impl AppContext {
         let item_meta = self.item_meta.read();
 
         if icon_spritesheet.is_none() && !self.is_busy() {
-            self.send_msg(Message::LoadIconSpritesheet);
+            self.send_context_msg(Message::LoadIconSpritesheet);
         }
 
         if item_spritesheet.is_none() && !self.is_busy() {
-            self.send_msg(Message::LoadItemSpritesheet);
+            self.send_context_msg(Message::LoadItemSpritesheet);
         }
 
         // FIXME: Lifetime stuff means ::from_slot_options doesn't work
@@ -173,7 +173,7 @@ impl AppContext {
             options.selected = self.selected_item.equals(group, index);
 
             if self.render_item_slot(ui, options).clicked() {
-                self.send_msg(Message::SelectItem(SelectedItem(group, index)));
+                self.send_context_msg(Message::SelectItem(SelectedItem(group, index)));
             }
         }
     }
@@ -209,7 +209,7 @@ impl AppContext {
                 ui.label("Id:");
                 ui.drag_value_with_buttons(&mut item.id, 1., 0..=largest_item_id);
                 if ui.button("\u{1f50e}").clicked() {
-                    self.send_msg(Message::OpenItemBrowser);
+                    self.send_context_msg(Message::OpenItemBrowser);
                 }
                 ui.end_row();
 
@@ -223,7 +223,7 @@ impl AppContext {
                 ui.label("Prefix:");
                 ui.drag_value_with_buttons(&mut item.prefix.id, 1., 0..=largest_prefix_id);
                 if ui.button("\u{1f50e}").clicked() {
-                    self.send_msg(Message::OpenPrefixBrowser);
+                    self.send_context_msg(Message::OpenPrefixBrowser);
                 }
                 ui.end_row();
             });
@@ -240,7 +240,7 @@ impl AppContext {
         let buff_meta = self.buff_meta.read();
 
         if buff_spritesheet.is_none() && !self.is_busy() {
-            self.send_msg(Message::LoadBuffSpritesheet);
+            self.send_context_msg(Message::LoadBuffSpritesheet);
         }
 
         let tooltip_options = BuffTooltipOptions::from_slot_options(&options);
@@ -267,7 +267,7 @@ impl AppContext {
             options.selected = self.selected_buff.equals(index);
 
             if self.render_buff_slot(ui, options).clicked() {
-                self.send_msg(Message::SelectBuff(SelectedBuff(index)));
+                self.send_context_msg(Message::SelectBuff(SelectedBuff(index)));
             }
         }
     }
@@ -297,7 +297,7 @@ impl AppContext {
                 ui.label("Id:");
                 ui.drag_value_with_buttons(&mut buff.id, 1., 0..=largest_buff_id);
                 if ui.button("\u{1f50e}").clicked() {
-                    self.send_msg(Message::OpenBuffBrowser);
+                    self.send_context_msg(Message::OpenBuffBrowser);
                 }
                 ui.end_row();
 

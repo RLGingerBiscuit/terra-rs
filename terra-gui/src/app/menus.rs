@@ -1,16 +1,13 @@
-use egui::Ui;
+use egui::{RichText, Ui};
 
-use super::{
-    context::AppContext, tabs::Tabs, visuals, AppMessage, Message, SHORTCUT_EXIT, SHORTCUT_LOAD,
-    SHORTCUT_SAVE,
-};
+use super::{visuals, App, AppMessage, Message, SHORTCUT_EXIT, SHORTCUT_LOAD, SHORTCUT_SAVE};
 use crate::ui::UiExt;
 
-impl AppContext {
+impl App {
     pub fn render_menu(&mut self, ctx: &egui::Context) {
         egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
             ui.style_mut().visuals.button_frame = false;
-            ui.set_enabled(!self.is_modal_open());
+            ui.set_enabled(!self.context.is_modal_open());
 
             ui.horizontal(|ui| {
                 ui.menu_button("File", |ui| self.render_file_menu(ui));
@@ -23,11 +20,11 @@ impl AppContext {
     fn render_file_menu(&mut self, ui: &mut Ui) {
         if ui.shortcut_button("Load", &SHORTCUT_LOAD).clicked() {
             ui.close_menu();
-            self.send_msg(Message::LoadPlayer);
+            self.send_context_msg(Message::LoadPlayer);
         }
         if ui.shortcut_button("Save", &SHORTCUT_SAVE).clicked() {
             ui.close_menu();
-            self.send_msg(Message::SavePlayer);
+            self.send_context_msg(Message::SavePlayer);
         }
         if ui.shortcut_button("Exit", &SHORTCUT_EXIT).clicked() {
             ui.close_menu();
@@ -38,26 +35,18 @@ impl AppContext {
     fn render_window_menu(&mut self, ui: &mut Ui) {
         let mut theme_change = None;
 
-        ui.horizontal(|ui| {
-            ui.label("Theme:");
-            egui::ComboBox::new("window_theme", "")
-                .selected_text(self.theme.to_string())
-                .show_ui(ui, |ui| {
-                    let current_theme = &mut self.theme;
-
-                    for theme in visuals::Theme::iter() {
-                        if ui
-                            .selectable_value(current_theme, theme, theme.to_string())
-                            .clicked()
-                        {
-                            theme_change = Some(theme);
-                        }
-                    }
-                });
+        ui.label(RichText::new("Theme").strong());
+        visuals::Theme::iter().for_each(|theme| {
+            if ui
+                .radio(theme == self.context.theme, theme.to_string())
+                .clicked()
+            {
+                theme_change = Some(theme);
+            }
         });
 
         if let Some(theme) = theme_change {
-            self.send_msg(Message::SetTheme(theme));
+            self.send_context_msg(Message::SetTheme(theme));
             ui.close_menu();
         }
 
@@ -65,45 +54,14 @@ impl AppContext {
 
         if ui.button("Reset Tabs").clicked() {
             ui.close_menu();
-            self.send_msg(Message::ResetTabs);
-        }
-
-        ui.separator();
-
-        for tab in Tabs::iter() {
-            let mut disabled = !self.closed_tabs.contains_key(&tab);
-
-            if ui.checkbox(&mut disabled, format!(" {tab}")).changed() {
-                // TODO: Re-implement this
-                // let mut tree = self.dock_state.write();
-
-                // if self.closed_tabs.remove(&tab).is_some() {
-                //     tree.push_to_focused_leaf(tab);
-                // } else if let Some((parent_index, node_index)) = tree.find_tab(&tab) {
-                //     let parent = tree.iter_mut().nth(parent_index.0).unwrap();
-                //     parent.remove_tab(node_index);
-                //     self.closed_tabs.insert(tab, parent_index);
-
-                //     // NOTE: Below is just inlined remove_empty_leaf (which was removed in egui_dock v0.5.0)
-                //     let mut nodes = tree.iter().enumerate();
-                //     let node = nodes.find_map(|(index, node)| match node {
-                //         Node::Leaf { tabs, .. } if tabs.is_empty() => Some(index),
-                //         _ => None,
-                //     });
-
-                //     if let Some(node) = node {
-                //         let node = NodeIndex(node);
-                //         (*tree).remove_leaf(node);
-                //     }
-                // }
-            }
+            self.send_app_msg(AppMessage::ResetTabs);
         }
     }
 
     fn render_help_menu(&mut self, ui: &mut Ui) {
         if ui.button("About").clicked() {
             ui.close_menu();
-            self.send_msg(Message::ShowAbout);
+            self.send_context_msg(Message::ShowAbout);
         };
     }
 }

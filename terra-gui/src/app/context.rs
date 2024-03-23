@@ -1,9 +1,7 @@
 use std::{path::PathBuf, sync::Arc, thread, time::Duration};
 
 use egui::{mutex::RwLock, Key, Modifiers, TextureHandle};
-use egui_dock::NodeIndex;
 use flume::{Receiver, Sender};
-use rustc_hash::FxHashMap;
 
 use terra_core::{
     meta::Meta,
@@ -15,7 +13,6 @@ use super::{
     inventory::{
         selected_buff, selected_item, ItemGroup, SelectedBuff, SelectedItem, SelectedLoadout,
     },
-    tabs::Tabs,
     visuals, AppMessage, DEFAULT_PLAYER, DEFAULT_PLAYER_DIR, SHORTCUT_EXIT, SHORTCUT_LOAD,
     SHORTCUT_SAVE,
 };
@@ -31,7 +28,6 @@ pub enum Message {
     ShowError(anyhow::Error),
     CloseError,
     SetTheme(visuals::Theme),
-    ResetTabs,
     ResetPlayer,
     LoadPlayer,
     SavePlayer,
@@ -55,8 +51,8 @@ pub enum Message {
 }
 
 pub struct AppContext {
-    channel: (Sender<Message>, Receiver<Message>),
-    ctx: Sender<AppMessage>,
+    chan: (Sender<Message>, Receiver<Message>),
+    atx: Sender<AppMessage>,
 
     pub player: Arc<RwLock<Player>>,
     pub player_path: Option<PathBuf>,
@@ -76,7 +72,6 @@ pub struct AppContext {
     pub search_term: String,
 
     pub theme: visuals::Theme,
-    pub closed_tabs: FxHashMap<Tabs, NodeIndex>,
 
     pub error: Option<anyhow::Error>,
     pub busy: Arc<RwLock<bool>>,
@@ -90,19 +85,18 @@ pub struct AppContext {
 
 impl AppContext {
     pub fn new(
-        tx: Sender<Message>,
-        rx: Receiver<Message>,
-        ctx: Sender<AppMessage>,
+        ctx: Sender<Message>,
+        crx: Receiver<Message>,
+        atx: Sender<AppMessage>,
         theme: visuals::Theme,
-        closed_tabs: FxHashMap<Tabs, NodeIndex>,
     ) -> Self {
         let prefix_meta = PrefixMeta::load().expect("Could not load prefixes");
         let item_meta = ItemMeta::load().expect("Could not load items");
         let buff_meta = BuffMeta::load().expect("Could not load buffs");
 
         Self {
-            channel: (tx, rx),
-            ctx,
+            chan: (ctx, crx),
+            atx,
 
             player: Arc::new(RwLock::new(Player::default())),
             player_path: None,
@@ -120,7 +114,6 @@ impl AppContext {
             icon_spritesheet: Arc::new(RwLock::new(None)),
 
             theme,
-            closed_tabs,
 
             search_term: Default::default(),
 
@@ -135,24 +128,20 @@ impl AppContext {
         }
     }
 
-    fn tx(&self) -> &Sender<Message> {
-        &self.channel.0
+    fn ctx(&self) -> &Sender<Message> {
+        &self.chan.0
     }
 
-    fn rx(&self) -> &Receiver<Message> {
-        &self.channel.1
+    fn crx(&self) -> &Receiver<Message> {
+        &self.chan.1
     }
 
-    fn ctx(&self) -> &Sender<AppMessage> {
-        &self.ctx
+    fn atx(&self) -> &Sender<AppMessage> {
+        &self.atx
     }
 
     pub fn theme(&self) -> visuals::Theme {
         self.theme
-    }
-
-    pub fn closed_tabs(&self) -> &FxHashMap<Tabs, NodeIndex> {
-        &self.closed_tabs
     }
 
     pub fn is_busy(&self) -> bool {
@@ -173,13 +162,12 @@ impl AppContext {
         &mut self,
         task: impl 'static + Send + Sync + FnOnce() -> anyhow::Result<Message>,
     ) {
-        let tx = self.channel.0.clone();
+        let tx = self.ctx().clone();
         let task = Box::new(task);
         let busy = self.busy.clone();
+        *busy.write() = true;
 
         thread::spawn(move || {
-            *busy.write() = true;
-
             match task() {
                 Ok(msg) => tx.send(msg).unwrap(),
                 Err(err) => tx.send(Message::ShowError(err)).unwrap(),
@@ -189,16 +177,16 @@ impl AppContext {
         });
     }
 
-    pub fn send_msg(&self, msg: Message) {
-        self.tx().send(msg).unwrap();
-    }
-
-    pub fn send_app_msg(&self, msg: AppMessage) {
+    pub fn send_context_msg(&self, msg: Message) {
         self.ctx().send(msg).unwrap();
     }
 
+    pub fn send_app_msg(&self, msg: AppMessage) {
+        self.atx().send(msg).unwrap();
+    }
+
     fn handle_update(&mut self, ctx: &egui::Context) {
-        if let Ok(msg) = self.rx().try_recv() {
+        while let Ok(msg) = self.crx().try_recv() {
             self.handle_message(ctx, msg);
         }
     }
@@ -207,14 +195,23 @@ impl AppContext {
         match msg {
             Message::Noop => {}
             Message::LoadItemSpritesheet => {
+                if self.item_spritesheet.read().is_some() {
+                    return;
+                }
                 let spritesheet = self.item_spritesheet.clone();
                 self.load_spritesheet(ctx, "items.png", spritesheet);
             }
             Message::LoadBuffSpritesheet => {
+                if self.buff_spritesheet.read().is_some() {
+                    return;
+                }
                 let spritesheet = self.buff_spritesheet.clone();
                 self.load_spritesheet(ctx, "buffs.png", spritesheet);
             }
             Message::LoadIconSpritesheet => {
+                if self.icon_spritesheet.read().is_some() {
+                    return;
+                }
                 let spritesheet = self.icon_spritesheet.clone();
                 self.load_spritesheet(ctx, "icons.png", spritesheet);
             }
@@ -228,10 +225,6 @@ impl AppContext {
             Message::SetTheme(theme) => {
                 theme.set_theme(ctx);
                 self.theme = theme;
-            }
-            Message::ResetTabs => {
-                self.closed_tabs.clear();
-                self.send_app_msg(AppMessage::ResetTabs);
             }
             Message::ResetPlayer => self.player.write().clone_from(&DEFAULT_PLAYER),
             Message::LoadPlayer => {
@@ -441,10 +434,10 @@ impl AppContext {
                 }
             } else {
                 if input.consume_shortcut(&SHORTCUT_LOAD) {
-                    self.send_msg(Message::LoadPlayer);
+                    self.send_context_msg(Message::LoadPlayer);
                 }
                 if input.consume_shortcut(&SHORTCUT_SAVE) {
-                    self.send_msg(Message::SavePlayer);
+                    self.send_context_msg(Message::SavePlayer);
                 }
                 if input.consume_shortcut(&SHORTCUT_EXIT) {
                     self.send_app_msg(AppMessage::Exit);
@@ -456,8 +449,6 @@ impl AppContext {
     pub fn update(&mut self, ctx: &egui::Context) {
         self.handle_update(ctx);
         self.handle_keyboard(ctx);
-
-        self.render_menu(ctx);
 
         self.render_about(ctx);
         self.render_error(ctx);

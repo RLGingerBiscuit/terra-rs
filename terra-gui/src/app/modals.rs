@@ -114,7 +114,7 @@ impl AppContext {
 
                     ui.vertical_right_justified(|ui| {
                         if ui.button("Ok").clicked() {
-                            self.send_msg(Message::CloseAbout);
+                            self.send_context_msg(Message::CloseAbout);
                         }
                     });
                 },
@@ -142,7 +142,7 @@ impl AppContext {
 
                     ui.vertical_right_justified(|ui| {
                         if ui.button("Ok").clicked() {
-                            self.send_msg(Message::CloseError);
+                            self.send_context_msg(Message::CloseError);
                         }
                     });
                 },
@@ -197,7 +197,7 @@ impl AppContext {
 
                                             let response = self.render_item_slot(ui, options);
                                             if response.clicked() {
-                                                self.send_msg(Message::SetCurrentItemId(meta.id));
+                                                self.send_context_msg(Message::SetCurrentItemId(meta.id));
                                             }
 
                                             if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
@@ -211,7 +211,7 @@ impl AppContext {
 
                 ui.vertical_right_justified(|ui| {
                     if ui.button("Close").clicked() {
-                        self.send_msg(Message::CloseItemBrowser);
+                        self.send_context_msg(Message::CloseItemBrowser);
                     }
                 });
             });
@@ -263,7 +263,7 @@ impl AppContext {
 
                                             let response = self.render_buff_slot(ui, options);
                                             if response.clicked() {
-                                                self.send_msg(Message::SetCurrentBuffId(meta.id));
+                                                self.send_context_msg(Message::SetCurrentBuffId(meta.id));
                                             }
 
                                             if i % BUFF_BROWSER_COLS == BUFF_BROWSER_COLS - 1 {
@@ -277,7 +277,7 @@ impl AppContext {
 
                 ui.vertical_right_justified(|ui| {
                     if ui.button("Close").clicked() {
-                        self.send_msg(Message::CloseBuffBrowser);
+                        self.send_context_msg(Message::CloseBuffBrowser);
                     }
                 });
             });
@@ -338,7 +338,7 @@ impl AppContext {
                                                     let response = ui.button(&meta.name);
 
                                                     if response.clicked() {
-                                                        self.send_msg(Message::SetCurrentPrefixId(
+                                                        self.send_context_msg(Message::SetCurrentPrefixId(
                                                             meta.id,
                                                         ));
                                                     }
@@ -363,7 +363,7 @@ impl AppContext {
 
                     ui.vertical_right_justified(|ui| {
                         if ui.button("Close").clicked() {
-                            self.send_msg(Message::ClosePrefixBrowser);
+                            self.send_context_msg(Message::ClosePrefixBrowser);
                         }
                     });
                 },
@@ -437,7 +437,7 @@ impl AppContext {
 
                                             let response = self.render_item_slot(ui, options);
                                             if response.clicked() {
-                                                self.send_msg(Message::ToggleResearchItem(meta.id));
+                                                self.send_context_msg(Message::ToggleResearchItem(meta.id));
                                             }
 
                                             if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
@@ -450,7 +450,7 @@ impl AppContext {
 
                     ui.vertical_right_justified(|ui| {
                         if ui.button("Close").clicked() {
-                            self.send_msg(Message::CloseResearchBrowser);
+                            self.send_context_msg(Message::CloseResearchBrowser);
                         }
                     });
                 },

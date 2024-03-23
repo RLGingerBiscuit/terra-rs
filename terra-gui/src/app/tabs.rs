@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use egui::{Align2, ComboBox, TextStyle, Ui, WidgetText};
-use egui_dock::{DockState, NodeIndex, TabViewer};
+use egui_dock::{DockState, TabViewer};
 
 use terra_core::{
     meta::Meta, utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE,
@@ -18,16 +18,19 @@ use super::{
     Message,
 };
 use crate::{
-    app::inventory::{
-        item_slot::{self, ItemSlotIcon},
-        slot::SlotText,
+    app::{
+        inventory::{
+            item_slot::{self, ItemSlotIcon},
+            slot::SlotText,
+        },
+        AppMessage,
     },
     enum_selectable_value,
     ui::UiExt,
 };
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub enum Tabs {
+pub enum Tab {
     Stats,
     LoadSave,
     Appearance,
@@ -43,75 +46,75 @@ pub enum Tabs {
     Research,
 }
 
-impl Display for Tabs {
+impl Display for Tab {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Tabs::LoadSave => "Load & Save",
-                Tabs::Stats => "Stats",
-                Tabs::Appearance => "Appearance",
-                Tabs::Bonuses => "Permanent Bonuses",
-                Tabs::Selected => "Selected",
-                Tabs::Inventory => "Inventory",
-                Tabs::Bank => "Piggy Bank",
-                Tabs::Safe => "Safe",
-                Tabs::Forge => "Defender's Forge",
-                Tabs::Void => "Void Vault",
-                Tabs::Buffs => "Buffs",
-                Tabs::Equipment => "Equipment",
-                Tabs::Research => "Research",
+                Tab::LoadSave => "Load & Save",
+                Tab::Stats => "Stats",
+                Tab::Appearance => "Appearance",
+                Tab::Bonuses => "Permanent Bonuses",
+                Tab::Selected => "Selected",
+                Tab::Inventory => "Inventory",
+                Tab::Bank => "Piggy Bank",
+                Tab::Safe => "Safe",
+                Tab::Forge => "Defender's Forge",
+                Tab::Void => "Void Vault",
+                Tab::Buffs => "Buffs",
+                Tab::Equipment => "Equipment",
+                Tab::Research => "Research",
             }
         )
     }
 }
 
-impl Tabs {
+impl Tab {
     #[inline]
     pub fn iter() -> impl Iterator<Item = Self> {
         [
-            Tabs::LoadSave,
-            Tabs::Stats,
-            Tabs::Appearance,
-            Tabs::Bonuses,
-            Tabs::Selected,
-            Tabs::Inventory,
-            Tabs::Bank,
-            Tabs::Safe,
-            Tabs::Forge,
-            Tabs::Void,
-            Tabs::Buffs,
-            Tabs::Equipment,
-            Tabs::Research,
+            Tab::LoadSave,
+            Tab::Stats,
+            Tab::Appearance,
+            Tab::Bonuses,
+            Tab::Selected,
+            Tab::Inventory,
+            Tab::Bank,
+            Tab::Safe,
+            Tab::Forge,
+            Tab::Void,
+            Tab::Buffs,
+            Tab::Equipment,
+            Tab::Research,
         ]
         .into_iter()
     }
 }
 
-pub fn default_ui() -> DockState<Tabs> {
-    let mut state = DockState::new(vec![Tabs::LoadSave]);
+pub fn default_ui() -> DockState<Tab> {
+    let mut state = DockState::new(vec![Tab::LoadSave]);
     let main_surface = state.main_surface_mut();
     let [load_save, _] = main_surface.split_below(
         0.into(),
-        0.41,
+        0.425,
         vec![
-            Tabs::Inventory,
-            Tabs::Bank,
-            Tabs::Safe,
-            Tabs::Forge,
-            Tabs::Void,
-            Tabs::Buffs,
-            Tabs::Equipment,
+            Tab::Inventory,
+            Tab::Bank,
+            Tab::Safe,
+            Tab::Forge,
+            Tab::Void,
+            Tab::Buffs,
+            Tab::Equipment,
         ],
     );
     let [load_save, stats] = main_surface.split_right(
         load_save,
-        0.15,
-        vec![Tabs::Stats, Tabs::Appearance, Tabs::Bonuses],
+        0.22,
+        vec![Tab::Stats, Tab::Appearance, Tab::Bonuses],
     );
     let [_stats, _selected] =
-        main_surface.split_right(stats, 0.6, vec![Tabs::Selected, Tabs::Research]);
+        main_surface.split_right(stats, 0.6, vec![Tab::Selected, Tab::Research]);
 
     main_surface.set_focused_node(load_save);
     state
@@ -143,13 +146,13 @@ impl AppContext {
         ui.vertical_centered_justified(|ui| {
             ui.spacing_mut().item_spacing = [8.; 2].into();
             if ui.button("Load Player").clicked() {
-                self.send_msg(Message::LoadPlayer);
+                self.send_context_msg(Message::LoadPlayer);
             }
             if ui.button("Save Player").clicked() {
-                self.send_msg(Message::SavePlayer);
+                self.send_context_msg(Message::SavePlayer);
             }
             if ui.button("Reset Player").clicked() {
-                self.send_msg(Message::ResetPlayer);
+                self.send_context_msg(Message::ResetPlayer);
             }
         });
     }
@@ -731,7 +734,7 @@ impl AppContext {
                                 })
                                 .changed()
                             {
-                                self.send_msg(Message::SelectLoadout(loadout));
+                                self.send_context_msg(Message::SelectLoadout(loadout));
                             }
                         }
 
@@ -757,38 +760,38 @@ impl AppContext {
 
         ui.horizontal(|ui| {
             if ui.button("Clear all").clicked() {
-                self.send_msg(Message::RemoveAllResearch);
+                self.send_context_msg(Message::RemoveAllResearch);
             }
             if ui.button("Unlock all").clicked() {
-                self.send_msg(Message::AddAllResearch);
+                self.send_context_msg(Message::AddAllResearch);
             }
             if ui.button("\u{1f50e}").clicked() {
-                self.send_msg(Message::OpenResearchBrowser);
+                self.send_context_msg(Message::OpenResearchBrowser);
             }
         });
     }
 }
 
 impl TabViewer for AppContext {
-    type Tab = Tabs;
+    type Tab = Tab;
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
         ui.set_enabled(!self.is_modal_open());
 
         match tab {
-            Tabs::LoadSave => self.render_load_save_tab(ui),
-            Tabs::Appearance => self.render_appearance_tab(ui),
-            Tabs::Stats => self.render_stats_tab(ui),
-            Tabs::Bonuses => self.render_bonuses_tab(ui),
-            Tabs::Selected => self.render_selected_tab(ui),
-            Tabs::Inventory => self.render_inventory_tab(ui),
-            Tabs::Bank => self.render_bank_tab(ui),
-            Tabs::Safe => self.render_safe_tab(ui),
-            Tabs::Forge => self.render_forge_tab(ui),
-            Tabs::Void => self.render_void_tab(ui),
-            Tabs::Buffs => self.render_buffs_tab(ui),
-            Tabs::Equipment => self.render_equipment_tab(ui),
-            Tabs::Research => self.render_research_tab(ui),
+            Tab::LoadSave => self.render_load_save_tab(ui),
+            Tab::Appearance => self.render_appearance_tab(ui),
+            Tab::Stats => self.render_stats_tab(ui),
+            Tab::Bonuses => self.render_bonuses_tab(ui),
+            Tab::Selected => self.render_selected_tab(ui),
+            Tab::Inventory => self.render_inventory_tab(ui),
+            Tab::Bank => self.render_bank_tab(ui),
+            Tab::Safe => self.render_safe_tab(ui),
+            Tab::Forge => self.render_forge_tab(ui),
+            Tab::Void => self.render_void_tab(ui),
+            Tab::Buffs => self.render_buffs_tab(ui),
+            Tab::Equipment => self.render_equipment_tab(ui),
+            Tab::Research => self.render_research_tab(ui),
         }
     }
 
@@ -796,8 +799,23 @@ impl TabViewer for AppContext {
         tab.to_string().into()
     }
 
-    fn on_close(&mut self, tab: &mut Self::Tab) -> bool {
-        self.closed_tabs.insert(*tab, NodeIndex::root());
-        true
+    fn closeable(&mut self, tab: &mut Self::Tab) -> bool {
+        !matches!(*tab, Tab::LoadSave)
+    }
+
+    fn add_popup(
+        &mut self,
+        ui: &mut Ui,
+        surface: egui_dock::SurfaceIndex,
+        node: egui_dock::NodeIndex,
+    ) {
+        ui.set_min_width(120.);
+        ui.style_mut().visuals.button_frame = false;
+
+        for tab in Tab::iter() {
+            if ui.button(tab.to_string()).clicked() {
+                self.send_app_msg(AppMessage::AddTab(tab, surface, node));
+            }
+        }
     }
 }
