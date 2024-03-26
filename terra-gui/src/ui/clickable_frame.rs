@@ -3,7 +3,7 @@
 /// This entire thing is copied from the original implementation.
 /// The only change is on line 311, to allow the frame to sense clicks.
 
-use egui::{epaint, layers::ShapeIdx, style::Margin, *};
+use egui::{epaint, layers::ShapeIdx, *};
 use epaint::*;
 
 /// Add a background, frame and/or margin to a rectangular background of a [`Ui`].
