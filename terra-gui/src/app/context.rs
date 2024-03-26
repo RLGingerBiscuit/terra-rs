@@ -1,17 +1,17 @@
-use std::{path::PathBuf, sync::Arc, thread, time::Duration};
+use std::{path::PathBuf, rc::Rc, sync::Arc, thread, time::Duration};
 
 use egui::{mutex::RwLock, Key, Modifiers, TextureHandle};
 use flume::{Receiver, Sender};
 
 use terra_core::{
-    meta::Meta,
     utils::{self, AsTicks},
     BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem,
 };
 
 use super::{
     inventory::{
-        selected_buff, selected_item, ItemGroup, SelectedBuff, SelectedItem, SelectedLoadout,
+        selected_buff, selected_item, ItemGroup, MetaLoader, SelectedBuff, SelectedItem,
+        SelectedLoadout,
     },
     visuals, AppMessage, DEFAULT_PLAYER, DEFAULT_PLAYER_DIR, SHORTCUT_EXIT, SHORTCUT_LOAD,
     SHORTCUT_SAVE,
@@ -89,10 +89,13 @@ impl AppContext {
         crx: Receiver<Message>,
         atx: Sender<AppMessage>,
         theme: visuals::Theme,
+        meta_loader: Rc<dyn MetaLoader>,
     ) -> Self {
-        let prefix_meta = PrefixMeta::load().expect("Could not load prefixes");
-        let item_meta = ItemMeta::load().expect("Could not load items");
-        let buff_meta = BuffMeta::load().expect("Could not load buffs");
+        let prefix_meta = meta_loader
+            .load_prefixes()
+            .expect("Could not load prefixes");
+        let item_meta = meta_loader.load_items().expect("Could not load items");
+        let buff_meta = meta_loader.load_buffs().expect("Could not load buffs");
 
         Self {
             chan: (ctx, crx),

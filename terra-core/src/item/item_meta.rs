@@ -1,6 +1,3 @@
-#[cfg(feature = "deserialize")]
-use std::{fs::File, io::BufReader};
-
 use crate::{meta::Meta, ItemRarity};
 
 #[repr(u8)]
@@ -82,26 +79,5 @@ impl Meta for ItemMeta {
 
     fn internal_name(&self) -> &str {
         &self.internal_name
-    }
-
-    #[cfg(feature = "deserialize")]
-    fn load() -> anyhow::Result<Vec<Self>>
-    where
-        Self: Sized,
-    {
-        let file = File::open(
-            std::env::current_exe()?
-                .parent()
-                .unwrap()
-                .join("resources")
-                .join("items.json"),
-        )?;
-
-        let reader = BufReader::new(file);
-
-        let mut meta: Vec<Self> = serde_json::from_reader(reader)?;
-        meta.sort_by(|a, b| a.id.cmp(&b.id));
-
-        Ok(meta)
     }
 }

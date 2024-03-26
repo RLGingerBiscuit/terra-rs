@@ -1,14 +1,9 @@
 pub trait Meta {
-    type Id: PartialOrd;
+    type Id: Ord;
 
     fn id(&self) -> Self::Id;
     fn name(&self) -> &str;
     fn internal_name(&self) -> &str;
-
-    #[cfg(feature = "deserialize")]
-    fn load() -> anyhow::Result<Vec<Self>>
-    where
-        Self: Sized;
 
     fn get(meta: &[Self], id: Self::Id) -> Option<&Self>
     where

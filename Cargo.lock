@@ -4423,6 +4423,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "catppuccin-egui",
+ "cfg-if",
  "eframe",
  "egui",
  "egui_dock",
@@ -4433,6 +4434,7 @@ dependencies = [
  "rfd",
  "rustc-hash",
  "serde",
+ "serde_json",
  "terra-core",
 ]
 

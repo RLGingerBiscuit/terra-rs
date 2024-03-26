@@ -18,6 +18,7 @@ use terra_core::{utils, Player};
 
 use self::{
     context::{AppContext, Message},
+    inventory::platform_meta_loader,
     tabs::{default_ui, Tab},
 };
 
@@ -66,7 +67,13 @@ impl App {
         };
         theme.set_theme(&cc.egui_ctx);
 
-        let context = AppContext::new(ctx.clone(), crx.clone(), atx.clone(), theme);
+        let context = AppContext::new(
+            ctx.clone(),
+            crx.clone(),
+            atx.clone(),
+            theme,
+            platform_meta_loader(),
+        );
 
         Self {
             app_chan: (atx, arx),
