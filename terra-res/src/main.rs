@@ -14,7 +14,7 @@ use itertools::Itertools;
 use mlua::Lua;
 use regex::{Captures, Regex};
 
-use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, ItemType, PrefixMeta};
+use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, ItemType, PrefixMeta, SharedString};
 
 mod truthy;
 use truthy::TruthyOption;
@@ -456,8 +456,8 @@ fn get_item_meta(
 
             let item = ItemMeta {
                 id,
-                internal_name,
-                name,
+                internal_name: internal_name.into(),
+                name: name.into(),
                 width,
                 height,
                 x,
@@ -481,7 +481,7 @@ fn get_item_meta(
                 fishing_bait,
                 range_boost,
                 sacrifices,
-                tooltip,
+                tooltip: tooltip.map(|t| t.into_iter().map(|l| l.into()).collect_vec()),
                 forbidden,
                 consumes_tile,
                 is_material,
@@ -578,12 +578,12 @@ fn get_buff_meta(
 
             buff_meta.push(BuffMeta {
                 id,
-                name,
+                name: name.into(),
                 x,
                 y,
-                internal_name,
+                internal_name: internal_name.into(),
                 buff_type,
-                tooltip,
+                tooltip: tooltip.map(|t| t.into_iter().map(|l| l.into()).collect_vec()),
             });
         });
 
@@ -593,8 +593,8 @@ fn get_buff_meta(
         let y = y.to_owned();
         buff_meta.push(BuffMeta {
             id: 0,
-            name: String::new(),
-            internal_name: "None".to_owned(),
+            name: SharedString::default(),
+            internal_name: SharedString::new("None"),
             x,
             y,
             buff_type: BuffType::Buff,
@@ -658,15 +658,15 @@ fn get_prefix_meta(
 
             prefix_meta.push(PrefixMeta {
                 id,
-                internal_name,
-                name,
+                internal_name: internal_name.into(),
+                name: name.into(),
             });
         });
 
     prefix_meta.push(PrefixMeta {
         id: 0,
-        name: String::new(),
-        internal_name: "None".to_owned(),
+        name: SharedString::default(),
+        internal_name: SharedString::new("None"),
     });
 
     prefix_meta.sort_by_key(|p| p.id);

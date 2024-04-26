@@ -1,4 +1,4 @@
-use crate::{meta::Meta, ItemRarity};
+use crate::{meta::Meta, ItemRarity, SharedString};
 
 #[repr(u8)]
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -31,8 +31,8 @@ pub enum ItemType {
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct ItemMeta {
     pub id: i32,
-    pub name: String,
-    pub internal_name: String,
+    pub name: SharedString,
+    pub internal_name: SharedString,
     pub width: i32,
     pub height: i32,
     pub x: i32,
@@ -56,7 +56,7 @@ pub struct ItemMeta {
     pub fishing_power: Option<i32>,
     pub fishing_bait: Option<i32>,
     pub range_boost: Option<i32>,
-    pub tooltip: Option<Vec<String>>,
+    pub tooltip: Option<Vec<SharedString>>,
     pub forbidden: Option<bool>,
     pub consumes_tile: Option<i32>,
     pub item_type: Option<ItemType>,
@@ -73,11 +73,11 @@ impl Meta for ItemMeta {
         self.id
     }
 
-    fn name(&self) -> &str {
-        &self.name
+    fn name(&self) -> SharedString {
+        self.name.clone()
     }
 
-    fn internal_name(&self) -> &str {
-        &self.internal_name
+    fn internal_name(&self) -> SharedString {
+        self.internal_name.clone()
     }
 }

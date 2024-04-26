@@ -1,9 +1,11 @@
+use crate::SharedString;
+
 pub trait Meta {
     type Id: Ord;
 
     fn id(&self) -> Self::Id;
-    fn name(&self) -> &str;
-    fn internal_name(&self) -> &str;
+    fn name(&self) -> SharedString;
+    fn internal_name(&self) -> SharedString;
 
     fn get(meta: &[Self], id: Self::Id) -> Option<&Self>
     where

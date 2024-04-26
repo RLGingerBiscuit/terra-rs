@@ -330,7 +330,7 @@ impl AppContext {
                 for item in &*item_meta {
                     if item.forbidden.is_none() {
                         player.research.push(ResearchItem {
-                            internal_name: item.internal_name.to_owned(),
+                            internal_name: item.internal_name.clone(),
                             stack: item.sacrifices,
                         });
                     }
@@ -353,7 +353,7 @@ impl AppContext {
                         player.research.remove(index);
                     } else {
                         player.research.push(ResearchItem {
-                            internal_name: meta.internal_name.to_owned(),
+                            internal_name: meta.internal_name.clone(),
                             stack: meta.sacrifices,
                         });
                     }

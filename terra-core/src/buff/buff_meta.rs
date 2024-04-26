@@ -1,4 +1,4 @@
-use crate::{meta::Meta, BuffType};
+use crate::{meta::Meta, BuffType, SharedString};
 
 #[derive(Debug, Clone)]
 #[cfg_attr(
@@ -9,12 +9,12 @@ use crate::{meta::Meta, BuffType};
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct BuffMeta {
     pub id: i32,
-    pub name: String,
-    pub internal_name: String,
+    pub name: SharedString,
+    pub internal_name: SharedString,
     pub x: i32,
     pub y: i32,
     pub buff_type: BuffType,
-    pub tooltip: Option<Vec<String>>,
+    pub tooltip: Option<Vec<SharedString>>,
 }
 
 impl Meta for BuffMeta {
@@ -24,11 +24,11 @@ impl Meta for BuffMeta {
         self.id
     }
 
-    fn name(&self) -> &str {
-        &self.name
+    fn name(&self) -> SharedString {
+        self.name.clone()
     }
 
-    fn internal_name(&self) -> &str {
-        &self.internal_name
+    fn internal_name(&self) -> SharedString {
+        self.internal_name.clone()
     }
 }

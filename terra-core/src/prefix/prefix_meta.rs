@@ -1,12 +1,12 @@
-use crate::meta::Meta;
+use crate::{meta::Meta, SharedString};
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct PrefixMeta {
     pub id: u8,
-    pub name: String,
-    pub internal_name: String,
+    pub name: SharedString,
+    pub internal_name: SharedString,
 }
 
 impl Meta for PrefixMeta {
@@ -16,11 +16,11 @@ impl Meta for PrefixMeta {
         self.id
     }
 
-    fn name(&self) -> &str {
-        &self.name
+    fn name(&self) -> SharedString {
+        self.name.clone()
     }
 
-    fn internal_name(&self) -> &str {
-        &self.internal_name
+    fn internal_name(&self) -> SharedString {
+        self.internal_name.clone()
     }
 }

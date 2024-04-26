@@ -335,7 +335,7 @@ impl AppContext {
                                                 ..(row_range.end * PREFIX_BROWSER_COLS)
                                             {
                                                 if let Some(meta) = filtered.next() {
-                                                    let response = ui.button(&meta.name);
+                                                    let response = ui.button(meta.name.as_ref());
 
                                                     if response.clicked() {
                                                         self.send_context_msg(Message::SetCurrentPrefixId(

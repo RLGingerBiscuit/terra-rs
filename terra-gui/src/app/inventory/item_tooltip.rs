@@ -249,7 +249,7 @@ impl<'a> Widget for ItemTooltip<'a> {
 
             if let Some(tooltip) = &item.tooltip {
                 for line in tooltip {
-                    ui.label(line);
+                    ui.label(line.as_ref());
                 }
             }
 

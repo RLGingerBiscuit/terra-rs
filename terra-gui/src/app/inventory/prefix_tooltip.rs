@@ -38,7 +38,7 @@ impl<'a> Widget for PrefixTooltip<'a> {
                 return;
             }
 
-            ui.heading(&prefix.name);
+            ui.heading(prefix.name.as_ref());
             ui.small(format!("Id: {}", prefix.id));
         })
         .response

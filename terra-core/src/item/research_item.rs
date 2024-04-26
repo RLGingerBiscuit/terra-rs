@@ -2,19 +2,22 @@ use std::io::{Read, Write};
 
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 
-use crate::ext::{TerraReadExt, TerraWriteExt};
+use crate::{
+    ext::{TerraReadExt, TerraWriteExt},
+    SharedString,
+};
 
 #[derive(Default, Debug, Clone)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct ResearchItem {
-    pub internal_name: String,
+    pub internal_name: SharedString,
     pub stack: i32,
 }
 
 impl ResearchItem {
     pub fn load(&mut self, reader: &mut dyn Read) -> anyhow::Result<()> {
-        self.internal_name = reader.read_lpstring()?;
+        self.internal_name = SharedString::from(reader.read_lpstring()?);
         self.stack = reader.read_i32::<LE>()?;
 
         Ok(())

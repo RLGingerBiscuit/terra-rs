@@ -61,7 +61,7 @@ impl<'a> Widget for BuffTooltip<'a> {
 
             if let Some(tooltip) = &buff.tooltip {
                 for line in tooltip {
-                    ui.label(line);
+                    ui.label(line.as_ref());
                 }
             }
         })

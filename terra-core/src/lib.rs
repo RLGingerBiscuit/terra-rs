@@ -1,3 +1,4 @@
+mod aes;
 pub mod bool_byte;
 pub mod buff;
 pub mod difficulty;
@@ -9,9 +10,9 @@ pub mod loadout;
 pub mod meta;
 pub mod player;
 pub mod prefix;
+mod shared_string;
 pub mod spawnpoint;
 pub mod utils;
-mod aes;
 
 pub const MAGIC_MASK: u64 = 0xFFFFFFFFFFFFFF;
 pub const MAGIC_NUMBER: u64 = 0x6369676F6C6572;
@@ -76,4 +77,5 @@ pub use journey_powers::{JourneyPowerId, JourneyPowers};
 pub use loadout::Loadout;
 pub use player::{Player, PlayerError};
 pub use prefix::{Prefix, PrefixMeta};
+pub use shared_string::SharedString;
 pub use spawnpoint::Spawnpoint;
