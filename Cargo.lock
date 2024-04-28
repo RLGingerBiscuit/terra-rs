@@ -4456,23 +4456,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "terra-tests"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "terra-core",
- "thiserror",
-]
-
-[[package]]
-name = "terra-tui"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "terra-core",
-]
-
-[[package]]
 name = "thiserror"
 version = "1.0.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
