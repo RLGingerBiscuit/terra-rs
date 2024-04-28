@@ -1,6 +1,7 @@
 mod context;
 mod inventory;
 mod menus;
+mod meta;
 mod modals;
 mod tabs;
 mod tasks;
@@ -18,7 +19,7 @@ use terra_core::{utils, Player};
 
 use self::{
     context::{AppContext, Message},
-    inventory::platform_meta_loader,
+    meta::platform_meta_loader,
     tabs::{default_ui, Tab},
 };
 

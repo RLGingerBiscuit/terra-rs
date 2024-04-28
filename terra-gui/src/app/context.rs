@@ -10,9 +10,9 @@ use terra_core::{
 
 use super::{
     inventory::{
-        selected_buff, selected_item, ItemGroup, MetaLoader, SelectedBuff, SelectedItem,
-        SelectedLoadout,
+        selected_buff, selected_item, ItemGroup, SelectedBuff, SelectedItem, SelectedLoadout,
     },
+    meta::MetaLoader,
     visuals, AppMessage, DEFAULT_PLAYER, DEFAULT_PLAYER_DIR, SHORTCUT_EXIT, SHORTCUT_LOAD,
     SHORTCUT_SAVE,
 };

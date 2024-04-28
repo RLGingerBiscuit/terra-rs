@@ -2,11 +2,8 @@ pub mod buff_slot;
 pub mod buff_tooltip;
 pub mod item_slot;
 pub mod item_tooltip;
-pub mod meta;
 pub mod prefix_tooltip;
 pub mod slot;
-
-pub use self::meta::{platform_meta_loader, MetaLoader};
 
 use egui::{Response, Ui, Vec2, Widget};
 use terra_core::{meta::Meta, utils, Buff, BuffMeta, Item, ItemMeta, Player, PrefixMeta};
