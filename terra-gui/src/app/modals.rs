@@ -197,7 +197,9 @@ impl AppContext {
 
                                             let response = self.render_item_slot(ui, options);
                                             if response.clicked() {
-                                                self.send_context_msg(Message::SetCurrentItemId(meta.id));
+                                                self.send_context_msg(Message::SetCurrentItemId(
+                                                    meta.id,
+                                                ));
                                             }
 
                                             if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
@@ -263,7 +265,9 @@ impl AppContext {
 
                                             let response = self.render_buff_slot(ui, options);
                                             if response.clicked() {
-                                                self.send_context_msg(Message::SetCurrentBuffId(meta.id));
+                                                self.send_context_msg(Message::SetCurrentBuffId(
+                                                    meta.id,
+                                                ));
                                             }
 
                                             if i % BUFF_BROWSER_COLS == BUFF_BROWSER_COLS - 1 {
@@ -338,9 +342,9 @@ impl AppContext {
                                                     let response = ui.button(meta.name.as_ref());
 
                                                     if response.clicked() {
-                                                        self.send_context_msg(Message::SetCurrentPrefixId(
-                                                            meta.id,
-                                                        ));
+                                                        self.send_context_msg(
+                                                            Message::SetCurrentPrefixId(meta.id),
+                                                        );
                                                     }
 
                                                     response.on_hover_ui(|ui| {
@@ -437,7 +441,9 @@ impl AppContext {
 
                                             let response = self.render_item_slot(ui, options);
                                             if response.clicked() {
-                                                self.send_context_msg(Message::ToggleResearchItem(meta.id));
+                                                self.send_context_msg(Message::ToggleResearchItem(
+                                                    meta.id,
+                                                ));
                                             }
 
                                             if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
