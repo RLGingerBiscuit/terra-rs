@@ -27,6 +27,8 @@ pub(crate) fn encrypt_to_writer<W: io::Write>(mut writer: W, data: &[u8]) -> any
     let padding = data.len() % 16;
     if padding > 0 {
         enc_data.extend(vec![0u8; 16 - padding]);
+    } else {
+        enc_data.extend(vec![0u8; 16]);
     }
 
     enc.encrypt_padded_mut::<Pkcs7>(&mut enc_data, data.len())
