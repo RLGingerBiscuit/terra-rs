@@ -776,7 +776,9 @@ impl TabViewer for AppContext {
     type Tab = Tab;
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
-        ui.set_enabled(!self.is_modal_open());
+        if self.is_modal_open() {
+            ui.disable();
+        }
 
         match tab {
             Tab::LoadSave => self.render_load_save_tab(ui),

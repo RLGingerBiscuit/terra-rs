@@ -49,8 +49,6 @@ pub trait UiExt {
         shortcut: &KeyboardShortcut,
     ) -> Response;
 
-    fn clickable_group<R>(&mut self, add_contents: impl FnOnce(&mut Ui) -> R) -> InnerResponse<R>;
-
     fn vertical_right_justified<R>(
         &mut self,
         add_contents: impl FnOnce(&mut Ui) -> R,
@@ -65,7 +63,7 @@ impl UiExt for Ui {
         speed: f32,
         range: RangeInclusive<Num>,
     ) -> Response {
-        self.add(DragValue::new(value).speed(speed).clamp_range(range))
+        self.add(DragValue::new(value).speed(speed).range(range))
     }
 
     #[inline]
@@ -106,11 +104,6 @@ impl UiExt for Ui {
         shortcut: &KeyboardShortcut,
     ) -> Response {
         self.add(Button::new(text).shortcut_text(self.ctx().format_shortcut(shortcut)))
-    }
-
-    #[inline]
-    fn clickable_group<R>(&mut self, add_contents: impl FnOnce(&mut Ui) -> R) -> InnerResponse<R> {
-        ClickableFrame::group(self.style()).show(self, add_contents)
     }
 
     #[inline]

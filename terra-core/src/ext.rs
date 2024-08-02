@@ -6,32 +6,6 @@ use crate::Color;
 
 pub trait TerraReadExt: io::Read {
     #[inline]
-    /// Reads a [`ULEB128`] encoded u32 from the underlying reader.
-    ///
-    /// # Errors
-    ///
-    /// This method returns the same errors as [`Read::read_exact`].
-    ///
-    /// [`Read::read_exact`]: https://doc.rust-lang.org/std/io/trait.Read.html#method.read_exact
-    /// [`ULEB128`]: https://wikipedia.org/wiki/LEB128#Unsigned_LEB128
-    fn read_uleb128_u32(&mut self) -> IOResult<u32> {
-        Ok(self.read_uleb128_usize()? as u32)
-    }
-
-    #[inline]
-    /// Reads a [`ULEB128`] encoded u64 from the underlying reader.
-    ///
-    /// # Errors
-    ///
-    /// This method returns the same errors as [`Read::read_exact`].
-    ///
-    /// [`Read::read_exact`]: https://doc.rust-lang.org/std/io/trait.Read.html#method.read_exact
-    /// [`ULEB128`]: https://wikipedia.org/wiki/LEB128#Unsigned_LEB128
-    fn read_uleb128_u64(&mut self) -> IOResult<u64> {
-        Ok(self.read_uleb128_usize()? as u64)
-    }
-
-    #[inline]
     /// Reads a [`ULEB128`] encoded usize from the underlying reader.
     ///
     /// # Errors
@@ -123,32 +97,6 @@ pub trait TerraReadExt: io::Read {
 impl<R: io::Read + ?Sized> TerraReadExt for R {}
 
 pub trait TerraWriteExt: io::Write {
-    #[inline]
-    /// Writes a [`ULEB128`] encoded u32 to the underlying writer.
-    ///
-    /// # Errors
-    ///
-    /// This method returns the same errors as [`Write::write_all`].
-    ///
-    /// [`Write::write_all`]: https://doc.rust-lang.org/std/io/trait.Write.html#method.write_all
-    /// [`ULEB128`]: https://wikipedia.org/wiki/LEB128#Unsigned_LEB128
-    fn write_uleb128_u32(&mut self, value: u32) -> IOResult<()> {
-        self.write_uleb128_usize(value as usize)
-    }
-
-    #[inline]
-    /// Writes a [`ULEB128`] encoded u64 to the underlying writer.
-    ///
-    /// # Errors
-    ///
-    /// This method returns the same errors as [`Write::write_all`].
-    ///
-    /// [`Write::write_all`]: https://doc.rust-lang.org/std/io/trait.Write.html#method.write_all
-    /// [`ULEB128`]: https://wikipedia.org/wiki/LEB128#Unsigned_LEB128
-    fn write_uleb128_u64(&mut self, value: u64) -> IOResult<()> {
-        self.write_uleb128_usize(value as usize)
-    }
-
     #[inline]
     /// Writes a [`ULEB128`] encoded usize to the underlying writer.
     ///

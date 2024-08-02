@@ -1,4 +1,4 @@
-use egui::{Response, RichText, Ui, Vec2, Widget};
+use egui::{RichText, Ui};
 use terra_core::{utils, ItemMeta, ItemType, PrefixMeta, STRANGE_BREW_ID, STRANGE_BREW_MAX_HEAL};
 
 use super::{item_name, item_slot::ItemSlotOptions};
@@ -54,217 +54,211 @@ impl<'a> ItemTooltip<'a> {
     pub fn new(options: ItemTooltipOptions<'a>, meta: &'a ItemMeta) -> Self {
         Self { options, meta }
     }
-}
 
-impl<'a> Widget for ItemTooltip<'a> {
-    fn ui(self, ui: &mut Ui) -> Response {
-        ui.allocate_ui(Vec2::INFINITY, |ui| {
-            let item = self.meta;
-            if item.id == 0 {
-                return;
+    pub fn ui(self, ui: &mut Ui) {
+        let item = self.meta;
+        if item.id == 0 {
+            return;
+        }
+
+        let prefix = self.options.prefix_meta;
+
+        ui.heading(item_name(&item.name, prefix));
+        if item.forbidden.is_some_and(|f| f) {
+            ui.small(
+                RichText::new("Forbidden")
+                    .small()
+                    .color(ui.style().visuals.error_fg_color),
+            );
+        }
+
+        ui.small(format!("Id: {}", item.id));
+        if let Some(prefix) = prefix {
+            if prefix.id != 0 {
+                ui.small(format!("Prefix Id: {}", prefix.id));
             }
+        }
 
-            let prefix = self.options.prefix_meta;
+        if self.options.favourited {
+            ui.label("Marked as favorite");
+            ui.label("Quick trash, stacking, and selling will be blocked");
+        }
 
-            ui.heading(item_name(&item.name, prefix));
-            if item.forbidden.is_some_and(|f| f) {
-                ui.small(
-                    RichText::new("Forbidden")
-                        .small()
-                        .color(ui.style().visuals.error_fg_color),
-                );
-            }
+        if let Some(damage) = item.damage {
+            let mut string = damage.to_string();
 
-            ui.small(format!("Id: {}", item.id));
-            if let Some(prefix) = prefix {
-                if prefix.id != 0 {
-                    ui.small(format!("Prefix Id: {}", prefix.id));
-                }
-            }
-
-            if self.options.favourited {
-                ui.label("Marked as favorite");
-                ui.label("Quick trash, stacking, and selling will be blocked");
-            }
-
-            if let Some(damage) = item.damage {
-                let mut string = damage.to_string();
-
-                if let Some(item_type) = item.item_type.as_ref() {
-                    match item_type {
-                        ItemType::Melee => string += " melee",
-                        ItemType::Ranged => string += " ranged",
-                        ItemType::Magic => string += " magic",
-                        ItemType::Summon => string += " summon",
-                        _ => {}
-                    }
-                }
-
-                string += " damage";
-
-                if let Some(use_time) = item.use_time {
-                    string +=
-                        &format!(" (~{:.0} DPS)", (damage as f32) * (60. / (use_time) as f32));
-                }
-
-                ui.label(string);
-            }
-
-            // NOTE: Inaccuracy here: crit chance is only displayed if melee, ranged, or magic, not always
-            if let Some(crit_chance) = item.crit_chance {
-                ui.label(format!("{}% critical strike chance", crit_chance));
-            }
-
-            if let Some(use_time) = item.use_time {
-                ui.label(format!(
-                    "Use time {} ({:.02}/s, {})",
-                    use_time,
-                    (60. / (use_time) as f32),
-                    utils::use_time_lookup(use_time)
-                ));
-            }
-
-            if let Some(knockback) = item.knockback {
-                ui.label(format!(
-                    "Knockback {} ({})",
-                    knockback,
-                    utils::knockback_lookup(knockback)
-                ));
-            }
-
-            if let Some(fishing_power) = item.fishing_power {
-                ui.label(format!("{}% fishing power", fishing_power));
-            }
-
-            if let Some(fishing_bait) = item.fishing_bait {
-                ui.label(format!("{}% fishing bait", fishing_bait));
-            }
-
-            if let Some(tile) = item.consumes_tile {
-                // TODO: Display the item name again
-                ui.label(format!("Consumes {}", tile));
-            }
-
-            if item
-                .is_quest_item
-                .is_some_and(|is_quest_item| is_quest_item)
-            {
-                ui.label("Quest Item");
-            }
-
-            if let Some(ItemType::Vanity) = &item.item_type {
-                ui.label("Vanity Item");
-            }
-
-            if let Some(defense) = item.defense {
-                if defense > 0 {
-                    ui.label(format!("{} defense", defense));
-                }
-            }
-
-            if let Some(pickaxe_power) = item.pickaxe_power {
-                if pickaxe_power > 0 {
-                    ui.label(format!("{}% pickaxe power", pickaxe_power));
-                }
-            }
-
-            if let Some(axe_power) = item.axe_power {
-                if axe_power > 0 {
-                    ui.label(format!("{}% axe power", axe_power * 5));
-                }
-            }
-
-            if let Some(hammer_power) = item.hammer_power {
-                if hammer_power > 0 {
-                    ui.label(format!("{}% hammer power", hammer_power));
-                }
-            }
-
-            if let Some(range_boost) = item.range_boost {
-                ui.label(format!(
-                    "{}{} range",
-                    if range_boost.is_positive() { "+" } else { "-" },
-                    range_boost
-                ));
-            }
-
-            if let Some(heal_life) = item.heal_life {
-                // Strange brew is strange
-                if item.id == STRANGE_BREW_ID {
-                    ui.label(format!(
-                        "Restores from {} to {} life",
-                        heal_life, STRANGE_BREW_MAX_HEAL
-                    ));
-                } else {
-                    ui.label(format!("Restores {} life", heal_life));
-                }
-            }
-
-            if let Some(heal_mana) = item.heal_mana {
-                ui.label(format!("Restores {} mana", heal_mana));
-            }
-
-            if let Some(mana_cost) = item.mana_cost {
-                ui.label(format!("Uses {} mana", mana_cost));
-            }
-
-            // NOTE: Not ingame
-            if let Some(item_type) = &item.item_type {
+            if let Some(item_type) = item.item_type.as_ref() {
                 match item_type {
-                    ItemType::HeadArmor => {
-                        ui.label("Equippable (head slot)");
-                    }
-                    ItemType::BodyArmor => {
-                        ui.label("Equippable (body slot)");
-                    }
-                    ItemType::LegArmor => {
-                        ui.label("Equippable (legs slot)");
-                    }
-                    ItemType::Accessory => {
-                        ui.label("Equippable (accessory)");
-                    }
-                    ItemType::Wall => {
-                        ui.label("Can be placed (wall)");
-                    }
-                    ItemType::Tile => {
-                        ui.label("Can be placed (tile)");
-                    }
-                    ItemType::Ammo => {
-                        ui.label("Ammo");
-                    }
+                    ItemType::Melee => string += " melee",
+                    ItemType::Ranged => string += " ranged",
+                    ItemType::Magic => string += " magic",
+                    ItemType::Summon => string += " summon",
                     _ => {}
                 }
             }
 
-            if item
-                .is_consumable
-                .is_some_and(|is_consumable| is_consumable)
-            {
-                ui.label("Consumable");
+            string += " damage";
+
+            if let Some(use_time) = item.use_time {
+                string += &format!(" (~{:.0} DPS)", (damage as f32) * (60. / (use_time) as f32));
             }
 
-            if item.is_material.is_some_and(|is_material| is_material) {
-                ui.label("Material");
-            }
+            ui.label(string);
+        }
 
-            if let Some(tooltip) = &item.tooltip {
-                for line in tooltip {
-                    ui.label(line.as_ref());
-                }
-            }
+        // NOTE: Inaccuracy here: crit chance is only displayed if melee, ranged, or magic, not always
+        if let Some(crit_chance) = item.crit_chance {
+            ui.label(format!("{}% critical strike chance", crit_chance));
+        }
 
-            // TODO: Add already researched/research X more
+        if let Some(use_time) = item.use_time {
             ui.label(format!(
-                "Research {} to unlock duplication",
-                item.sacrifices
+                "Use time {} ({:.02}/s, {})",
+                use_time,
+                (60. / (use_time) as f32),
+                utils::use_time_lookup(use_time)
             ));
+        }
 
-            ui.label(format!("{} Max Stack", item.max_stack));
+        if let Some(knockback) = item.knockback {
+            ui.label(format!(
+                "Knockback {} ({})",
+                knockback,
+                utils::knockback_lookup(knockback)
+            ));
+        }
 
-            ui.label(format!("Worth {}", utils::coins_to_string(item.value)));
+        if let Some(fishing_power) = item.fishing_power {
+            ui.label(format!("{}% fishing power", fishing_power));
+        }
 
-            // TODO: Maybe prefix values?
-        })
-        .response
+        if let Some(fishing_bait) = item.fishing_bait {
+            ui.label(format!("{}% fishing bait", fishing_bait));
+        }
+
+        if let Some(tile) = item.consumes_tile {
+            // TODO: Display the item name again
+            ui.label(format!("Consumes {}", tile));
+        }
+
+        if item
+            .is_quest_item
+            .is_some_and(|is_quest_item| is_quest_item)
+        {
+            ui.label("Quest Item");
+        }
+
+        if let Some(ItemType::Vanity) = &item.item_type {
+            ui.label("Vanity Item");
+        }
+
+        if let Some(defense) = item.defense {
+            if defense > 0 {
+                ui.label(format!("{} defense", defense));
+            }
+        }
+
+        if let Some(pickaxe_power) = item.pickaxe_power {
+            if pickaxe_power > 0 {
+                ui.label(format!("{}% pickaxe power", pickaxe_power));
+            }
+        }
+
+        if let Some(axe_power) = item.axe_power {
+            if axe_power > 0 {
+                ui.label(format!("{}% axe power", axe_power * 5));
+            }
+        }
+
+        if let Some(hammer_power) = item.hammer_power {
+            if hammer_power > 0 {
+                ui.label(format!("{}% hammer power", hammer_power));
+            }
+        }
+
+        if let Some(range_boost) = item.range_boost {
+            ui.label(format!(
+                "{}{} range",
+                if range_boost.is_positive() { "+" } else { "-" },
+                range_boost
+            ));
+        }
+
+        if let Some(heal_life) = item.heal_life {
+            // Strange brew is strange
+            if item.id == STRANGE_BREW_ID {
+                ui.label(format!(
+                    "Restores from {} to {} life",
+                    heal_life, STRANGE_BREW_MAX_HEAL
+                ));
+            } else {
+                ui.label(format!("Restores {} life", heal_life));
+            }
+        }
+
+        if let Some(heal_mana) = item.heal_mana {
+            ui.label(format!("Restores {} mana", heal_mana));
+        }
+
+        if let Some(mana_cost) = item.mana_cost {
+            ui.label(format!("Uses {} mana", mana_cost));
+        }
+
+        // NOTE: Not ingame
+        if let Some(item_type) = &item.item_type {
+            match item_type {
+                ItemType::HeadArmor => {
+                    ui.label("Equippable (head slot)");
+                }
+                ItemType::BodyArmor => {
+                    ui.label("Equippable (body slot)");
+                }
+                ItemType::LegArmor => {
+                    ui.label("Equippable (legs slot)");
+                }
+                ItemType::Accessory => {
+                    ui.label("Equippable (accessory)");
+                }
+                ItemType::Wall => {
+                    ui.label("Can be placed (wall)");
+                }
+                ItemType::Tile => {
+                    ui.label("Can be placed (tile)");
+                }
+                ItemType::Ammo => {
+                    ui.label("Ammo");
+                }
+                _ => {}
+            }
+        }
+
+        if item
+            .is_consumable
+            .is_some_and(|is_consumable| is_consumable)
+        {
+            ui.label("Consumable");
+        }
+
+        if item.is_material.is_some_and(|is_material| is_material) {
+            ui.label("Material");
+        }
+
+        if let Some(tooltip) = &item.tooltip {
+            for line in tooltip {
+                ui.label(line.as_ref());
+            }
+        }
+
+        // TODO: Add already researched/research X more
+        ui.label(format!(
+            "Research {} to unlock duplication",
+            item.sacrifices
+        ));
+
+        ui.label(format!("{} Max Stack", item.max_stack));
+
+        ui.label(format!("Worth {}", utils::coins_to_string(item.value)));
+
+        // TODO: Maybe prefix values?
     }
 }

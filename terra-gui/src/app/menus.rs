@@ -7,7 +7,9 @@ impl App {
     pub fn render_menu(&mut self, ctx: &egui::Context) {
         egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
             ui.style_mut().visuals.button_frame = false;
-            ui.set_enabled(!self.context.is_modal_open());
+            if self.context.is_modal_open() {
+                ui.disable();
+            }
 
             ui.horizontal(|ui| {
                 ui.menu_button("File", |ui| self.render_file_menu(ui));

@@ -1,4 +1,4 @@
-use egui::{Response, Ui, Vec2, Widget};
+use egui::Ui;
 use terra_core::BuffMeta;
 
 use super::{buff_name, buff_slot::BuffSlotOptions};
@@ -43,28 +43,22 @@ impl<'a> BuffTooltip<'a> {
     pub fn new(options: BuffTooltipOptions, meta: &'a BuffMeta) -> Self {
         Self { options, meta }
     }
-}
+    pub fn ui(self, ui: &mut Ui) {
+        let buff = self.meta;
+        if buff.id == 0 {
+            return;
+        }
 
-impl<'a> Widget for BuffTooltip<'a> {
-    fn ui(self, ui: &mut Ui) -> Response {
-        ui.allocate_ui(Vec2::INFINITY, |ui| {
-            let buff = self.meta;
-            if buff.id == 0 {
-                return;
+        let time = self.options.time;
+
+        ui.heading(buff_name(&buff.name, time));
+
+        ui.small(format!("ID: {}", buff.id));
+
+        if let Some(tooltip) = &buff.tooltip {
+            for line in tooltip {
+                ui.label(line.as_ref());
             }
-
-            let time = self.options.time;
-
-            ui.heading(buff_name(&buff.name, time));
-
-            ui.small(format!("ID: {}", buff.id));
-
-            if let Some(tooltip) = &buff.tooltip {
-                for line in tooltip {
-                    ui.label(line.as_ref());
-                }
-            }
-        })
-        .response
+        }
     }
 }

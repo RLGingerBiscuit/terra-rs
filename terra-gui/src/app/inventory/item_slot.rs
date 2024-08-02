@@ -239,7 +239,7 @@ impl<'a> Widget for ItemSlot<'a> {
         let (rect, response) = ui.allocate_exact_size(SLOT_SIZE, Sense::hover());
 
         {
-            let mut ui = ui.child_ui(rect, *ui.layout());
+            let mut ui = ui.child_ui(rect, *ui.layout(), None);
 
             if let (true, Some(sheet)) = (self.meta.id != 0, self.item_sheet) {
                 let (uv, size, padding) =
@@ -291,9 +291,5 @@ impl<'a> Slot for ItemSlot<'a> {
 
     fn highlighted(&self) -> bool {
         self.options.highlighted
-    }
-
-    fn tooltip_on_hover(&self) -> bool {
-        self.options.tooltip_on_hover
     }
 }

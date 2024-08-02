@@ -29,7 +29,6 @@ pub(super) trait Slot<W: Widget = Self> {
     fn margin(&self) -> Margin;
     fn selected(&self) -> bool;
     fn highlighted(&self) -> bool;
-    fn tooltip_on_hover(&self) -> bool;
 }
 
 pub(super) fn paint_texts(ui: &mut Ui, rect: Rect, texts: &[SlotText]) {

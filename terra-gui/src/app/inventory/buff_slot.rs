@@ -116,7 +116,7 @@ impl<'a> Widget for BuffSlot<'a> {
         let (rect, response) = ui.allocate_exact_size(SLOT_SIZE, Sense::hover());
 
         {
-            let mut ui = ui.child_ui(rect, *ui.layout());
+            let mut ui = ui.child_ui(rect, *ui.layout(), None);
 
             if let Some(sheet) = self.buff_sheet {
                 let (uv, size, padding) =
@@ -154,9 +154,5 @@ impl<'a> Slot for BuffSlot<'a> {
 
     fn highlighted(&self) -> bool {
         self.options.highlighted
-    }
-
-    fn tooltip_on_hover(&self) -> bool {
-        self.options.tooltip_on_hover
     }
 }

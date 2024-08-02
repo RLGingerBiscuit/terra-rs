@@ -17,5 +17,10 @@ fn main() {
         ..Default::default()
     };
 
-    eframe::run_native("terra-rs", options, Box::new(|cc| Box::new(App::new(cc)))).ok();
+    eframe::run_native(
+        "terra-rs",
+        options,
+        Box::new(|cc| Ok(Box::new(App::new(cc)))),
+    )
+    .ok();
 }

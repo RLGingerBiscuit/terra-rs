@@ -232,7 +232,7 @@ impl AppContext {
     pub fn render_item_tooltip(&self, ui: &mut Ui, options: ItemTooltipOptions) {
         let item_meta = self.item_meta.read();
         let meta = ItemMeta::get_or_default(&item_meta, options.id);
-        ui.add(ItemTooltip::new(options, meta));
+        ItemTooltip::new(options, meta).ui(ui);
     }
 
     pub fn render_buff_slot(&self, ui: &mut Ui, options: BuffSlotOptions) -> Response {
@@ -313,12 +313,12 @@ impl AppContext {
     pub fn render_buff_tooltip(&self, ui: &mut Ui, options: BuffTooltipOptions) {
         let buff_meta = self.buff_meta.read();
         let meta = BuffMeta::get_or_default(&buff_meta, options.id);
-        ui.add(BuffTooltip::new(options, meta));
+        BuffTooltip::new(options, meta).ui(ui)
     }
 
     pub fn render_prefix_tooltip(&self, ui: &mut Ui, options: PrefixTooltipOptions) {
         let prefix_meta = self.prefix_meta.read();
         let meta = PrefixMeta::get_or_default(&prefix_meta, options.id);
-        ui.add(PrefixTooltip::new(options, meta));
+        PrefixTooltip::new(options, meta).ui(ui);
     }
 }
