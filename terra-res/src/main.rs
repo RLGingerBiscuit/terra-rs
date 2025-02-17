@@ -317,7 +317,7 @@ fn expand_templates(
     }
 }
 
-fn get_item_type(lua_item: &mlua::Table<'_>) -> Option<ItemType> {
+fn get_item_type(lua_item: &mlua::Table) -> Option<ItemType> {
     for (name, item_type) in [
         ("ammo", ItemType::Ammo),
         ("melee", ItemType::Melee),
@@ -342,7 +342,7 @@ fn get_item_type(lua_item: &mlua::Table<'_>) -> Option<ItemType> {
         ("bodySlot", ItemType::BodyArmor),
         ("legsSlot", ItemType::LegArmor),
     ] {
-        if let Some(n) = lua_item.get::<_, i32>(name).ok() {
+        if let Some(n) = lua_item.get::<i32>(name).ok() {
             if n >= 0 {
                 return Some(item_type);
             }
@@ -406,7 +406,7 @@ fn get_item_meta(
             continue;
         };
 
-        let id = i32::from_str(key.to_str()?)?;
+        let id = i32::from_str(&key.to_str()?)?;
         let internal_name = lua_item.get("internalName").unwrap_or(String::new());
         let name = items["ItemName"][&internal_name]
             .as_str()
@@ -454,7 +454,7 @@ fn get_item_meta(
 
         let rarity = if is_expert.is_some_and(|e| e) {
             ItemRarity::Expert
-        } else if let Ok(rarity) = lua_item.get::<&str, i32>("rarity") {
+        } else if let Ok(rarity) = lua_item.get::<i32>("rarity") {
             ItemRarity::from(rarity)
         } else {
             ItemRarity::from(lua_item.get("rare").unwrap_or(0))
