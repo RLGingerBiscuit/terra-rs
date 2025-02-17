@@ -1,9 +1,0 @@
-[package]
-name = "terra-tui"
-version.workspace = true
-edition.workspace = true
-publish = false
-
-[dependencies]
-terra-core = { workspace = true }
-anyhow = { workspace = true }
