@@ -4,6 +4,8 @@ json-fixer/
 # A little hack to get build type in main.rs
 build_type.txt
 
+# Generated resources
 generated/
 
-lua_item.lua
+# Lua scripts (mostly item data pulled from the wiki)
+*.lua

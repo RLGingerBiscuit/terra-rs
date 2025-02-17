@@ -87,13 +87,13 @@ fn main() {
     player_dir.push("tests");
 
     let item_meta: Vec<ItemMeta> =
-        serde_json::from_str(include_str!("../../data/resources/items.json"))
+        serde_json::from_str(include_str!("../../../data/resources/items.json"))
             .expect("Could not load items");
     let buff_meta: Vec<BuffMeta> =
-        serde_json::from_str(include_str!("../../data/resources/buffs.json"))
+        serde_json::from_str(include_str!("../../../data/resources/buffs.json"))
             .expect("Could not load buffs");
     let prefix_meta: Vec<PrefixMeta> =
-        serde_json::from_str(include_str!("../../data/resources/prefixes.json"))
+        serde_json::from_str(include_str!("../../../data/resources/prefixes.json"))
             .expect("Could not load prefixes");
 
     println!("Items count: {}", item_meta.len());

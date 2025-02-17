@@ -900,12 +900,15 @@ fn generate_spritesheet(
 fn main() -> Result<()> {
     // Pretty scuffed but works for now
     let mut build_type = String::new();
-    File::open("./terra-res/build_type.txt")?.read_to_string(&mut build_type)?;
 
-    let res_fol = PathBuf::from_str("./terra-res/resources")?;
+    let terra_res_fol = PathBuf::from_str("crates/terra-res")?;
+
+    File::open(terra_res_fol.join("build_type.txt"))?.read_to_string(&mut build_type)?;
+
+    let res_fol = terra_res_fol.join("resources");
     let items_fol = res_fol.join("items");
     let buffs_fol = res_fol.join("buffs");
-    let gen_fol = PathBuf::from_str("./terra-res/generated")?.join(&build_type);
+    let gen_fol = terra_res_fol.join("generated").join(&build_type);
 
     create_dir_all(&gen_fol, true)?;
 
