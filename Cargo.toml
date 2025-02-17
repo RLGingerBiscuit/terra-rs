@@ -32,6 +32,7 @@ image = { workspace = true }
 rfd = "0.14.1"
 cfg-if = "1.0.0"
 open = "5.3.0"
+time = { version = "0.3.37", default-features = false, features = ["std"] }
 
 [workspace]
 resolver = "2"

@@ -94,7 +94,10 @@ impl AppContext {
 
                     ui.vertical_centered(|ui| {
                         ui.heading("terra-rs");
-                        ui.label("\u{a9} 2023 RLGingerBiscuit - MIT");
+                        ui.label(format!(
+                            "\u{a9} 2022-{} RLGingerBiscuit - MIT",
+                            time::OffsetDateTime::now_utc().year()
+                        ));
                         ui.label(concat!("Version ", env!("CARGO_PKG_VERSION")));
                     });
 
