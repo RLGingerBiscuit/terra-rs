@@ -4,7 +4,7 @@ on:
   push:
     branches: ['master']
     paths:
-      - 'data/resources.zip'
+      - 'data/resources/**'
       - '.github/workflows/**'
       - 'terra-*/**/*.rs'
       - '**/Cargo.*'
@@ -36,7 +36,7 @@ jobs:
           filters: |
             files:
               - '.github/workflows/**'
-              - 'data/resources.zip'
+              - 'data/resources/**'
               - 'terra-*/**'
               - '**/Cargo.*'
               - '!terra-res/'
@@ -98,10 +98,8 @@ jobs:
             target/
 
       - name: Extract resources
-        run: 7z x -otarget/release/resources ./data/resources.zip
-
-      - name: Rename executable
-        run: mv target/release/terra-gui${{ matrix.platform.ext }} target/release/terra-rs${{ matrix.platform.ext }}
+        # run: 7z x -otarget/release/resources ./data/resources.zip
+        run: mv data/resources target/release/resources
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3

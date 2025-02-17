@@ -1,8 +1,9 @@
 [package]
 name = "terra-tui"
-version = "0.0.1"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+publish = false
 
 [dependencies]
-terra-core = { path = "../terra-core" }
+terra-core = { workspace = true }
 anyhow = { workspace = true }

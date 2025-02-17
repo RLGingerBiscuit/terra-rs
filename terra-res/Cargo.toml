@@ -1,7 +1,8 @@
 [package]
 name = "terra-res"
-version = "0.0.1"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+publish = false
 
 [dependencies]
 terra-core = { path = "../terra-core", default-features = false, features = [

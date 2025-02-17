@@ -1,5 +1,8 @@
 {
     "files.autoSave": "afterDelay",
     "files.autoSaveDelay": 1000,
-    "rust-analyzer.showUnlinkedFileNotification": false
+    "rust-analyzer.showUnlinkedFileNotification": false,
+    "search.exclude": {
+        "**/Cargo.lock": true
+    }
 }

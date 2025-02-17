@@ -6,7 +6,9 @@ use std::{
     str::FromStr,
 };
 
-use fs_extra::dir::{copy as copy_dir, create as create_dir, CopyOptions as DirCopyOptions};
+use fs_extra::dir::{
+    copy as copy_dir, create_all as create_dir_all, CopyOptions as DirCopyOptions,
+};
 
 use anyhow::Result;
 use image::{DynamicImage, GenericImage, GenericImageView};
@@ -14,6 +16,10 @@ use itertools::Itertools;
 use mlua::Lua;
 use regex::{Captures, Regex};
 
+use reqwest::{
+    blocking::Client,
+    header::{HeaderMap, HeaderValue},
+};
 use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, ItemType, PrefixMeta, SharedString};
 
 mod truthy;
@@ -347,16 +353,19 @@ fn get_item_type(lua_item: &mlua::Table<'_>) -> Option<ItemType> {
 }
 
 fn get_item_meta(
+    client: &Client,
     template: &Regex,
     game: &serde_json::Value,
     items: &serde_json::Value,
     npcs: &serde_json::Value,
     offset_filepath: &Path,
 ) -> Result<Vec<ItemMeta>> {
-    // https://terraria.wiki.gg/wiki/Module:Iteminfo/data
-    // API: https://terraria.wiki.gg/api.php?action=query&prop=revisions&titles=Module:Iteminfo/data&rvlimit=1&rvslots=*&rvprop=ids|content&format=json
+    // https://terraria.wiki.gg/wiki/Module:Iteminfo/luadata
+    // API: https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/luadata
 
-    let lua_resp = reqwest::blocking::get(ITEM_DATA_URL)?;
+    let lua_resp = client.get(ITEM_DATA_URL).send()?;
+
+    let lua_resp = lua_resp.error_for_status()?;
     let lua_json: serde_json::Value = lua_resp.json()?;
 
     // Yeesh
@@ -503,13 +512,14 @@ fn get_item_meta(
 }
 
 fn get_buff_meta(
+    client: &Client,
     template: &Regex,
     game: &serde_json::Value,
     items: &serde_json::Value,
     npcs: &serde_json::Value,
     offset_filepath: &Path,
 ) -> Result<Vec<BuffMeta>> {
-    let resp = reqwest::blocking::get(BUFF_IDS_URL)?;
+    let resp = client.get(BUFF_IDS_URL).send()?;
     let text = resp.text()?;
 
     let doc = scraper::Html::parse_document(&text);
@@ -610,12 +620,13 @@ fn get_buff_meta(
 }
 
 fn get_prefix_meta(
+    client: &Client,
     _template: &Regex,
     _game: &serde_json::Value,
     items: &serde_json::Value,
     _npcs: &serde_json::Value,
 ) -> Result<Vec<PrefixMeta>> {
-    let resp = reqwest::blocking::get(PREFIX_IDS_URL)?;
+    let resp = client.get(PREFIX_IDS_URL).send()?;
     let text = resp.text()?;
 
     let doc = scraper::Html::parse_document(&text);
@@ -896,7 +907,7 @@ fn main() -> Result<()> {
     let buffs_fol = res_fol.join("buffs");
     let gen_fol = PathBuf::from_str("./terra-res/generated")?.join(&build_type);
 
-    create_dir(&gen_fol, true)?;
+    create_dir_all(&gen_fol, true)?;
 
     let mut item_file = OpenOptions::new()
         .create(true)
@@ -933,6 +944,12 @@ fn main() -> Result<()> {
     let item_offset_filepath = gen_fol.join("items.css");
     let buff_offset_filepath = gen_fol.join("buffs.css");
 
+    let client = {
+        let mut map = HeaderMap::with_capacity(1);
+        map.insert(reqwest::header::USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.3"));
+        Client::builder().default_headers(map).build()?
+    };
+
     println!("Generating item spritesheet");
     let item_spritesheet =
         generate_spritesheet(&items_fol, &res_fol, "slot", 2560, &item_offset_filepath)?;
@@ -951,6 +968,7 @@ fn main() -> Result<()> {
 
     println!("Getting item meta");
     let item_meta = get_item_meta(
+        &client,
         &template,
         &game_localization,
         &item_localization,
@@ -959,6 +977,7 @@ fn main() -> Result<()> {
     )?;
     println!("Getting buff meta");
     let buff_meta = get_buff_meta(
+        &client,
         &template,
         &game_localization,
         &item_localization,
@@ -967,6 +986,7 @@ fn main() -> Result<()> {
     )?;
     println!("Getting prefix meta");
     let prefix_meta = get_prefix_meta(
+        &client,
         &template,
         &game_localization,
         &item_localization,
@@ -997,6 +1017,14 @@ fn main() -> Result<()> {
 
     let dir_options = DirCopyOptions::new().overwrite(true).copy_inside(true);
     copy_dir(&gen_fol, &final_dir, &dir_options)?;
+
+    if build_type == "release" {
+        let data_dir = PathBuf::from("./data");
+        if data_dir.exists() {
+            fs::remove_dir_all(&data_dir)?;
+        }
+        copy_dir(&gen_fol, &data_dir, &dir_options)?;
+    }
 
     Ok(())
 }
