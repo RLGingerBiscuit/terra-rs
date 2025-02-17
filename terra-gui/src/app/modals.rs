@@ -123,31 +123,33 @@ impl AppContext {
     }
 
     pub fn render_error(&self, ctx: &egui::Context) {
-        if let Some(err) = self.error.as_ref() {
-            self.render_modal(
-                ctx,
-                "Error",
-                false,
-                Sizing::Fixed(vec2(ERROR_MODAL_WIDTH, ERROR_MODAL_HEIGHT)),
-                |ui| {
-                    ui.spacing_mut().item_spacing.y = 8.;
+        let Some(err) = self.error.as_ref() else {
+            return;
+        };
 
-                    ui.label(err.to_string());
+        self.render_modal(
+            ctx,
+            "Error",
+            false,
+            Sizing::Fixed(vec2(ERROR_MODAL_WIDTH, ERROR_MODAL_HEIGHT)),
+            |ui| {
+                ui.spacing_mut().item_spacing.y = 8.;
 
-                    CollapsingHeader::new("Details").show(ui, |ui| {
-                        err.chain().enumerate().for_each(|(i, e)| {
-                            ui.label(RichText::new(format!("{i}. {e}")).code());
-                        });
+                ui.label(err.to_string());
+
+                CollapsingHeader::new("Details").show(ui, |ui| {
+                    err.chain().enumerate().for_each(|(i, e)| {
+                        ui.label(RichText::new(format!("{i}. {e}")).code());
                     });
+                });
 
-                    ui.vertical_right_justified(|ui| {
-                        if ui.button("Ok").clicked() {
-                            self.send_context_msg(Message::CloseError);
-                        }
-                    });
-                },
-            );
-        }
+                ui.vertical_right_justified(|ui| {
+                    if ui.button("Ok").clicked() {
+                        self.send_context_msg(Message::CloseError);
+                    }
+                });
+            },
+        );
     }
 
     pub fn render_item_browser(&mut self, ctx: &egui::Context) {
@@ -188,23 +190,25 @@ impl AppContext {
                                     for i in (row_range.start * ITEM_BROWSER_COLS)
                                         ..(row_range.end * ITEM_BROWSER_COLS)
                                     {
-                                        if let Some(meta) = filtered.next() {
-                                            let options = ItemSlotOptions::from_meta(
-                                                meta,
-                                                ItemGroup::ItemBrowser,
-                                            )
-                                            .tooltip_on_hover(true);
+                                        let Some(meta) = filtered.next() else {
+                                            continue;
+                                        };
 
-                                            let response = self.render_item_slot(ui, options);
-                                            if response.clicked() {
-                                                self.send_context_msg(Message::SetCurrentItemId(
-                                                    meta.id,
-                                                ));
-                                            }
+                                        let options = ItemSlotOptions::from_meta(
+                                            meta,
+                                            ItemGroup::ItemBrowser,
+                                        )
+                                        .tooltip_on_hover(true);
 
-                                            if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
-                                                ui.end_row();
-                                            }
+                                        let response = self.render_item_slot(ui, options);
+                                        if response.clicked() {
+                                            self.send_context_msg(Message::SetCurrentItemId(
+                                                meta.id,
+                                            ));
+                                        }
+
+                                        if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
+                                            ui.end_row();
                                         }
                                     }
                                 });
@@ -259,20 +263,22 @@ impl AppContext {
                                     for i in (row_range.start * BUFF_BROWSER_COLS)
                                         ..(row_range.end * BUFF_BROWSER_COLS)
                                     {
-                                        if let Some(meta) = filtered.next() {
-                                            let options = BuffSlotOptions::from_meta(meta)
-                                                .tooltip_on_hover(true);
+                                        let Some(meta) = filtered.next() else {
+                                            continue;
+                                        };
 
-                                            let response = self.render_buff_slot(ui, options);
-                                            if response.clicked() {
-                                                self.send_context_msg(Message::SetCurrentBuffId(
-                                                    meta.id,
-                                                ));
-                                            }
+                                        let options =
+                                            BuffSlotOptions::from_meta(meta).tooltip_on_hover(true);
 
-                                            if i % BUFF_BROWSER_COLS == BUFF_BROWSER_COLS - 1 {
-                                                ui.end_row();
-                                            }
+                                        let response = self.render_buff_slot(ui, options);
+                                        if response.clicked() {
+                                            self.send_context_msg(Message::SetCurrentBuffId(
+                                                meta.id,
+                                            ));
+                                        }
+
+                                        if i % BUFF_BROWSER_COLS == BUFF_BROWSER_COLS - 1 {
+                                            ui.end_row();
                                         }
                                     }
                                 });
@@ -338,26 +344,28 @@ impl AppContext {
                                             for i in (row_range.start * PREFIX_BROWSER_COLS)
                                                 ..(row_range.end * PREFIX_BROWSER_COLS)
                                             {
-                                                if let Some(meta) = filtered.next() {
-                                                    let response = ui.button(meta.name.as_ref());
+                                                let Some(meta) = filtered.next() else {
+                                                    continue;
+                                                };
 
-                                                    if response.clicked() {
-                                                        self.send_context_msg(
-                                                            Message::SetCurrentPrefixId(meta.id),
-                                                        );
-                                                    }
+                                                let response = ui.button(meta.name.as_ref());
 
-                                                    response.on_hover_ui(|ui| {
-                                                        let options =
-                                                            PrefixTooltipOptions::new().id(meta.id);
-                                                        self.render_prefix_tooltip(ui, options);
-                                                    });
+                                                if response.clicked() {
+                                                    self.send_context_msg(
+                                                        Message::SetCurrentPrefixId(meta.id),
+                                                    );
+                                                }
 
-                                                    if i % PREFIX_BROWSER_COLS
-                                                        == PREFIX_BROWSER_COLS - 1
-                                                    {
-                                                        ui.end_row();
-                                                    }
+                                                response.on_hover_ui(|ui| {
+                                                    let options =
+                                                        PrefixTooltipOptions::new().id(meta.id);
+                                                    self.render_prefix_tooltip(ui, options);
+                                                });
+
+                                                if i % PREFIX_BROWSER_COLS
+                                                    == PREFIX_BROWSER_COLS - 1
+                                                {
+                                                    ui.end_row();
                                                 }
                                             }
                                         });
@@ -426,29 +434,31 @@ impl AppContext {
                                     for i in (row_range.start * ITEM_BROWSER_COLS)
                                         ..(row_range.end * ITEM_BROWSER_COLS)
                                     {
-                                        if let Some(meta) = filtered.next() {
-                                            let options = ItemSlotOptions::from_meta(
-                                                meta,
-                                                ItemGroup::ResearchBrowser,
-                                            )
-                                            .highlighted(
-                                                player
-                                                    .research
-                                                    .iter()
-                                                    .any(|i| i.internal_name == meta.internal_name),
-                                            )
-                                            .tooltip_on_hover(true);
+                                        let Some(meta) = filtered.next() else {
+                                            continue;
+                                        };
 
-                                            let response = self.render_item_slot(ui, options);
-                                            if response.clicked() {
-                                                self.send_context_msg(Message::ToggleResearchItem(
-                                                    meta.id,
-                                                ));
-                                            }
+                                        let options = ItemSlotOptions::from_meta(
+                                            meta,
+                                            ItemGroup::ResearchBrowser,
+                                        )
+                                        .highlighted(
+                                            player
+                                                .research
+                                                .iter()
+                                                .any(|i| i.internal_name == meta.internal_name),
+                                        )
+                                        .tooltip_on_hover(true);
 
-                                            if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
-                                                ui.end_row();
-                                            }
+                                        let response = self.render_item_slot(ui, options);
+                                        if response.clicked() {
+                                            self.send_context_msg(Message::ToggleResearchItem(
+                                                meta.id,
+                                            ));
+                                        }
+
+                                        if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
+                                            ui.end_row();
                                         }
                                     }
                                 });

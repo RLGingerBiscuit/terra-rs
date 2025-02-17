@@ -241,31 +241,33 @@ impl AppContext {
                     utils::get_player_dir_or_default(player_path)
                 };
 
-                if let Some(path) = rfd::FileDialog::new()
+                let Some(path) = rfd::FileDialog::new()
                     .set_directory(player_path)
                     .add_filter("Terraria Player File", &["plr"])
                     .add_filter("Decrypted Player File", &["dplr"])
                     .add_filter("All Files", &["*"])
                     .pick_file()
-                {
-                    self.player_path = Some(path.clone());
+                else {
+                    return;
+                };
 
-                    let player = self.player.clone();
-                    let item_meta = self.item_meta.clone();
+                self.player_path = Some(path.clone());
 
-                    self.do_task(move || {
-                        let mut player = player.write();
-                        if path
-                            .extension()
-                            .is_some_and(|e| e.to_string_lossy() == "dplr")
-                        {
-                            player.load_decrypted(&item_meta.read(), &path)?;
-                        } else {
-                            player.load(&item_meta.read(), &path)?;
-                        }
-                        Ok(Message::Noop)
-                    });
-                }
+                let player = self.player.clone();
+                let item_meta = self.item_meta.clone();
+
+                self.do_task(move || {
+                    let mut player = player.write();
+                    if path
+                        .extension()
+                        .is_some_and(|e| e.to_string_lossy() == "dplr")
+                    {
+                        player.load_decrypted(&item_meta.read(), &path)?;
+                    } else {
+                        player.load(&item_meta.read(), &path)?;
+                    }
+                    Ok(Message::Noop)
+                });
             }
             Message::SavePlayer => {
                 let player_path = self
@@ -291,32 +293,34 @@ impl AppContext {
                     (directory, file_name)
                 };
 
-                if let Some(path) = rfd::FileDialog::new()
+                let Some(path) = rfd::FileDialog::new()
                     .set_directory(directory)
                     .set_file_name(file_name)
                     .add_filter("Terraria Player File", &["plr"])
                     .add_filter("Decrypted Player File", &["dplr"])
                     .add_filter("All Files", &["*"])
                     .save_file()
-                {
-                    self.player_path = Some(path.clone());
+                else {
+                    return;
+                };
 
-                    let player = self.player.clone();
-                    let item_meta = self.item_meta.clone();
+                self.player_path = Some(path.clone());
 
-                    self.do_task(move || {
-                        let player = player.read();
-                        if path
-                            .extension()
-                            .is_some_and(|e| e.to_string_lossy() == "dplr")
-                        {
-                            player.save_decrypted(&item_meta.read(), &path)?;
-                        } else {
-                            player.save(&item_meta.read(), &path)?;
-                        }
-                        Ok(Message::Noop)
-                    });
-                }
+                let player = self.player.clone();
+                let item_meta = self.item_meta.clone();
+
+                self.do_task(move || {
+                    let player = player.read();
+                    if path
+                        .extension()
+                        .is_some_and(|e| e.to_string_lossy() == "dplr")
+                    {
+                        player.save_decrypted(&item_meta.read(), &path)?;
+                    } else {
+                        player.save(&item_meta.read(), &path)?;
+                    }
+                    Ok(Message::Noop)
+                });
             }
             Message::SelectLoadout(selection) => self.selected_loadout = selection,
             Message::SelectItem(selection) => self.selected_item = selection,
