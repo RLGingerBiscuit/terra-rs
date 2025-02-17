@@ -15,7 +15,6 @@ use crate::{
     CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, EQUIPMENT_COUNT,
     FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
     MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT,
-    TICKS_PER_MICROSECOND,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -234,7 +233,7 @@ impl Default for Player {
             dead: false,
             respawn_timer: 0,
 
-            last_save: chrono::Utc::now().timestamp_micros() * TICKS_PER_MICROSECOND as i64,
+            last_save: utils::current_save_time(),
 
             golfer_score: 0,
 
@@ -596,7 +595,7 @@ impl Player {
         if self.version >= 202 {
             self.last_save = reader.read_i64::<LE>()?;
         } else {
-            self.last_save = chrono::Utc::now().timestamp_micros() * TICKS_PER_MICROSECOND as i64;
+            self.last_save = utils::current_save_time();
         }
 
         if self.version >= 206 {

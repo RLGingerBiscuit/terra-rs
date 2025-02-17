@@ -23,7 +23,7 @@ pub const ENCRYPTION_BYTES: &[u8; 16] = b"h\x003\x00y\x00_\x00g\x00U\x00y\x00Z\x
 pub const CURRENT_VERSION: i32 = 279;
 
 /// C#'s DateTime uses Ticks, so here is the conversion factor
-pub const TICKS_PER_MICROSECOND: usize = 10;
+pub const NANOSECONDS_PER_TICK: i128 = 100;
 
 pub const ARMOR_COUNT: usize = 3;
 pub const ACCESSORY_COUNT: usize = 7;

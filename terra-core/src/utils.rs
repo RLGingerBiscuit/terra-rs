@@ -5,7 +5,7 @@ use std::{
 
 use dirs_next::{data_local_dir, document_dir};
 
-use crate::{Color, Item, TICKS_PER_MICROSECOND};
+use crate::{Color, Item, NANOSECONDS_PER_TICK};
 
 pub fn get_data_dir() -> PathBuf {
     match std::env::consts::OS {
@@ -261,13 +261,13 @@ pub trait AsTicks {
 
 impl AsTicks for std::time::Duration {
     fn as_ticks(&self) -> i64 {
-        (self.as_micros() * TICKS_PER_MICROSECOND as u128) as i64
+        (self.as_nanos() / NANOSECONDS_PER_TICK as u128) as i64
     }
 }
 
-impl AsTicks for chrono::Duration {
+impl AsTicks for time::Duration {
     fn as_ticks(&self) -> i64 {
-        self.num_microseconds().unwrap_or_default() * TICKS_PER_MICROSECOND as i64
+        (self.whole_nanoseconds() / NANOSECONDS_PER_TICK) as i64
     }
 }
 
@@ -285,4 +285,8 @@ pub fn to_hex(color: Color) -> String {
 
 pub fn has_item(id: i32, inventory: &[Item]) -> bool {
     inventory.iter().any(|a| a.id == id)
+}
+
+pub(crate) fn current_save_time() -> i64 {
+    (time::OffsetDateTime::now_utc().unix_timestamp_nanos() / NANOSECONDS_PER_TICK) as i64
 }
