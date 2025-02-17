@@ -1,8 +1,6 @@
 use std::{fs::File, io::Read, path::PathBuf};
 
-use anyhow::Result;
-
-use terra_core::{meta::Meta, BuffMeta, ItemMeta, Player, PrefixMeta};
+use terra_core::{BuffMeta, ItemMeta, Player, PrefixMeta};
 
 #[derive(thiserror::Error, Debug)]
 pub enum TestError {
@@ -22,7 +20,7 @@ fn run_test(
     chara_name: &String,
     directory: &PathBuf,
     item_meta: &Vec<ItemMeta>,
-) -> Result<(), TestError> {
+) -> anyhow::Result<(), TestError> {
     let filepath = directory.join(format!("{}.plr", chara_name));
 
     println!("Filepath: {}", filepath.display());
@@ -88,9 +86,15 @@ fn main() {
     let mut player_dir = PathBuf::new();
     player_dir.push("tests");
 
-    let item_meta = ItemMeta::load().expect("Could not load items.");
-    let buff_meta = BuffMeta::load().expect("Could not load buffs.");
-    let prefix_meta = PrefixMeta::load().expect("Could not load prefixes.");
+    let item_meta: Vec<ItemMeta> =
+        serde_json::from_str(include_str!("../../data/resources/items.json"))
+            .expect("Could not load items");
+    let buff_meta: Vec<BuffMeta> =
+        serde_json::from_str(include_str!("../../data/resources/buffs.json"))
+            .expect("Could not load buffs");
+    let prefix_meta: Vec<PrefixMeta> =
+        serde_json::from_str(include_str!("../../data/resources/prefixes.json"))
+            .expect("Could not load prefixes");
 
     println!("Items count: {}", item_meta.len());
     println!("Buffs count: {}", buff_meta.len());

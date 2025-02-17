@@ -8,3 +8,4 @@ publish = false
 terra-core = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
+serde_json = { workspace = true }
