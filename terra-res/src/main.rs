@@ -1019,7 +1019,7 @@ fn main() -> Result<()> {
     copy_dir(&gen_fol, &final_dir, &dir_options)?;
 
     if build_type == "release" {
-        let data_dir = PathBuf::from("./data");
+        let data_dir = PathBuf::from("./data/resources");
         if data_dir.exists() {
             fs::remove_dir_all(&data_dir)?;
         }
