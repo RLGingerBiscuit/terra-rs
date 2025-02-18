@@ -18,7 +18,7 @@ def concat_versions(versions: list[tuple[str, int]], i: int) -> tuple[str, int]:
 
 
 def main():
-    lines = Path("data/versions.txt").read_text().splitlines()
+    lines = Path(__file__).parent.joinpath("../data/versions.txt").read_text().splitlines()
 
     versions: list[tuple[str, int]] = []
 
@@ -28,7 +28,7 @@ def main():
         version = int(split[1].strip())
         versions.append((name, version))
 
-    func = f"""    match version {{
+    func = """    match version {
             i32::MIN..=-1 => "Unknown","""
 
     i = 0
@@ -46,7 +46,7 @@ def main():
             next_tuple = versions[-1]
 
         if previous_tuple[1] > current[1] or current[1] > next_tuple[1]:
-            print(f"ERROR: not ordered (line {i+1})")
+            print(f"ERROR: not ordered (line {i + 1})")
             exit(1)
 
         next_version = next_tuple[1]
@@ -71,11 +71,11 @@ def main():
 
         if version + 1 == next_version - 1:
             func += f"""
-            {version+1} => "{name} (or newer)","""
+            {version + 1} => "{name} (or newer)","""
             continue
 
         func += f"""
-            {version+1}..={next_version-1} => "{name} (or newer)","""
+            {version + 1}..={next_version - 1} => "{name} (or newer)","""
 
     func += f"""
             _ => "{versions[-1][0]} (or newer)"
