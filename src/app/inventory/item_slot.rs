@@ -234,7 +234,7 @@ impl<'a> ItemSlot<'a> {
     }
 }
 
-impl<'a> Widget for ItemSlot<'a> {
+impl Widget for ItemSlot<'_> {
     fn ui(mut self, ui: &mut Ui) -> Response {
         let (rect, response) = ui.allocate_exact_size(SLOT_SIZE, Sense::hover());
 
@@ -266,7 +266,7 @@ impl<'a> Widget for ItemSlot<'a> {
     }
 }
 
-impl<'a> Slot for ItemSlot<'a> {
+impl Slot for ItemSlot<'_> {
     fn slot_size(&self) -> Vec2 {
         SLOT_SIZE
     }

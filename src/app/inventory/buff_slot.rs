@@ -111,7 +111,7 @@ impl<'a> BuffSlot<'a> {
     }
 }
 
-impl<'a> Widget for BuffSlot<'a> {
+impl Widget for BuffSlot<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         let (rect, response) = ui.allocate_exact_size(SLOT_SIZE, Sense::hover());
 
@@ -130,7 +130,7 @@ impl<'a> Widget for BuffSlot<'a> {
     }
 }
 
-impl<'a> Slot for BuffSlot<'a> {
+impl Slot for BuffSlot<'_> {
     fn slot_size(&self) -> Vec2 {
         SLOT_SIZE
     }
