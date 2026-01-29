@@ -20,7 +20,7 @@ pub const MAGIC_NUMBER: u64 = 0x6369676F6C6572;
 /// `h3y_gUyZ`, with null bytes every other byte
 pub const ENCRYPTION_BYTES: &[u8; 16] = b"h\x003\x00y\x00_\x00g\x00U\x00y\x00Z\x00";
 
-pub const CURRENT_VERSION: i32 = 279;
+pub const CURRENT_VERSION: i32 = 315;
 
 /// C#'s DateTime uses Ticks, so here is the conversion factor
 pub const NANOSECONDS_PER_TICK: i128 = 100;

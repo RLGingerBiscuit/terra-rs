@@ -175,7 +175,7 @@ impl<'a> ItemSlot<'a> {
         self.meta
     }
 
-    pub fn options(&self) -> &ItemSlotOptions {
+    pub fn options(&self) -> &ItemSlotOptions<'_> {
         &self.options
     }
 

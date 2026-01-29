@@ -16,10 +16,7 @@ use itertools::Itertools;
 use mlua::Lua;
 use regex::{Captures, Regex};
 
-use reqwest::{
-    blocking::Client,
-    header::{HeaderMap, HeaderValue},
-};
+use reqwest::{blocking::Client, header::HeaderMap};
 use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, ItemType, PrefixMeta, SharedString};
 
 mod truthy;
@@ -165,6 +162,9 @@ fn animated_items() -> HashMap<i32, [u32; 4]> {
     map.insert(5275, [8, 14, 0, 0]);
     map.insert(5277, [10, 12, 0, 0]);
     map.insert(5278, [10, 11, 1, 1]);
+    map.insert(5537, [15, 14, 0, 0]);
+    map.insert(5644, [12, 12, 0, 0]);
+    map.insert(5645, [16, 15, 0, 1]);
 
     map
 }
@@ -644,8 +644,15 @@ fn get_prefix_meta(
         .skip(1)
         .for_each(|tr| {
             let mut tds = tr.select(&td_selector);
+            let text = tds
+                .next()
+                .unwrap()
+                .text()
+                .collect::<String>()
+                .trim()
+                .to_owned();
 
-            let id = u8::from_str(tds.next().unwrap().inner_html().trim()).unwrap();
+            let id = u8::from_str(&text).unwrap();
 
             // NOTE: We're ignoring the mobile-only prefix 'Piercing' here
             if id == 90 {
@@ -659,7 +666,13 @@ fn get_prefix_meta(
                 76 => "Quick2".to_owned(),
                 84 => "Legendary2".to_owned(),
                 90 => "Piercing".to_owned(),
-                _ => tds.next().unwrap().inner_html().trim().to_owned(),
+                _ => tds
+                    .next()
+                    .unwrap()
+                    .text()
+                    .collect::<String>()
+                    .trim()
+                    .to_owned(),
             };
 
             // Quick hack because Piercing is mobile only
@@ -948,8 +961,17 @@ fn main() -> Result<()> {
     let buff_offset_filepath = gen_fol.join("buffs.css");
 
     let client = {
-        let mut map = HeaderMap::with_capacity(1);
-        map.insert(reqwest::header::USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.3"));
+        let mut map = HeaderMap::with_capacity(2);
+        map.insert(
+            reqwest::header::USER_AGENT,
+            std::env::var("TERRA_USER_AGENT")
+                .unwrap_or_else(|_| "terra-res-bot/0.1".to_owned())
+                .parse()?,
+        );
+        map.insert(
+            reqwest::header::COOKIE,
+            std::env::var("TERRA_COOKIE").unwrap().parse()?,
+        );
         Client::builder().default_headers(map).build()?
     };
 

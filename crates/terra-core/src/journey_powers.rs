@@ -62,11 +62,14 @@ impl Default for JourneyPowers {
 impl JourneyPowers {
     pub fn load(&mut self, reader: &mut dyn Read) -> anyhow::Result<()> {
         while reader.read_bool()? {
-            match JourneyPowerId::from(reader.read_u16::<LE>()?) {
+            let id = JourneyPowerId::from(reader.read_u16::<LE>()?);
+            match id {
                 JourneyPowerId::Godmode => self.godmode = reader.read_bool()?,
                 JourneyPowerId::FarPlacement => self.far_placement = reader.read_bool()?,
                 JourneyPowerId::Spawnrate => self.spawnrate = reader.read_f32::<LE>()?,
-                _ => {}
+                _ => {
+                    eprintln!("Unknown JourneyPowerID: {:?}", id);
+                }
             }
         }
 
