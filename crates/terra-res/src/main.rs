@@ -412,7 +412,7 @@ fn get_item_meta(
             .as_str()
             .unwrap_or_else(|| &internal_name);
         let name = expand_templates(name, template, game, items, npcs);
-        let max_stack = lua_item.get("maxStack").unwrap_or(1);
+        let max_stack = lua_item.get("maxStack").unwrap_or(9999);
         let value = lua_item.get("value").unwrap_or(0);
         let use_time = lua_item.get("useTime").truthy_option();
         let damage = lua_item.get("damage").truthy_option();
