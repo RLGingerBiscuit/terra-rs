@@ -20,7 +20,7 @@ impl<'a> ItemTooltipOptions<'a> {
         }
     }
 
-    pub fn from_slot_options(options: &'a ItemSlotOptions) -> Self {
+    pub fn from_slot_options(options: ItemSlotOptions<'a>) -> Self {
         Self {
             id: options.id,
             prefix_meta: options.prefix_meta,
