@@ -4,7 +4,7 @@ use egui::{Align2, ComboBox, TextStyle, Ui, WidgetText};
 use egui_dock::{DockState, TabViewer};
 
 use terra_core::{
-    meta::Meta, utils, Difficulty, Item, PrefixMeta, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE,
+    meta::Meta, utils, Difficulty, Item, PrefixMeta, Team, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE,
     HAIR_DYE_COUNT, HAIR_STYLE_COUNT, INVENTORY_STRIDE, LOADOUT_COUNT, SKIN_VARIANT_COUNT,
 };
 
@@ -253,6 +253,23 @@ impl AppContext {
             ui.label("Golfer score:");
             ui.drag_value_with_buttons(&mut player.golfer_score, 1., 0..=i32::MAX);
             ui.end_row();
+
+            ui.label("Team:");
+            ComboBox::from_id_source("player_team")
+                .selected_text(player.team.to_string())
+                .show_ui(ui, |ui| {
+                    enum_selectable_value!(
+                        ui,
+                        &mut player.team,
+                        Team::None,
+                        Team::Red,
+                        Team::Green,
+                        Team::Blue,
+                        Team::Yellow,
+                        Team::Pink
+                    );
+                });
+            ui.end_row();
         });
     }
 
@@ -475,7 +492,7 @@ impl AppContext {
 
         ui.horizontal_top(|ui| {
             let spacing = (ui.available_width()
-                - buff_slot::SLOT_SIZE.x * 11.
+                - buff_slot::SLOT_SIZE.x * (BUFF_STRIDE as f32)
                 - ui.spacing().item_spacing.x * 22.)
                 / 2.;
             if spacing > 0. {

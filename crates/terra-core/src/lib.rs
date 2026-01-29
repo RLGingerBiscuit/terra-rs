@@ -12,6 +12,7 @@ pub mod player;
 pub mod prefix;
 mod shared_string;
 pub mod spawnpoint;
+pub mod team;
 pub mod utils;
 
 pub const MAGIC_MASK: u64 = 0xFFFFFFFFFFFFFF;
@@ -79,3 +80,4 @@ pub use player::{Player, PlayerError};
 pub use prefix::{Prefix, PrefixMeta};
 pub use shared_string::SharedString;
 pub use spawnpoint::Spawnpoint;
+pub use team::Team;

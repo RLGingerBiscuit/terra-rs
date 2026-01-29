@@ -11,7 +11,7 @@ use crate::{
     aes::{decrypt_from_reader, encrypt_to_writer},
     ext::{TerraReadExt, TerraWriteExt},
     utils, BoolByte, Buff, Color, Difficulty, FileType, Item, ItemMeta, JourneyPowers, Loadout,
-    ResearchItem, Spawnpoint, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
+    ResearchItem, Spawnpoint, Team, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
     CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, EQUIPMENT_COUNT,
     FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
     MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT,
@@ -141,7 +141,7 @@ pub struct Player {
     pub current_loadout_index: i32,
     pub loadouts: [Loadout; LOADOUT_COUNT],
 
-    pub team: u8,
+    pub team: Team,
     pub voice_variant: u8,
     pub voice_pitch_offset: f32,
     pub pending_refunds: Vec<Item>,
@@ -255,7 +255,7 @@ impl Default for Player {
 
             loadouts: std::array::from_fn(|_| Loadout::default()),
 
-            team: 0,
+            team: Team::None,
             voice_variant: 0,
             voice_pitch_offset: 0.,
             pending_refunds: Vec::new(),
@@ -334,7 +334,7 @@ impl Player {
         }
 
         if self.version >= 283 {
-            self.team = reader.read_u8()?;
+            self.team = Team::from(reader.read_u8()?);
         }
 
         if self.version >= 83 {
@@ -753,7 +753,7 @@ impl Player {
         }
 
         if self.version >= 283 {
-            writer.write_u8(self.team)?;
+            writer.write_u8(self.team.into())?;
         }
 
         if self.version >= 83 {
