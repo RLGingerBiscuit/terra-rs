@@ -7,6 +7,7 @@ license = "MIT"
 rust-version = "1.83"
 version.workspace = true
 repository.workspace = true
+default-run = "terra-rs"
 
 [package.metadata.wix]
 upgrade-guid = "03720709-179C-4D12-8268-3FE5122B0226"
