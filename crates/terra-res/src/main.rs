@@ -312,8 +312,10 @@ fn expand_templates(
         expand_templates(&expanded, template, game, items, npcs)
     } else {
         expanded
-            .replace("<right>", "Right Click")
-            .replace("<left>", "Left Click")
+            .replace("{InputTrigger_UseOrAttack}", "Left Click")
+            .replace("{InputTrigger_InteractWithTile}", "Right Click")
+            .replace("{InputTrigger_Grapple}", "E")
+            .replace("{InputTrigger_ToggleOrOpen}", "Right Click")
     }
 }
 
@@ -431,11 +433,18 @@ fn get_item_meta(
         let range_boost = lua_item.get("tileBoost").truthy_option();
         let sacrifices = lua_item.get("sacrifices").unwrap_or(1);
 
-        let tooltip = items["ItemTooltip"][&internal_name].as_str().map(|tt| {
-            tt.lines()
-                .map(|s| expand_templates(&s, &template, &game, &items, &npcs))
-                .collect::<Vec<_>>()
-        });
+        let tooltip = if items["ItemTooltip"][&internal_name].is_null() {
+            None
+        } else {
+            Some(
+                items["ItemTooltip"][&internal_name]
+                    .as_str()
+                    .unwrap()
+                    .lines()
+                    .map(|s| expand_templates(&s, &template, &game, &items, &npcs))
+                    .collect::<Vec<_>>(),
+            )
+        };
 
         let forbidden = if forbidden_items.contains(&id) {
             Some(true)
@@ -530,7 +539,7 @@ fn get_buff_meta(
 
     let internal_name_selector = scraper::Selector::parse("code").unwrap();
     let name_selector = scraper::Selector::parse("span.i>span>span>a").unwrap();
-    let image_selector = scraper::Selector::parse("span.i>a>img").unwrap();
+    // let image_selector = scraper::Selector::parse("span.i img").unwrap();
 
     let offsets = get_offsets(offset_filepath)?;
 
@@ -546,25 +555,12 @@ fn get_buff_meta(
 
             let id = i32::from_str(tds.next().unwrap().inner_html().trim()).unwrap();
 
-            let image_text = tds
-                .next()
-                .unwrap()
-                .select(&image_selector)
-                .next()
-                .unwrap()
-                .value()
-                .attr("alt")
-                .unwrap()
-                .to_owned();
+            let _ = tds.next(); // Skip image
 
             let name = match tds.next().unwrap().select(&name_selector).next() {
                 Some(a) => a.inner_html().trim().to_owned(),
-                None => image_text,
+                None => "".to_owned(),
             };
-
-            let [x, y, _, _] = offsets.get(&id).unwrap_or(&[-1, -1, 0, 0]);
-            let x = x.to_owned();
-            let y = y.to_owned();
 
             let internal_name = tds
                 .next()
@@ -582,11 +578,37 @@ fn get_buff_meta(
                 _ => panic!("TF THIS?"),
             };
 
-            let tooltip = game["BuffDescription"][&internal_name].as_str().map(|tt| {
-                tt.lines()
-                    .map(|s| expand_templates(&s, template, game, items, npcs))
-                    .collect::<Vec<_>>()
-            });
+            let name = if game["BuffName"][&internal_name].is_null() {
+                name
+            } else {
+                game["BuffName"][&internal_name]
+                    .as_str()
+                    .unwrap()
+                    .to_owned()
+            };
+
+            let name = if name.is_empty() {
+                internal_name.clone()
+            } else {
+                name
+            };
+
+            let tooltip = if game["BuffDescription"][&internal_name].is_null() {
+                None
+            } else {
+                Some(
+                    game["BuffDescription"][&internal_name]
+                        .as_str()
+                        .unwrap()
+                        .lines()
+                        .map(|s| expand_templates(&s, template, game, items, npcs))
+                        .collect::<Vec<_>>(),
+                )
+            };
+
+            let [x, y, _, _] = offsets.get(&id).unwrap_or(&[-1, -1, 0, 0]);
+            let x = x.to_owned();
+            let y = y.to_owned();
 
             buff_meta.push(BuffMeta {
                 id,
@@ -654,18 +676,12 @@ fn get_prefix_meta(
 
             let id = u8::from_str(&text).unwrap();
 
-            // NOTE: We're ignoring the mobile-only prefix 'Piercing' here
-            if id == 90 {
-                return;
-            }
-
             let internal_name = match id {
                 // Edge Cases
                 20 => "Deadly2".to_owned(),
                 75 => "Hasty2".to_owned(),
                 76 => "Quick2".to_owned(),
                 84 => "Legendary2".to_owned(),
-                90 => "Piercing".to_owned(),
                 _ => tds
                     .next()
                     .unwrap()
@@ -675,11 +691,13 @@ fn get_prefix_meta(
                     .to_owned(),
             };
 
-            // Quick hack because Piercing is mobile only
-            let name = if internal_name == "Piercing" {
+            let name = if items["PrefixName"][&internal_name].is_null() {
                 internal_name.clone()
             } else {
-                items["Prefix"][&internal_name].as_str().unwrap().to_owned()
+                items["PrefixName"][&internal_name]
+                    .as_str()
+                    .unwrap()
+                    .to_owned()
             };
 
             prefix_meta.push(PrefixMeta {
