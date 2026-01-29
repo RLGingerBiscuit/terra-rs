@@ -691,13 +691,21 @@ fn get_prefix_meta(
                     .to_owned(),
             };
 
-            let name = if items["PrefixName"][&internal_name].is_null() {
-                internal_name.clone()
-            } else {
-                items["PrefixName"][&internal_name]
-                    .as_str()
-                    .unwrap()
-                    .to_owned()
+            let name = match id {
+                20 => "Deadly".to_owned(),
+                75 => "Hasty".to_owned(),
+                76 => "Quick".to_owned(),
+                84 => "Legendary".to_owned(),
+                _ => {
+                    if items["PrefixName"][&internal_name].is_null() {
+                        internal_name.clone()
+                    } else {
+                        items["PrefixName"][&internal_name]
+                            .as_str()
+                            .unwrap()
+                            .to_owned()
+                    }
+                }
             };
 
             prefix_meta.push(PrefixMeta {
