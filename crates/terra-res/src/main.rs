@@ -16,10 +16,7 @@ use itertools::Itertools;
 use mlua::Lua;
 use regex::{Captures, Regex};
 
-use reqwest::{
-    blocking::Client,
-    header::{HeaderMap, HeaderValue},
-};
+use reqwest::{blocking::Client, header::HeaderMap};
 use terra_core::{BuffMeta, BuffType, ItemMeta, ItemRarity, ItemType, PrefixMeta, SharedString};
 
 mod truthy;
@@ -165,6 +162,9 @@ fn animated_items() -> HashMap<i32, [u32; 4]> {
     map.insert(5275, [8, 14, 0, 0]);
     map.insert(5277, [10, 12, 0, 0]);
     map.insert(5278, [10, 11, 1, 1]);
+    map.insert(5537, [15, 14, 0, 0]);
+    map.insert(5644, [12, 12, 0, 0]);
+    map.insert(5645, [16, 15, 0, 1]);
 
     map
 }
@@ -312,8 +312,10 @@ fn expand_templates(
         expand_templates(&expanded, template, game, items, npcs)
     } else {
         expanded
-            .replace("<right>", "Right Click")
-            .replace("<left>", "Left Click")
+            .replace("{InputTrigger_UseOrAttack}", "Left Click")
+            .replace("{InputTrigger_InteractWithTile}", "Right Click")
+            .replace("{InputTrigger_Grapple}", "E")
+            .replace("{InputTrigger_ToggleOrOpen}", "Right Click")
     }
 }
 
@@ -412,7 +414,7 @@ fn get_item_meta(
             .as_str()
             .unwrap_or_else(|| &internal_name);
         let name = expand_templates(name, template, game, items, npcs);
-        let max_stack = lua_item.get("maxStack").unwrap_or(1);
+        let max_stack = lua_item.get("maxStack").unwrap_or(9999);
         let value = lua_item.get("value").unwrap_or(0);
         let use_time = lua_item.get("useTime").truthy_option();
         let damage = lua_item.get("damage").truthy_option();
@@ -431,11 +433,18 @@ fn get_item_meta(
         let range_boost = lua_item.get("tileBoost").truthy_option();
         let sacrifices = lua_item.get("sacrifices").unwrap_or(1);
 
-        let tooltip = items["ItemTooltip"][&internal_name].as_str().map(|tt| {
-            tt.lines()
-                .map(|s| expand_templates(&s, &template, &game, &items, &npcs))
-                .collect::<Vec<_>>()
-        });
+        let tooltip = if items["ItemTooltip"][&internal_name].is_null() {
+            None
+        } else {
+            Some(
+                items["ItemTooltip"][&internal_name]
+                    .as_str()
+                    .unwrap()
+                    .lines()
+                    .map(|s| expand_templates(&s, &template, &game, &items, &npcs))
+                    .collect::<Vec<_>>(),
+            )
+        };
 
         let forbidden = if forbidden_items.contains(&id) {
             Some(true)
@@ -530,7 +539,7 @@ fn get_buff_meta(
 
     let internal_name_selector = scraper::Selector::parse("code").unwrap();
     let name_selector = scraper::Selector::parse("span.i>span>span>a").unwrap();
-    let image_selector = scraper::Selector::parse("span.i>a>img").unwrap();
+    // let image_selector = scraper::Selector::parse("span.i img").unwrap();
 
     let offsets = get_offsets(offset_filepath)?;
 
@@ -546,25 +555,12 @@ fn get_buff_meta(
 
             let id = i32::from_str(tds.next().unwrap().inner_html().trim()).unwrap();
 
-            let image_text = tds
-                .next()
-                .unwrap()
-                .select(&image_selector)
-                .next()
-                .unwrap()
-                .value()
-                .attr("alt")
-                .unwrap()
-                .to_owned();
+            let _ = tds.next(); // Skip image
 
             let name = match tds.next().unwrap().select(&name_selector).next() {
                 Some(a) => a.inner_html().trim().to_owned(),
-                None => image_text,
+                None => "".to_owned(),
             };
-
-            let [x, y, _, _] = offsets.get(&id).unwrap_or(&[-1, -1, 0, 0]);
-            let x = x.to_owned();
-            let y = y.to_owned();
 
             let internal_name = tds
                 .next()
@@ -582,11 +578,37 @@ fn get_buff_meta(
                 _ => panic!("TF THIS?"),
             };
 
-            let tooltip = game["BuffDescription"][&internal_name].as_str().map(|tt| {
-                tt.lines()
-                    .map(|s| expand_templates(&s, template, game, items, npcs))
-                    .collect::<Vec<_>>()
-            });
+            let name = if game["BuffName"][&internal_name].is_null() {
+                name
+            } else {
+                game["BuffName"][&internal_name]
+                    .as_str()
+                    .unwrap()
+                    .to_owned()
+            };
+
+            let name = if name.is_empty() {
+                internal_name.clone()
+            } else {
+                name
+            };
+
+            let tooltip = if game["BuffDescription"][&internal_name].is_null() {
+                None
+            } else {
+                Some(
+                    game["BuffDescription"][&internal_name]
+                        .as_str()
+                        .unwrap()
+                        .lines()
+                        .map(|s| expand_templates(&s, template, game, items, npcs))
+                        .collect::<Vec<_>>(),
+                )
+            };
+
+            let [x, y, _, _] = offsets.get(&id).unwrap_or(&[-1, -1, 0, 0]);
+            let x = x.to_owned();
+            let y = y.to_owned();
 
             buff_meta.push(BuffMeta {
                 id,
@@ -644,13 +666,15 @@ fn get_prefix_meta(
         .skip(1)
         .for_each(|tr| {
             let mut tds = tr.select(&td_selector);
+            let text = tds
+                .next()
+                .unwrap()
+                .text()
+                .collect::<String>()
+                .trim()
+                .to_owned();
 
-            let id = u8::from_str(tds.next().unwrap().inner_html().trim()).unwrap();
-
-            // NOTE: We're ignoring the mobile-only prefix 'Piercing' here
-            if id == 90 {
-                return;
-            }
+            let id = u8::from_str(&text).unwrap();
 
             let internal_name = match id {
                 // Edge Cases
@@ -658,15 +682,30 @@ fn get_prefix_meta(
                 75 => "Hasty2".to_owned(),
                 76 => "Quick2".to_owned(),
                 84 => "Legendary2".to_owned(),
-                90 => "Piercing".to_owned(),
-                _ => tds.next().unwrap().inner_html().trim().to_owned(),
+                _ => tds
+                    .next()
+                    .unwrap()
+                    .text()
+                    .collect::<String>()
+                    .trim()
+                    .to_owned(),
             };
 
-            // Quick hack because Piercing is mobile only
-            let name = if internal_name == "Piercing" {
-                internal_name.clone()
-            } else {
-                items["Prefix"][&internal_name].as_str().unwrap().to_owned()
+            let name = match id {
+                20 => "Deadly".to_owned(),
+                75 => "Hasty".to_owned(),
+                76 => "Quick".to_owned(),
+                84 => "Legendary".to_owned(),
+                _ => {
+                    if items["PrefixName"][&internal_name].is_null() {
+                        internal_name.clone()
+                    } else {
+                        items["PrefixName"][&internal_name]
+                            .as_str()
+                            .unwrap()
+                            .to_owned()
+                    }
+                }
             };
 
             prefix_meta.push(PrefixMeta {
@@ -948,8 +987,17 @@ fn main() -> Result<()> {
     let buff_offset_filepath = gen_fol.join("buffs.css");
 
     let client = {
-        let mut map = HeaderMap::with_capacity(1);
-        map.insert(reqwest::header::USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.3"));
+        let mut map = HeaderMap::with_capacity(2);
+        map.insert(
+            reqwest::header::USER_AGENT,
+            std::env::var("TERRA_USER_AGENT")
+                .unwrap_or_else(|_| "terra-res-bot/0.1".to_owned())
+                .parse()?,
+        );
+        map.insert(
+            reqwest::header::COOKIE,
+            std::env::var("TERRA_COOKIE").unwrap().parse()?,
+        );
         Client::builder().default_headers(map).build()?
     };
 

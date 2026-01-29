@@ -140,12 +140,7 @@ impl AppContext {
             self.send_context_msg(Message::LoadItemSpritesheet);
         }
 
-        // FIXME: Lifetime stuff means ::from_slot_options doesn't work
-        // let tooltip_options = ItemTooltipOptions::from_slot_options(&options);
-        let tooltip_options = ItemTooltipOptions::new()
-            .id(options.id)
-            .favourited(options.favourited)
-            .prefix_meta(options.prefix_meta);
+        let tooltip_options = ItemTooltipOptions::from_slot_options(options.clone());
         let tooltip_on_hover = options.tooltip_on_hover;
 
         let meta = ItemMeta::get_or_default(&item_meta, options.id);

@@ -11,7 +11,7 @@ use crate::{
     aes::{decrypt_from_reader, encrypt_to_writer},
     ext::{TerraReadExt, TerraWriteExt},
     utils, BoolByte, Buff, Color, Difficulty, FileType, Item, ItemMeta, JourneyPowers, Loadout,
-    ResearchItem, Spawnpoint, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
+    ResearchItem, Spawnpoint, Team, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
     CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, EQUIPMENT_COUNT,
     FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
     MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT,
@@ -139,8 +139,13 @@ pub struct Player {
     pub super_cart_enabled: bool,
 
     pub current_loadout_index: i32,
-
     pub loadouts: [Loadout; LOADOUT_COUNT],
+
+    pub team: Team,
+    pub voice_variant: u8,
+    pub voice_pitch_offset: f32,
+    pub pending_refunds: Vec<Item>,
+    pub one_time_dialogues_seen: Vec<String>,
 }
 
 impl Default for Player {
@@ -249,6 +254,12 @@ impl Default for Player {
             current_loadout_index: 0,
 
             loadouts: std::array::from_fn(|_| Loadout::default()),
+
+            team: Team::None,
+            voice_variant: 0,
+            voice_pitch_offset: 0.,
+            pending_refunds: Vec::new(),
+            one_time_dialogues_seen: Vec::new(),
         }
     }
 }
@@ -320,6 +331,10 @@ impl Player {
 
         if self.version >= 82 {
             self.hair_dye = reader.read_u8()?;
+        }
+
+        if self.version >= 283 {
+            self.team = Team::from(reader.read_u8()?);
         }
 
         if self.version >= 83 {
@@ -603,6 +618,9 @@ impl Player {
         }
 
         if self.version >= 218 {
+            if self.version >= 282 {
+                let _ = reader.read_bool();
+            }
             let research_count = reader.read_i32::<LE>()?;
 
             self.research.clear();
@@ -639,6 +657,9 @@ impl Player {
 
         if self.version >= 262 {
             self.current_loadout_index = reader.read_i32::<LE>()?;
+            self.current_loadout_index = self
+                .current_loadout_index
+                .clamp(0, (LOADOUT_COUNT - 1) as i32);
             if self.current_loadout_index > 0 {
                 self.loadouts[self.current_loadout_index as usize] = self.loadouts[0].clone();
                 self.loadouts[0] = Loadout::default();
@@ -652,6 +673,34 @@ impl Player {
                     self.loadouts[i].load(reader, item_meta, self.version, true, true)?;
                     self.loadouts[i].load_visuals(reader, self.version, false)?;
                 }
+            }
+        }
+
+        if self.version >= 280 {
+            self.voice_variant = reader.read_u8()?;
+        } else {
+            self.voice_variant = if self.male { 1 } else { 2 }
+        }
+
+        if self.version >= 281 {
+            self.voice_pitch_offset = reader.read_f32::<LE>()?;
+        }
+
+        if self.version >= 300 {
+            let count = reader.read_i32::<LE>()? as usize;
+            self.pending_refunds.reserve(count);
+            for _ in 0..count {
+                let mut item = Item::default();
+                item.load(reader, item_meta, true, false, true, true, false)?;
+                self.pending_refunds.push(item);
+            }
+        }
+
+        if self.version >= 310 {
+            let count = reader.read_i32::<LE>()? as usize;
+            self.one_time_dialogues_seen.reserve(count);
+            for _ in 0..count {
+                self.one_time_dialogues_seen.push(reader.read_lpstring()?);
             }
         }
 
@@ -701,6 +750,10 @@ impl Player {
 
         if self.version >= 82 {
             writer.write_u8(self.hair_dye)?;
+        }
+
+        if self.version >= 283 {
+            writer.write_u8(self.team.into())?;
         }
 
         if self.version >= 83 {
@@ -952,6 +1005,9 @@ impl Player {
         }
 
         if self.version >= 218 {
+            if self.version >= 282 {
+                writer.write_bool(false)?;
+            }
             writer.write_i32::<LE>(self.research.len() as i32)?;
 
             for research_item in self.research.iter() {
@@ -1007,6 +1063,30 @@ impl Player {
             }
         }
 
+        if self.version >= 280 {
+            writer.write_u8(self.voice_variant)?;
+        }
+
+        if self.version >= 281 {
+            writer.write_f32::<LE>(self.voice_pitch_offset)?;
+        }
+
+        if self.version >= 300 {
+            writer.write_i32::<LE>(self.pending_refunds.len() as i32)?;
+
+            for item in self.pending_refunds.iter() {
+                item.save(writer, item_meta, true, false, true, true, false)?;
+            }
+        }
+
+        if self.version >= 310 {
+            writer.write_i32::<LE>(self.one_time_dialogues_seen.len() as i32)?;
+
+            for dialogue in self.one_time_dialogues_seen.iter() {
+                writer.write_lpstring(dialogue)?;
+            }
+        }
+
         Ok(())
     }
 
@@ -1027,6 +1107,18 @@ impl Player {
         let mut decrypted_file = File::create(decrypted_filepath)?;
         let buf = decrypt_from_reader(original_file)?;
         decrypted_file.write_all(&buf)?;
+        Ok(())
+    }
+
+    pub fn encrypt_file(
+        decrypted_filepath: &Path,
+        encrypted_filepath: &Path,
+    ) -> anyhow::Result<()> {
+        let mut decrypted_file = File::open(decrypted_filepath)?;
+        let mut encrypted_file = File::create(encrypted_filepath)?;
+        let mut buf = Vec::new();
+        decrypted_file.read_to_end(&mut buf)?;
+        encrypt_to_writer(&mut encrypted_file, &buf)?;
         Ok(())
     }
 
