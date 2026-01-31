@@ -158,7 +158,8 @@ pub fn version_lookup(version: i32) -> &'static str {
         279 => "1.4.4.9",
         280..=314 => "1.4.4.9 (or newer)",
         315 => "1.4.5",
-        _ => "1.4.5 (or newer)",
+        316 => "1.4.5.3",
+        _ => "1.4.5.3 (or newer)",
     }
 }
 
