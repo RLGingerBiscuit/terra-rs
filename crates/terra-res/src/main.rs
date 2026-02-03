@@ -23,8 +23,8 @@ mod truthy;
 use truthy::TruthyOption;
 
 const ITEM_DATA_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/luadata";
-const BUFF_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Buff_IDs";
-const PREFIX_IDS_URL: &str = "https://terraria.wiki.gg/wiki/Prefix_IDs";
+const BUFF_INFO_URL:&str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Template:GetBuffInfo";
+const PREFIX_IDS_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Prefix_IDs";
 const TRAPPED_CHEST_DOT: &str = "trapped_chest_dot.png";
 
 fn get_offsets(path: &Path) -> Result<HashMap<i32, [i32; 4]>> {
@@ -228,6 +228,27 @@ fn trapped_chests() -> HashMap<i32, i32> {
     map.insert(5167, 5156);
     map.insert(5188, 5177);
     map.insert(5209, 5198);
+    map.insert(5567, 5556);
+    map.insert(5620, 5609);
+    map.insert(5708, 5697);
+    map.insert(5731, 5720);
+    map.insert(5754, 5745);
+    map.insert(5776, 5763);
+    map.insert(5797, 5784);
+    map.insert(5818, 5805);
+    map.insert(5839, 5826);
+    map.insert(5857, 5846);
+    map.insert(5878, 5865);
+    map.insert(5897, 5886);
+    map.insert(5918, 5905);
+    map.insert(5952, 5939);
+    map.insert(5974, 5962);
+    map.insert(5995, 5982);
+    map.insert(6018, 6005);
+    map.insert(6041, 6028);
+    map.insert(6064, 6051);
+    map.insert(6087, 6074);
+    map.insert(6131, 6118);
     map
 }
 
@@ -528,109 +549,130 @@ fn get_buff_meta(
     npcs: &serde_json::Value,
     offset_filepath: &Path,
 ) -> Result<Vec<BuffMeta>> {
-    let resp = client.get(BUFF_IDS_URL).send()?;
-    let text = resp.text()?;
+    let resp = client.get(BUFF_INFO_URL).send()?;
+    let resp = resp.error_for_status()?;
+    let json: serde_json::Value = resp.json()?;
 
-    let doc = scraper::Html::parse_document(&text);
+    let text = json
+        .as_object()
+        .unwrap()
+        .get("query")
+        .unwrap()
+        .get("pages")
+        .unwrap()
+        .get("55467")
+        .unwrap()
+        .get("revisions")
+        .unwrap()
+        .get(0)
+        .unwrap()
+        .get("slots")
+        .unwrap()
+        .get("main")
+        .unwrap()
+        .get("*")
+        .unwrap()
+        .as_str()
+        .unwrap();
 
-    let tbody_selector = scraper::Selector::parse("table.terraria.sortable").unwrap();
-    let tr_selector = scraper::Selector::parse("tbody>tr").unwrap();
-    let td_selector = scraper::Selector::parse("td").unwrap();
+    let count = {
+        let count_regex = Regex::new(r"-->\|__buff:count\|(\d+)<!--")?;
+        let Some(count_match) = count_regex.captures(text).map(|x| x.get(1)).flatten() else {
+            panic!("Couldn't find buff count!");
+        };
+        count_match.as_str().parse::<usize>()?
+    };
 
-    let internal_name_selector = scraper::Selector::parse("code").unwrap();
-    let name_selector = scraper::Selector::parse("span.i>span>span>a").unwrap();
-    // let image_selector = scraper::Selector::parse("span.i img").unwrap();
+    println!("Buff count: {}", count);
+
+    let buff_regex = Regex::new(r"-->\|__buff:(iname|type):(\d+)\|(.*)<!--")?;
+    let mut buff_captures = buff_regex.captures_iter(text);
 
     let offsets = get_offsets(offset_filepath)?;
 
-    let mut buff_meta = Vec::new();
+    let mut buff_meta: Vec<BuffMeta> = Vec::with_capacity(count);
 
-    doc.select(&tbody_selector)
-        .next()
-        .unwrap()
-        .select(&tr_selector)
-        .skip(1)
-        .for_each(|tr| {
-            let mut tds = tr.select(&td_selector);
+    loop {
+        let Some(cap) = buff_captures.next() else {
+            break;
+        };
+        let id = cap.get(2).expect("No id capture").as_str().parse::<i32>()?;
+        let field = cap.get(1).expect("No field capture").as_str();
+        let value = cap.get(3).expect("No value capture").as_str();
 
-            let id = i32::from_str(tds.next().unwrap().inner_html().trim()).unwrap();
-
-            let _ = tds.next(); // Skip image
-
-            let name = match tds.next().unwrap().select(&name_selector).next() {
-                Some(a) => a.inner_html().trim().to_owned(),
-                None => "".to_owned(),
-            };
-
-            let internal_name = tds
-                .next()
-                .unwrap()
-                .select(&internal_name_selector)
-                .next()
-                .unwrap()
-                .inner_html()
-                .trim()
-                .to_owned();
-
-            let buff_type = match tds.next().unwrap().inner_html().trim() {
-                "Buff" => BuffType::Buff,
-                "Debuff" => BuffType::Debuff,
-                _ => panic!("TF THIS?"),
-            };
-
-            let name = if game["BuffName"][&internal_name].is_null() {
-                name
-            } else {
-                game["BuffName"][&internal_name]
-                    .as_str()
-                    .unwrap()
-                    .to_owned()
-            };
-
-            let name = if name.is_empty() {
-                internal_name.clone()
-            } else {
-                name
-            };
-
-            let tooltip = if game["BuffDescription"][&internal_name].is_null() {
-                None
-            } else {
-                Some(
-                    game["BuffDescription"][&internal_name]
-                        .as_str()
-                        .unwrap()
-                        .lines()
-                        .map(|s| expand_templates(&s, template, game, items, npcs))
-                        .collect::<Vec<_>>(),
-                )
-            };
-
+        let buff = if let Some(buff) = buff_meta.iter_mut().find(|b| b.id == id) {
+            buff
+        } else {
             let [x, y, _, _] = offsets.get(&id).unwrap_or(&[-1, -1, 0, 0]);
-            let x = x.to_owned();
-            let y = y.to_owned();
-
             buff_meta.push(BuffMeta {
                 id,
-                name: name.into(),
-                x,
-                y,
-                internal_name: internal_name.into(),
-                buff_type,
-                tooltip: tooltip.map(|t| t.into_iter().map(|l| l.into()).collect_vec()),
+                name: SharedString::default(),
+                x: *x,
+                y: *y,
+                internal_name: SharedString::default(),
+                buff_type: BuffType::Buff,
+                tooltip: None,
             });
-        });
+            buff_meta.last_mut().unwrap()
+        };
+
+        match field {
+            "iname" => {
+                buff.internal_name = SharedString::new(value);
+                buff.name = if game["BuffName"][value].is_null() {
+                    SharedString::new(value)
+                } else {
+                    SharedString::new(game["BuffName"][value].as_str().unwrap())
+                };
+                buff.tooltip = if game["BuffDescription"][value].is_null() {
+                    None
+                } else {
+                    Some(
+                        game["BuffDescription"][value]
+                            .as_str()
+                            .unwrap()
+                            .lines()
+                            .map(|s| expand_templates(&s, template, game, items, npcs))
+                            .collect::<Vec<_>>()
+                            .into_iter()
+                            .map(|l| l.into())
+                            .collect(),
+                    )
+                };
+            }
+            "type" => {
+                buff.buff_type = match value {
+                    "buff" => BuffType::Buff,
+                    "debuff" => BuffType::Debuff,
+                    _ => panic!("TF THIS?"),
+                }
+            }
+            _ => panic!("Unknown field: {}", field),
+        }
+    }
+
+    if buff_meta.len() != count {
+        panic!(
+            "Buff count mismatch: expected {}, got {}",
+            count,
+            buff_meta.len()
+        );
+    }
+
+    for buff in &buff_meta {
+        if buff.internal_name.is_empty() {
+            println!("Warning: Buff ID {} has no internal name!", buff.id);
+        }
+    }
 
     {
         let [x, y, _, _] = offsets.get(&0).unwrap_or(&[-1, -1, 0, 0]);
-        let x = x.to_owned();
-        let y = y.to_owned();
         buff_meta.push(BuffMeta {
             id: 0,
             name: SharedString::default(),
             internal_name: SharedString::new("None"),
-            x,
-            y,
+            x: *x,
+            y: *y,
             buff_type: BuffType::Buff,
             tooltip: None,
         });
@@ -649,71 +691,60 @@ fn get_prefix_meta(
     _npcs: &serde_json::Value,
 ) -> Result<Vec<PrefixMeta>> {
     let resp = client.get(PREFIX_IDS_URL).send()?;
-    let text = resp.text()?;
+    let resp = resp.error_for_status()?;
+    let json: serde_json::Value = resp.json()?;
 
-    let doc = scraper::Html::parse_document(&text);
-
-    let tbody_selector = scraper::Selector::parse("table.terraria.sortable").unwrap();
-    let tr_selector = scraper::Selector::parse("tbody>tr").unwrap();
-    let td_selector = scraper::Selector::parse("td").unwrap();
-
-    let mut prefix_meta = Vec::new();
-
-    doc.select(&tbody_selector)
-        .next()
+    let text = json
+        .as_object()
         .unwrap()
-        .select(&tr_selector)
-        .skip(1)
-        .for_each(|tr| {
-            let mut tds = tr.select(&td_selector);
-            let text = tds
-                .next()
+        .get("query")
+        .unwrap()
+        .get("pages")
+        .unwrap()
+        .get("8827")
+        .unwrap()
+        .get("revisions")
+        .unwrap()
+        .get(0)
+        .unwrap()
+        .get("slots")
+        .unwrap()
+        .get("main")
+        .unwrap()
+        .get("*")
+        .unwrap()
+        .as_str()
+        .unwrap();
+
+    let prefix_regex = Regex::new(r"\|\s*(\d+)\s*\|\|\s*\{\{gameText\|Prefix\.([^\{}]*)\}\}")?;
+    let mut prefix_captures = prefix_regex.captures_iter(text);
+
+    let mut prefix_meta: Vec<PrefixMeta> = Vec::new();
+
+    loop {
+        let Some(cap) = prefix_captures.next() else {
+            break;
+        };
+        let id = cap.get(1).expect("No id capture").as_str().parse::<u8>()?;
+        let internal_name = cap.get(2).expect("No internal name capture").as_str();
+
+        let name = if items["PrefixName"][internal_name].is_null() {
+            internal_name.to_owned()
+        } else {
+            items["PrefixName"][internal_name]
+                .as_str()
                 .unwrap()
-                .text()
-                .collect::<String>()
-                .trim()
-                .to_owned();
+                .to_owned()
+        };
 
-            let id = u8::from_str(&text).unwrap();
-
-            let internal_name = match id {
-                // Edge Cases
-                20 => "Deadly2".to_owned(),
-                75 => "Hasty2".to_owned(),
-                76 => "Quick2".to_owned(),
-                84 => "Legendary2".to_owned(),
-                _ => tds
-                    .next()
-                    .unwrap()
-                    .text()
-                    .collect::<String>()
-                    .trim()
-                    .to_owned(),
-            };
-
-            let name = match id {
-                20 => "Deadly".to_owned(),
-                75 => "Hasty".to_owned(),
-                76 => "Quick".to_owned(),
-                84 => "Legendary".to_owned(),
-                _ => {
-                    if items["PrefixName"][&internal_name].is_null() {
-                        internal_name.clone()
-                    } else {
-                        items["PrefixName"][&internal_name]
-                            .as_str()
-                            .unwrap()
-                            .to_owned()
-                    }
-                }
-            };
-
-            prefix_meta.push(PrefixMeta {
-                id,
-                internal_name: internal_name.into(),
-                name: name.into(),
-            });
+        prefix_meta.push(PrefixMeta {
+            id,
+            internal_name: SharedString::new(internal_name),
+            name: SharedString::new(&name),
         });
+    }
+
+    println!("Prefix count: {}", prefix_meta.len());
 
     prefix_meta.push(PrefixMeta {
         id: 0,
