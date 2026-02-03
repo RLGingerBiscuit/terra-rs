@@ -1,6 +1,6 @@
 use egui::{
-    load::SizedTexture, pos2, vec2, Align2, Color32, Image, ImageSource, Margin, Rect, Response,
-    Sense, TextStyle, TextureHandle, Ui, Vec2, Widget,
+    pos2, vec2, Align2, Color32, Margin, Rect, Response, Sense, TextStyle, TextureHandle, Ui, Vec2,
+    Widget,
 };
 use terra_core::{Item, ItemMeta, PrefixMeta};
 
@@ -14,10 +14,10 @@ pub const ICON_DISPLAYED_SIZE: Vec2 = Vec2::splat(32.);
 
 pub const SLOT_SIZE: Vec2 = Vec2::splat(40.);
 pub const MARGIN: Margin = Margin {
-    left: 6.,
-    right: 6.,
-    top: 6.,
-    bottom: 6.,
+    left: 6,
+    right: 6,
+    top: 6,
+    bottom: 6,
 };
 
 pub const SPRITE_SCALE: Vec2 = Vec2::splat(2.);
@@ -221,14 +221,7 @@ impl<'a> ItemSlot<'a> {
         );
 
         ui.horizontal_top(|ui| {
-            ui.add_space(padding.x);
-            ui.vertical(|ui| {
-                ui.add_space(padding.y);
-                let source = ImageSource::Texture(SizedTexture::new(sheet, ICON_DISPLAYED_SIZE));
-                ui.add(Image::new(source).uv(uv).tint(tint));
-                ui.add_space(padding.y);
-            });
-            ui.add_space(padding.x);
+            render_padded_sprite(ui, sheet, uv, ICON_DISPLAYED_SIZE, padding, Some(tint));
         })
         .response
     }
@@ -239,13 +232,13 @@ impl Widget for ItemSlot<'_> {
         let (rect, response) = ui.allocate_exact_size(SLOT_SIZE, Sense::hover());
 
         {
-            let mut ui = ui.child_ui(rect, *ui.layout(), None);
+            let mut ui = ui.new_child(egui::UiBuilder::new().max_rect(rect).layout(*ui.layout()));
 
             if let (true, Some(sheet)) = (self.meta.id != 0, self.item_sheet) {
                 let (uv, size, padding) =
                     calc_uv_size_padding(sheet, self.sprite_rect(), self.scale(), self.slot_size());
 
-                render_padded_sprite(&mut ui, sheet, uv, size, padding);
+                render_padded_sprite(&mut ui, sheet, uv, size, padding, None);
             } else if let (Some(icon), Some(sheet)) = (self.options.icon, self.icon_sheet) {
                 self.render_item_slot_icon(&mut ui, icon, sheet);
             };

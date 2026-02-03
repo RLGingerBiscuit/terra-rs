@@ -5,10 +5,10 @@ use super::slot::{calc_uv_size_padding, render_padded_sprite, Slot, SlotText};
 
 pub const SLOT_SIZE: Vec2 = Vec2::splat(32.);
 pub const MARGIN: Margin = Margin {
-    left: 0.,
-    right: 0.,
-    top: 0.,
-    bottom: 0.,
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
 };
 
 pub const SPRITE_SIZE: Vec2 = Vec2::splat(BUFF_SPRITE_SIZE as f32);
@@ -116,13 +116,13 @@ impl Widget for BuffSlot<'_> {
         let (rect, response) = ui.allocate_exact_size(SLOT_SIZE, Sense::hover());
 
         {
-            let mut ui = ui.child_ui(rect, *ui.layout(), None);
+            let mut ui = ui.new_child(egui::UiBuilder::new().max_rect(rect).layout(*ui.layout()));
 
             if let Some(sheet) = self.buff_sheet {
                 let (uv, size, padding) =
                     calc_uv_size_padding(sheet, self.sprite_rect(), self.scale(), self.slot_size());
 
-                render_padded_sprite(&mut ui, sheet, uv, size, padding);
+                render_padded_sprite(&mut ui, sheet, uv, size, padding, None);
             }
         }
 

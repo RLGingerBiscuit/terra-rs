@@ -4,8 +4,10 @@ use egui::{Align2, ComboBox, TextStyle, Ui, WidgetText};
 use egui_dock::{DockState, TabViewer};
 
 use terra_core::{
-    meta::Meta, utils, Difficulty, Item, PrefixMeta, Team, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE,
-    HAIR_DYE_COUNT, HAIR_STYLE_COUNT, INVENTORY_STRIDE, LOADOUT_COUNT, SKIN_VARIANT_COUNT,
+    meta::Meta,
+    utils::{self},
+    Difficulty, Item, PrefixMeta, Team, ARMOR_COUNT, BANK_STRIDE, BUFF_STRIDE, HAIR_DYE_COUNT,
+    HAIR_STYLE_COUNT, INVENTORY_STRIDE, LOADOUT_COUNT, SKIN_VARIANT_COUNT,
 };
 
 use super::{
@@ -209,7 +211,7 @@ impl AppContext {
             ui.end_row();
 
             ui.label("Difficulty:");
-            ComboBox::from_id_source("player_difficulty")
+            ComboBox::from_id_salt("player_difficulty")
                 .selected_text(player.difficulty.to_string())
                 .show_ui(ui, |ui| {
                     enum_selectable_value!(
@@ -226,7 +228,20 @@ impl AppContext {
             ui.label("Version:");
             ui.horizontal(|ui| {
                 ui.drag_value_with_buttons(&mut player.version, 1., 0..=i32::MAX);
-                ui.small(utils::version_lookup(player.version));
+                ComboBox::from_id_salt("player_version")
+                    .selected_text(utils::version_lookup(player.version))
+                    .show_ui(ui, |ui| {
+                        for (name, version) in utils::version_map() {
+                            let name = *name;
+                            let version = *version;
+                            if ui
+                                .selectable_label(player.version == version, name)
+                                .clicked()
+                            {
+                                player.version = version;
+                            }
+                        }
+                    });
             });
             ui.end_row();
 
@@ -255,7 +270,7 @@ impl AppContext {
             ui.end_row();
 
             ui.label("Team:");
-            ComboBox::from_id_source("player_team")
+            ComboBox::from_id_salt("player_team")
                 .selected_text(player.team.to_string())
                 .show_ui(ui, |ui| {
                     enum_selectable_value!(
@@ -745,7 +760,7 @@ impl AppContext {
                         if i == 0 {
                             let mut loadout = self.selected_loadout;
 
-                            if ComboBox::from_id_source("player_loadouts")
+                            if ComboBox::from_id_salt("player_loadouts")
                                 .show_index(ui, &mut loadout.0, LOADOUT_COUNT, |i| {
                                     format!("Loadout {}", i + 1)
                                 })
@@ -818,7 +833,7 @@ impl TabViewer for AppContext {
         tab.to_string().into()
     }
 
-    fn closeable(&mut self, tab: &mut Self::Tab) -> bool {
+    fn is_closeable(&self, tab: &Self::Tab) -> bool {
         !matches!(*tab, Tab::LoadSave)
     }
 

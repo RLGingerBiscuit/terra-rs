@@ -1,6 +1,7 @@
 use std::{
     num::ParseIntError,
     path::{Path, PathBuf},
+    sync::LazyLock,
 };
 
 use dirs_next::{data_local_dir, document_dir};
@@ -50,6 +51,91 @@ pub fn get_player_dir_or_default(player_path: &Path) -> PathBuf {
         None => fallback(),
     }
 }
+
+static VERSION_MAP: LazyLock<Vec<(&'static str, i32)>> = LazyLock::new(|| {
+    let mut v = Vec::with_capacity(81);
+    v.push(("1.0", 0));
+    v.push(("1.0.1", 2));
+    v.push(("1.0.2", 3));
+    v.push(("1.0.3", 4));
+    v.push(("1.0.4", 9));
+    v.push(("1.0.5", 12));
+    v.push(("1.0.6", 20));
+    v.push(("1.0.6.1", 22));
+    v.push(("1.1", 36));
+    v.push(("1.1.1", 37));
+    v.push(("1.1.2", 39));
+    v.push(("1.2", 67));
+    v.push(("1.2.0.1", 68));
+    v.push(("1.2.0.2", 69));
+    v.push(("1.2.0.3", 70));
+    v.push(("1.2.0.3.1", 71));
+    v.push(("1.2.1", 72));
+    v.push(("1.2.1.2", 73));
+    v.push(("1.2.2", 77));
+    v.push(("1.2.3", 93));
+    v.push(("1.2.3.1", 94));
+    v.push(("1.2.4", 101));
+    v.push(("1.2.4.1", 102));
+    v.push(("1.3.0.1", 146));
+    v.push(("1.3.0.2", 147));
+    v.push(("1.3.0.3", 149));
+    v.push(("1.3.0.4", 151));
+    v.push(("1.3.0.5", 153));
+    v.push(("1.3.0.6", 154));
+    v.push(("1.3.0.7", 155));
+    v.push(("1.3.0.8", 156));
+    v.push(("1.3.1", 168));
+    v.push(("1.3.1.1", 169));
+    v.push(("1.3.2", 172));
+    v.push(("1.3.2.1", 173));
+    v.push(("1.3.3", 175));
+    v.push(("1.3.3.1", 176));
+    v.push(("1.3.3.3", 177));
+    v.push(("1.3.4", 184));
+    v.push(("1.3.4.1", 185));
+    v.push(("1.3.4.2", 186));
+    v.push(("1.3.4.3", 187));
+    v.push(("1.3.4.4", 188));
+    v.push(("1.3.5", 191));
+    v.push(("1.3.5.1", 192));
+    v.push(("1.3.5.2", 193));
+    v.push(("1.3.5.3", 194));
+    v.push(("1.4.0.1", 225));
+    v.push(("1.4.0.2", 226));
+    v.push(("1.4.0.3", 227));
+    v.push(("1.4.0.4", 228));
+    v.push(("1.4.0.5", 230));
+    v.push(("1.4.1", 232));
+    v.push(("1.4.1.1", 233));
+    v.push(("1.4.1.2", 234));
+    v.push(("1.4.2", 235));
+    v.push(("1.4.2.1", 236));
+    v.push(("1.4.2.2", 237));
+    v.push(("1.4.2.3", 238));
+    v.push(("1.4.3", 242));
+    v.push(("1.4.3.1", 243));
+    v.push(("1.4.3.2", 244));
+    v.push(("1.4.3.3", 245));
+    v.push(("1.4.3.4", 246));
+    v.push(("1.4.3.5", 247));
+    v.push(("1.4.3.6", 248));
+    v.push(("1.4.4", 269));
+    v.push(("1.4.4.1", 270));
+    v.push(("1.4.4.2", 271));
+    v.push(("1.4.4.3", 272));
+    v.push(("1.4.4.4", 273));
+    v.push(("1.4.4.5", 274));
+    v.push(("1.4.4.6", 275));
+    v.push(("1.4.4.7", 276));
+    v.push(("1.4.4.8", 277));
+    v.push(("1.4.4.8.1", 278));
+    v.push(("1.4.4.9", 279));
+    v.push(("1.4.5", 315));
+    v.push(("1.4.5.3", 316));
+    v.sort_by(|a, b| b.1.cmp(&a.1));
+    v
+});
 
 pub fn version_lookup(version: i32) -> &'static str {
     match version {
@@ -161,6 +247,10 @@ pub fn version_lookup(version: i32) -> &'static str {
         316 => "1.4.5.3",
         _ => "1.4.5.3 (or newer)",
     }
+}
+
+pub fn version_map() -> &'static [(&'static str, i32)] {
+    &VERSION_MAP
 }
 
 pub fn use_time_lookup(use_time: i32) -> &'static str {

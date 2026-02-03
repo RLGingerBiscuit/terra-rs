@@ -1,4 +1,4 @@
-use egui::{RichText, Ui};
+use egui::{RichText, Ui, UiKind};
 
 use super::{visuals, App, AppMessage, Message, SHORTCUT_EXIT, SHORTCUT_LOAD, SHORTCUT_SAVE};
 use crate::ui::UiExt;
@@ -21,15 +21,15 @@ impl App {
 
     fn render_file_menu(&mut self, ui: &mut Ui) {
         if ui.shortcut_button("Load", &SHORTCUT_LOAD).clicked() {
-            ui.close_menu();
+            ui.close_kind(UiKind::Menu);
             self.send_context_msg(Message::LoadPlayer);
         }
         if ui.shortcut_button("Save", &SHORTCUT_SAVE).clicked() {
-            ui.close_menu();
+            ui.close_kind(UiKind::Menu);
             self.send_context_msg(Message::SavePlayer);
         }
         if ui.shortcut_button("Exit", &SHORTCUT_EXIT).clicked() {
-            ui.close_menu();
+            ui.close_kind(UiKind::Menu);
             self.send_app_msg(AppMessage::Exit);
         }
     }
@@ -49,20 +49,20 @@ impl App {
 
         if let Some(theme) = theme_change {
             self.send_context_msg(Message::SetTheme(theme));
-            ui.close_menu();
+            ui.close_kind(UiKind::Menu);
         }
 
         ui.separator();
 
         if ui.button("Reset Tabs").clicked() {
-            ui.close_menu();
+            ui.close_kind(UiKind::Menu);
             self.send_app_msg(AppMessage::ResetTabs);
         }
     }
 
     fn render_help_menu(&mut self, ui: &mut Ui) {
         if ui.button("About").clicked() {
-            ui.close_menu();
+            ui.close_kind(UiKind::Menu);
             self.send_context_msg(Message::ShowAbout);
         };
     }

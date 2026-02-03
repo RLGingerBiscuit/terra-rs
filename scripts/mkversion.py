@@ -18,7 +18,9 @@ def concat_versions(versions: list[tuple[str, int]], i: int) -> tuple[str, int]:
 
 
 def main():
-    lines = Path(__file__).parent.joinpath("../data/versions.txt").read_text().splitlines()
+    lines = (
+        Path(__file__).parent.joinpath("../data/versions.txt").read_text().splitlines()
+    )
 
     versions: list[tuple[str, int]] = []
 
@@ -27,6 +29,10 @@ def main():
         name = split[0].strip()
         version = int(split[1].strip())
         versions.append((name, version))
+
+    map = f"""static VERSION_MAP: LazyLock<Vec<(&'static str, i32)>> = LazyLock::new(|| {{
+    let mut v = Vec::with_capacity({len(versions)});
+"""
 
     func = """    match version {
             i32::MIN..=-1 => "Unknown","""
@@ -53,6 +59,9 @@ def main():
 
         name = current[0]
         version = current[1]
+
+        map += f"""    m.insert("{name}", {version});
+"""
 
         if version == next_version:
             concat, new_i = concat_versions(versions, i)
@@ -81,7 +90,13 @@ def main():
             _ => "{versions[-1][0]} (or newer)"
         }}"""
 
+    map += """    v.sort_by(|a, b| b.1.cmp(&a.1));
+    v
+});"""
+
     print(func)
+    print("------------")
+    print(map)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+- Various dependency upgrades
+- Added version dropdown
+
 ## [1.1.1] - 2026-01-31
 
 - Added support for Terraria 1.4.5.3

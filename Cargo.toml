@@ -1,48 +1,23 @@
-[package]
-name = "terra-rs"
-description = "A Terraria character editor written in Rust"
-edition = "2021"
-authors = ["Ginger Biscuit <rlgingerbiscuit@proton.me>"]
-license = "MIT"
-rust-version = "1.83"
-version.workspace = true
-repository.workspace = true
-default-run = "terra-rs"
-
-[package.metadata.wix]
-upgrade-guid = "03720709-179C-4D12-8268-3FE5122B0226"
-path-guid = "BF6B3190-DAA1-414D-A314-72858C8E7460"
-license = false
-eula = false
-
-[dependencies]
-terra-core = { workspace = true }
-anyhow = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-time = { workspace = true }
-once_cell = "1.20.3"
-flume = "0.11.1"
-rustc-hash = "2.1.1"
-eframe = { version = "0.28.1", features = ["persistence"] }
-egui = { version = "0.28.1", features = ["color-hex"] }
-catppuccin-egui = { version = "5.3.1", default-features = false, features = [
-    "egui28",
-] }
-egui_dock = { version = "0.13.0", features = ["serde"] }
-image = { workspace = true }
-rfd = "0.15.2"
-cfg-if = "1.0.0"
-open = "5.3.2"
-
 [workspace]
 resolver = "2"
-members = ["crates/terra-core", "crates/terra-res", "crates/terra-tests"]
+members = ["crates/terra-core", "crates/terra-gui", "crates/terra-res", "crates/terra-tests"]
 
 [workspace.package]
 repository = "https://github.com/RLGingerBiscuit/terra-rs"
 edition = "2021"
+rust-version = "1.93"
 version = "1.1.1"
+authors = ["Ginger Biscuit <rlgingerbiscuit@proton.me>"]
+license = "MIT"
+
+[workspace.dependencies]
+anyhow = "1.0.100"
+thiserror = "2.0.18"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+image = { version = "0.25.0", features = ["png"] }
+time = { version = "0.3.46", default-features = false, features = ["std"] }
+terra-core = { path = "crates/terra-core" }
 
 [profile.release]
 opt-level = 2
@@ -51,12 +26,3 @@ opt-level = 2
 [profile.dist]
 inherits = "release"
 lto = "thin"
-
-[workspace.dependencies]
-anyhow = "1.0.95"
-thiserror = "2.0.11"
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.138"
-image = { version = "0.25.5", features = ["png"] }
-terra-core = { path = "crates/terra-core" }
-time = { version = "0.3.37", default-features = false, features = ["std"] }

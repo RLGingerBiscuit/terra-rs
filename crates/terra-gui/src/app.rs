@@ -10,7 +10,7 @@ mod visuals;
 use std::path::PathBuf;
 
 use eframe::CreationContext;
-use egui::{self, Key, KeyboardShortcut, Modifiers, UiStackInfo, Vec2, ViewportCommand};
+use egui::{self, Key, KeyboardShortcut, Modifiers, Vec2, ViewportCommand};
 use egui_dock::{DockArea, DockState};
 use flume::{Receiver, Sender};
 use once_cell::sync::Lazy;
@@ -142,21 +142,10 @@ impl eframe::App for App {
         self.render_menu(ctx);
         self.context.update(ctx);
 
-        let layer_id = egui::LayerId::background();
         let max_rect = ctx.available_rect();
-        let clip_rect = ctx.available_rect();
         let id = egui::Id::new("dock_area");
 
-        let mut ui = egui::Ui::new(
-            ctx.clone(),
-            layer_id,
-            id,
-            max_rect,
-            clip_rect,
-            UiStackInfo::default(),
-        );
-
-        // let mut ui = egui::Ui::new(ctx.clone(), layer_id, id, max_rect, clip_rect);
+        let mut ui = egui::Ui::new(ctx.clone(), id, egui::UiBuilder::new().max_rect(max_rect));
 
         ui.spacing_mut().item_spacing = Vec2::splat(8.);
         if self.context.is_modal_open() {

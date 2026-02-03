@@ -102,12 +102,17 @@ pub(super) fn render_padded_sprite(
     uv: Rect,
     size: Vec2,
     padding: Vec2,
+    tint: Option<Color32>,
 ) {
     ui.add_space(padding.x);
     ui.vertical(|ui| {
         ui.add_space(padding.y);
         let source = ImageSource::Texture(SizedTexture::new(sheet, size));
-        ui.add(Image::new(source).uv(uv));
+        let mut img = Image::new(source).uv(uv);
+        if let Some(tint) = tint {
+            img = img.tint(tint);
+        }
+        ui.add(img);
         ui.add_space(padding.y);
     });
     ui.add_space(padding.x);

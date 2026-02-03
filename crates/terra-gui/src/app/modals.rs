@@ -108,7 +108,7 @@ impl AppContext {
                         }
                         ui.end_row();
 
-                        ui.label("GUI Library Github:");
+                        ui.label("GUI Library:");
                         if ui.link(EGUI_GITHUB_REPO_NAME).clicked() {
                             open::that(EGUI_GITHUB_REPO_URL).ok();
                         }
@@ -182,7 +182,7 @@ impl AppContext {
                         .ceil() as usize;
 
                     ScrollArea::new([false, true])
-                        .id_source("item_browser_scrollarea")
+                        .id_salt("item_browser_scrollarea")
                         .show_rows(ui, item_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
                             Grid::new("item_browser_grid")
                                 .num_columns(ITEM_BROWSER_COLS)
@@ -255,7 +255,7 @@ impl AppContext {
                         .ceil() as usize;
 
                     ScrollArea::new([false, true])
-                        .id_source("buff_browser_scrollarea")
+                        .id_salt("buff_browser_scrollarea")
                         .show_rows(ui, buff_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
                             Grid::new("buff_browser_grid")
                                 .num_columns(BUFF_BROWSER_COLS)
@@ -332,7 +332,7 @@ impl AppContext {
                             .ceil() as usize;
 
                         ScrollArea::new([false, true])
-                            .id_source("prefix_browser_scrollarea")
+                            .id_salt("prefix_browser_scrollarea")
                             .show_rows(
                                 ui,
                                 ui.text_style_height(&TextStyle::Body),
@@ -424,7 +424,7 @@ impl AppContext {
                         .ceil() as usize;
 
                     ScrollArea::new([false, true])
-                        .id_source("research_browser_scrollarea")
+                        .id_salt("research_browser_scrollarea")
                         .show_rows(ui, item_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
                             Grid::new("research_browser_grid")
                                 .num_columns(ITEM_BROWSER_COLS)
