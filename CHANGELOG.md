@@ -1,9 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.2] - 2026-02-03
 
-- Various dependency upgrades
-- Added version dropdown
+- Added version selector dropdown
+- Fixed trapped chest icons
 
 ## [1.1.1] - 2026-01-31
 
