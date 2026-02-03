@@ -1,5 +1,5 @@
 [workspace]
-members = ["cargo:."]
+members = ["cargo:crates/terra-gui"]
 
 # Config for 'dist'
 [dist]
