@@ -2,6 +2,11 @@
 
 Just a Terraria character editor written in Rust to learn Rust.
 
+## Screenshot
+
+![Items](docs/screenshot-items.png)
+![Buffs](docs/screenshot-buffs.png)
+
 ## Usage
 
 Download the [latest release](https://github.com/RLGingerBiscuit/terra-rs/releases/latest) and extract it using your preferred tool (I use [7-zip](https://www.7-zip.org/)).
