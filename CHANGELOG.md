@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.4] - 2026-02-05
+
+- Added support for Terraria 1.4.5.4
+
 ## [1.1.3] - 2026-02-03
 
 - Fixed build issues on aarch64
