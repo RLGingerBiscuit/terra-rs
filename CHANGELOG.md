@@ -1,6 +1,6 @@
 # Changelog
 
-## [unreleased] - 2026-02-11
+## [1.2.1] - 2026-02-11
 
 - Added mobile toggle
 - Fixed mobile support
