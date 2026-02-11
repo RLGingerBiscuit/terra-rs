@@ -1,5 +1,9 @@
 # Changelog
 
+## [unreleased] - 2026-02-11
+
+- Added support for Terraria 1.4.5.5
+
 ## [1.1.4] - 2026-02-05
 
 - Added support for Terraria 1.4.5.4

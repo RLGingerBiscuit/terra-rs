@@ -53,7 +53,7 @@ pub fn get_player_dir_or_default(player_path: &Path) -> PathBuf {
 }
 
 static VERSION_MAP: LazyLock<Vec<(&'static str, i32)>> = LazyLock::new(|| {
-    let mut v = Vec::with_capacity(82);
+    let mut v = Vec::with_capacity(83);
     v.push(("1.0", 0));
     v.push(("1.0.1", 2));
     v.push(("1.0.2", 3));
@@ -134,6 +134,7 @@ static VERSION_MAP: LazyLock<Vec<(&'static str, i32)>> = LazyLock::new(|| {
     v.push(("1.4.5", 315));
     v.push(("1.4.5.3", 316));
     v.push(("1.4.5.4", 317));
+    v.push(("1.4.5.5", 318));
     v.sort_by(|a, b| b.1.cmp(&a.1));
     v
 });
@@ -247,7 +248,8 @@ pub fn version_lookup(version: i32) -> &'static str {
         315 => "1.4.5",
         316 => "1.4.5.3",
         317 => "1.4.5.4",
-        _ => "1.4.5.4 (or newer)",
+        318 => "1.4.5.5",
+        _ => "1.4.5.5 (or newer)",
     }
 }
 
