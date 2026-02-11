@@ -14,7 +14,8 @@ use crate::{
     ResearchItem, Spawnpoint, Team, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
     CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, EQUIPMENT_COUNT,
     FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
-    MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, SPAWNPOINT_LIMIT, TEMPORARY_SLOT_COUNT,
+    MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, MOBILE_WEIRD_PADDING_SIZE, SPAWNPOINT_LIMIT,
+    TEMPORARY_SLOT_COUNT,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -39,6 +40,7 @@ pub enum PlayerError {
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct Player {
+    pub is_mobile: bool,
     pub version: i32,
     pub revision: u32,
     pub favourited: u64,
@@ -151,6 +153,7 @@ pub struct Player {
 impl Default for Player {
     fn default() -> Self {
         Self {
+            is_mobile: false,
             version: CURRENT_VERSION,
             revision: 0,
             favourited: 0,
@@ -709,7 +712,15 @@ impl Player {
 
     pub fn load(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
         let mut file = open_file(filepath)?;
-        let buf = decrypt_from_reader(&mut file)?;
+        let mut data = Vec::with_capacity(file.metadata()?.len() as usize);
+        file.read_to_end(&mut data)?;
+        self.is_mobile = is_probably_mobile_player(&data);
+        if self.is_mobile {
+            data.truncate(data.len() - MOBILE_WEIRD_PADDING_SIZE as usize);
+        }
+
+        let mut reader = Cursor::new(data);
+        let buf = decrypt_from_reader(&mut reader)?;
         let mut reader = Cursor::new(buf);
         self.load_from_reader(item_meta, &mut reader)
     }
@@ -1094,7 +1105,11 @@ impl Player {
         let mut file = create_file(filepath)?;
         let mut buf = Vec::new();
         self.save_to_writer(item_meta, &mut buf)?;
-        encrypt_to_writer(&mut file, &buf)
+        encrypt_to_writer(&mut file, &buf)?;
+        if self.is_mobile {
+            file.write_all(&vec![0; MOBILE_WEIRD_PADDING_SIZE as usize])?;
+        }
+        Ok(())
     }
 
     pub fn save_decrypted(&self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
@@ -1103,9 +1118,18 @@ impl Player {
     }
 
     pub fn decrypt_file(original_filepath: &Path, decrypted_filepath: &Path) -> anyhow::Result<()> {
-        let original_file = File::open(original_filepath)?;
+        let mut original_file = File::open(original_filepath)?;
         let mut decrypted_file = File::create(decrypted_filepath)?;
-        let buf = decrypt_from_reader(original_file)?;
+
+        let mut data = Vec::with_capacity(original_file.metadata()?.len() as usize);
+        original_file.read_to_end(&mut data)?;
+        let is_mobile = is_probably_mobile_player(&data);
+        if is_mobile {
+            data.truncate(data.len() - MOBILE_WEIRD_PADDING_SIZE as usize);
+        }
+
+        let mut reader = Cursor::new(data);
+        let buf = decrypt_from_reader(&mut reader)?;
         decrypted_file.write_all(&buf)?;
         Ok(())
     }
@@ -1113,12 +1137,16 @@ impl Player {
     pub fn encrypt_file(
         decrypted_filepath: &Path,
         encrypted_filepath: &Path,
+        is_mobile: bool,
     ) -> anyhow::Result<()> {
         let mut decrypted_file = File::open(decrypted_filepath)?;
         let mut encrypted_file = File::create(encrypted_filepath)?;
         let mut buf = Vec::new();
         decrypted_file.read_to_end(&mut buf)?;
         encrypt_to_writer(&mut encrypted_file, &buf)?;
+        if is_mobile {
+            encrypted_file.write_all(&vec![0; MOBILE_WEIRD_PADDING_SIZE as usize])?;
+        }
         Ok(())
     }
 
@@ -1136,4 +1164,11 @@ impl Player {
             || utils::has_item(id, &self.defenders_forge)
             || utils::has_item(id, &self.void_vault)
     }
+}
+
+fn is_probably_mobile_player(data: &[u8]) -> bool {
+    data.len() > MOBILE_WEIRD_PADDING_SIZE
+        && data[data.len() as usize - MOBILE_WEIRD_PADDING_SIZE as usize..]
+            .iter()
+            .all(|&b| b == 0)
 }

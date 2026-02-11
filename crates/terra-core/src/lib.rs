@@ -21,6 +21,10 @@ pub const MAGIC_NUMBER: u64 = 0x6369676F6C6572;
 /// `h3y_gUyZ`, with null bytes every other byte
 pub const ENCRYPTION_BYTES: &[u8; 16] = b"h\x003\x00y\x00_\x00g\x00U\x00y\x00Z\x00";
 
+// For some reason that I can't be bothered researching right now, the mobile (and possibly console) version
+// of the game adds 288 extra bytes to the end of the file AFTER encryption and padding.
+pub const MOBILE_WEIRD_PADDING_SIZE: usize = 288;
+
 pub const CURRENT_VERSION: i32 = 318;
 
 /// C#'s DateTime uses Ticks, so here is the conversion factor

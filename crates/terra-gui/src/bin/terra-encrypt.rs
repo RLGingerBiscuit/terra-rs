@@ -15,7 +15,9 @@ fn main() {
         input_path.with_extension("plr")
     };
 
-    match terra_core::Player::encrypt_file(input_path, &output_path) {
+    let is_mobile = args.iter().any(|arg| arg == "--mobile" || arg == "-m");
+
+    match terra_core::Player::encrypt_file(input_path, &output_path, is_mobile) {
         Ok(_) => println!(
             "Encryption successful! Output saved to '{}'",
             output_path.display()

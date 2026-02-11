@@ -3,6 +3,7 @@
 ## [unreleased] - 2026-02-11
 
 - Added support for Terraria 1.4.5.5
+- Improved mobile support
 
 ## [1.1.4] - 2026-02-05
 
