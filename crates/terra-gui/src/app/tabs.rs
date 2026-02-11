@@ -145,6 +145,8 @@ impl ItemTabOptions {
 
 impl AppContext {
     fn render_load_save_tab(&mut self, ui: &mut Ui) {
+        let mut player = self.player.write();
+
         ui.vertical_centered_justified(|ui| {
             ui.spacing_mut().item_spacing = [8.; 2].into();
             if ui.button("Load Player").clicked() {
@@ -156,6 +158,9 @@ impl AppContext {
             if ui.button("Reset Player").clicked() {
                 self.send_context_msg(Message::ResetPlayer);
             }
+
+            ui.checkbox(&mut player.is_mobile, "Mobile Character")
+                .on_hover_text("Whether to save the player in mobile format.");
         });
     }
 

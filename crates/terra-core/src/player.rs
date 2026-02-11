@@ -14,7 +14,7 @@ use crate::{
     ResearchItem, Spawnpoint, Team, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
     CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, EQUIPMENT_COUNT,
     FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
-    MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, MOBILE_WEIRD_PADDING_SIZE, SPAWNPOINT_LIMIT,
+    MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, MOBILE_FILE_ALIGNMENT, SPAWNPOINT_LIMIT,
     TEMPORARY_SLOT_COUNT,
 };
 
@@ -712,12 +712,9 @@ impl Player {
 
     pub fn load(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
         let mut file = open_file(filepath)?;
-        let mut data = Vec::with_capacity(file.metadata()?.len() as usize);
+        let mut data = Vec::with_capacity(file.metadata().map(|m| m.len() as usize).unwrap_or(0));
         file.read_to_end(&mut data)?;
-        self.is_mobile = is_probably_mobile_player(&data);
-        if self.is_mobile {
-            data.truncate(data.len() - MOBILE_WEIRD_PADDING_SIZE as usize);
-        }
+        self.is_mobile = try_truncate_mobile_data(&mut data);
 
         let mut reader = Cursor::new(data);
         let buf = decrypt_from_reader(&mut reader)?;
@@ -1105,9 +1102,15 @@ impl Player {
         let mut file = create_file(filepath)?;
         let mut buf = Vec::new();
         self.save_to_writer(item_meta, &mut buf)?;
-        encrypt_to_writer(&mut file, &buf)?;
         if self.is_mobile {
-            file.write_all(&vec![0; MOBILE_WEIRD_PADDING_SIZE as usize])?;
+            let mut out = Vec::with_capacity(buf.len());
+            encrypt_to_writer(&mut out, &buf)?;
+            if self.is_mobile {
+                align_mobile_data(&mut out);
+            }
+            file.write_all(&out)?;
+        } else {
+            encrypt_to_writer(&mut file, &buf)?;
         }
         Ok(())
     }
@@ -1120,13 +1123,14 @@ impl Player {
     pub fn decrypt_file(original_filepath: &Path, decrypted_filepath: &Path) -> anyhow::Result<()> {
         let mut original_file = File::open(original_filepath)?;
         let mut decrypted_file = File::create(decrypted_filepath)?;
-
-        let mut data = Vec::with_capacity(original_file.metadata()?.len() as usize);
+        let mut data = Vec::with_capacity(
+            original_file
+                .metadata()
+                .map(|m| m.len() as usize)
+                .unwrap_or(0),
+        );
         original_file.read_to_end(&mut data)?;
-        let is_mobile = is_probably_mobile_player(&data);
-        if is_mobile {
-            data.truncate(data.len() - MOBILE_WEIRD_PADDING_SIZE as usize);
-        }
+        let _ = try_truncate_mobile_data(&mut data);
 
         let mut reader = Cursor::new(data);
         let buf = decrypt_from_reader(&mut reader)?;
@@ -1143,9 +1147,15 @@ impl Player {
         let mut encrypted_file = File::create(encrypted_filepath)?;
         let mut buf = Vec::new();
         decrypted_file.read_to_end(&mut buf)?;
-        encrypt_to_writer(&mut encrypted_file, &buf)?;
         if is_mobile {
-            encrypted_file.write_all(&vec![0; MOBILE_WEIRD_PADDING_SIZE as usize])?;
+            let mut out = Vec::with_capacity(buf.len());
+            encrypt_to_writer(&mut out, &buf)?;
+            if is_mobile {
+                align_mobile_data(&mut out);
+            }
+            encrypted_file.write_all(&out)?;
+        } else {
+            encrypt_to_writer(&mut encrypted_file, &buf)?;
         }
         Ok(())
     }
@@ -1167,8 +1177,39 @@ impl Player {
 }
 
 fn is_probably_mobile_player(data: &[u8]) -> bool {
-    data.len() > MOBILE_WEIRD_PADDING_SIZE
-        && data[data.len() as usize - MOBILE_WEIRD_PADDING_SIZE as usize..]
-            .iter()
-            .all(|&b| b == 0)
+    // This is probably good enough, right?
+    data.len() % MOBILE_FILE_ALIGNMENT == 0 && data[data.len() as usize - 1] == 0
+}
+
+fn try_truncate_mobile_data(data: &mut Vec<u8>) -> bool {
+    if !is_probably_mobile_player(data) {
+        return false;
+    }
+
+    let mut count = 0;
+    for byte in data.iter().rev() {
+        if *byte == 0 {
+            count += 1;
+        } else {
+            break;
+        }
+    }
+
+    if (data.len() - count) % 16 != 0 {
+        // Since the alignment is AFTER encryption, we should always have a multiple of 16 bytes left.
+        // If not, it's probably not actually a mobile player.
+        false
+    } else {
+        data.truncate(data.len() - count);
+        true
+    }
+}
+
+fn align_mobile_data(data: &mut Vec<u8>) {
+    let padding_needed =
+        (MOBILE_FILE_ALIGNMENT - (data.len() % MOBILE_FILE_ALIGNMENT)) % MOBILE_FILE_ALIGNMENT;
+
+    if padding_needed > 0 {
+        data.extend(vec![0; padding_needed as usize]);
+    }
 }

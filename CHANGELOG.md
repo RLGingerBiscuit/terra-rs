@@ -1,5 +1,10 @@
 # Changelog
 
+## [unreleased] - 2026-02-11
+
+- Added mobile toggle
+- Fixed mobile support
+
 ## [1.2.0] - 2026-02-11
 
 - Added support for Terraria 1.4.5.5
