@@ -4,7 +4,6 @@ mod loader;
 mod menus;
 mod modals;
 mod tabs;
-mod tasks;
 mod visuals;
 
 use std::path::PathBuf;

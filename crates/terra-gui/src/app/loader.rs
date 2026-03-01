@@ -25,4 +25,8 @@ where
     fn load_prefixes(&self) -> impl Future<Output = anyhow::Result<Vec<PrefixMeta>>> + Send;
     fn load_items(&self) -> impl Future<Output = anyhow::Result<Vec<ItemMeta>>> + Send;
     fn load_buffs(&self) -> impl Future<Output = anyhow::Result<Vec<BuffMeta>>> + Send;
+    fn load_spritesheet(
+        &self,
+        name: &str,
+    ) -> impl Future<Output = anyhow::Result<image::RgbaImage>> + Send;
 }

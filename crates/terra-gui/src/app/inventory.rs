@@ -148,14 +148,6 @@ impl AppContext {
         let icon_spritesheet = self.icon_spritesheet.get();
         let item_spritesheet = self.item_spritesheet.get();
 
-        if icon_spritesheet.is_none() && !self.is_busy() {
-            self.send_context_msg(Message::LoadIconSpritesheet);
-        }
-
-        if item_spritesheet.is_none() && !self.is_busy() {
-            self.send_context_msg(Message::LoadItemSpritesheet);
-        }
-
         let tooltip_options = ItemTooltipOptions::from_slot_options(options.clone());
         let tooltip_on_hover = options.tooltip_on_hover;
 
@@ -251,10 +243,6 @@ impl AppContext {
             return self.render_empty_slot::<BuffSlot>(ui);
         };
         let buff_spritesheet = self.buff_spritesheet.get();
-
-        if buff_spritesheet.is_none() && !self.is_busy() {
-            self.send_context_msg(Message::LoadBuffSpritesheet);
-        }
 
         let tooltip_options = BuffTooltipOptions::from_slot_options(&options);
         let tooltip_on_hover = options.tooltip_on_hover;

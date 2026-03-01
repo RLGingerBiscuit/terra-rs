@@ -1,14 +1,12 @@
 use std::{future::Future, path::PathBuf, sync::Arc};
 
-use egui::{Key, Modifiers, TextureHandle};
+use egui::{ColorImage, Key, Modifiers, TextureHandle, TextureOptions};
 use flume::{Receiver, Sender};
 
 use once_cell::sync::OnceCell;
 use parking_lot::RwLock;
 use terra_core::{utils::AsTicks, BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem};
 use time::Duration;
-
-use crate::app::tasks;
 
 use super::{
     inventory::{
@@ -22,9 +20,9 @@ use super::{
 #[derive(Debug)]
 pub enum Message {
     Noop,
-    LoadItemSpritesheet,
-    LoadBuffSpritesheet,
-    LoadIconSpritesheet,
+    LoadItemSpritesheet(Box<image::RgbaImage>),
+    LoadBuffSpritesheet(Box<image::RgbaImage>),
+    LoadIconSpritesheet(Box<image::RgbaImage>),
     ShowAbout,
     CloseAbout,
     ShowError(anyhow::Error),
@@ -101,12 +99,12 @@ impl AppContext {
         let buff_spritesheet = Arc::new(OnceCell::new());
         let icon_spritesheet = Arc::new(OnceCell::new());
 
-        let tx_clone = chan.0.clone();
+        let (task_tx, sheet_tx) = (chan.0.clone(), chan.0.clone());
         let prefix_meta_clone = prefix_meta.clone();
         let item_meta_clone = item_meta.clone();
         let buff_meta_clone = buff_meta.clone();
 
-        tasks::do_task(tx_clone, &busy, async move {
+        do_task(task_tx, &busy, async move {
             let prefix_meta = prefix_meta_clone;
             let item_meta = item_meta_clone;
             let buff_meta = buff_meta_clone;
@@ -126,12 +124,34 @@ impl AppContext {
                 .set(loader.load_buffs().await.expect("Could not load buffs"))
                 .ok();
 
+            let item_spritesheet = loader
+                .load_spritesheet("items.png")
+                .await
+                .expect("Could not load item spritesheet");
+
+            // Note: these are sent to main thread because egui needs them
+            sheet_tx
+                .send(Message::LoadItemSpritesheet(Box::new(item_spritesheet)))
+                .unwrap();
+
+            let buff_spritesheet = loader
+                .load_spritesheet("buffs.png")
+                .await
+                .expect("Could not load buff spritesheet");
+            sheet_tx
+                .send(Message::LoadBuffSpritesheet(Box::new(buff_spritesheet)))
+                .unwrap();
+
+            let icon_spritesheet = loader
+                .load_spritesheet("icons.png")
+                .await
+                .expect("Could not load icon spritesheet");
+            sheet_tx
+                .send(Message::LoadIconSpritesheet(Box::new(icon_spritesheet)))
+                .unwrap();
+
             Ok(Message::Noop)
         });
-
-        // let prefix_meta = loader.load_prefixes().expect("Could not load prefixes");
-        // let item_meta = loader.load_items().expect("Could not load items");
-        // let buff_meta = loader.load_buffs().expect("Could not load buffs");
 
         Self {
             chan,
@@ -201,7 +221,7 @@ impl AppContext {
         &mut self,
         task: impl 'static + Send + Future<Output = anyhow::Result<Message>>,
     ) {
-        tasks::do_task(self.context_tx().clone(), &self.busy, task);
+        do_task(self.context_tx().clone(), &self.busy, task);
     }
 
     pub fn send_context_msg(&self, msg: Message) {
@@ -221,26 +241,29 @@ impl AppContext {
     fn handle_message(&mut self, ctx: &egui::Context, msg: Message) {
         match msg {
             Message::Noop => {}
-            Message::LoadItemSpritesheet => {
-                if self.item_spritesheet.get().is_some() {
-                    return;
-                }
-                let spritesheet = self.item_spritesheet.clone();
-                self.load_spritesheet(ctx, "items.png", spritesheet);
+            Message::LoadItemSpritesheet(spritesheet) => {
+                let image = ColorImage::from_rgba_unmultiplied(
+                    [spritesheet.width() as _, spritesheet.height() as _],
+                    spritesheet.as_ref(),
+                );
+                let handle = ctx.load_texture("item_spritesheet", image, TextureOptions::NEAREST);
+                self.item_spritesheet.set(handle).ok();
             }
-            Message::LoadBuffSpritesheet => {
-                if self.buff_spritesheet.get().is_some() {
-                    return;
-                }
-                let spritesheet = self.buff_spritesheet.clone();
-                self.load_spritesheet(ctx, "buffs.png", spritesheet);
+            Message::LoadBuffSpritesheet(spritesheet) => {
+                let image = ColorImage::from_rgba_unmultiplied(
+                    [spritesheet.width() as _, spritesheet.height() as _],
+                    spritesheet.as_ref(),
+                );
+                let handle = ctx.load_texture("buff_spritesheet", image, TextureOptions::NEAREST);
+                self.buff_spritesheet.set(handle).ok();
             }
-            Message::LoadIconSpritesheet => {
-                if self.icon_spritesheet.get().is_some() {
-                    return;
-                }
-                let spritesheet = self.icon_spritesheet.clone();
-                self.load_spritesheet(ctx, "icons.png", spritesheet);
+            Message::LoadIconSpritesheet(spritesheet) => {
+                let image = ColorImage::from_rgba_unmultiplied(
+                    [spritesheet.width() as _, spritesheet.height() as _],
+                    spritesheet.as_ref(),
+                );
+                let handle = ctx.load_texture("icon_spritesheet", image, TextureOptions::NEAREST);
+                self.icon_spritesheet.set(handle).ok();
             }
             Message::ShowAbout => self.show_about = true,
             Message::CloseAbout => self.show_about = false,
@@ -522,4 +545,22 @@ impl AppContext {
         self.render_prefix_browser(ctx);
         self.render_research_browser(ctx);
     }
+}
+
+fn do_task(
+    tx: flume::Sender<Message>,
+    busy: &Arc<RwLock<bool>>,
+    task: impl 'static + Send + Future<Output = anyhow::Result<Message>>,
+) {
+    let busy = busy.clone();
+    *busy.write() = true;
+
+    #[cfg(not(target_arch = "wasm32"))]
+    tokio::spawn(async move {
+        match task.await {
+            Ok(msg) => tx.send(msg).unwrap(),
+            Err(err) => tx.send(Message::ShowError(err)).unwrap(),
+        }
+        *busy.write() = false;
+    });
 }

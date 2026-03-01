@@ -28,6 +28,12 @@ impl NativeLoader {
 
         Ok(meta)
     }
+
+    async fn load_spritesheet(&self, name: &str) -> anyhow::Result<image::RgbaImage> {
+        let path = self.resources_path.join(name);
+        let image = image::open(path)?.into_rgba8();
+        Ok(image)
+    }
 }
 
 impl super::Loader for NativeLoader {
@@ -41,5 +47,9 @@ impl super::Loader for NativeLoader {
 
     async fn load_buffs(&self) -> anyhow::Result<Vec<BuffMeta>> {
         self.load_meta("buffs.json").await
+    }
+
+    async fn load_spritesheet(&self, name: &str) -> anyhow::Result<image::RgbaImage> {
+        self.load_spritesheet(name).await
     }
 }
