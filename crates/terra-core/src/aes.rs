@@ -1,7 +1,7 @@
 use std::io;
 
 use aes::{
-    cipher::{block_padding::Pkcs7, BlockDecryptMut, BlockEncryptMut, KeyIvInit},
+    cipher::{block_padding::Pkcs7, BlockDecryptMut, BlockEncryptMut, BlockSizeUser, KeyIvInit},
     Aes128Dec, Aes128Enc,
 };
 use cbc::{Decryptor, Encryptor};
@@ -23,13 +23,14 @@ pub(crate) fn decrypt_from_reader<R: io::Read>(mut reader: R) -> anyhow::Result<
 pub(crate) fn encrypt_to_writer<W: io::Write>(mut writer: W, data: &[u8]) -> anyhow::Result<()> {
     let enc = Encryptor::<Aes128Enc>::new(ENCRYPTION_BYTES.into(), ENCRYPTION_BYTES.into());
 
-    let mut enc_data = data.to_vec();
-    let padding = data.len() % 16;
-    if padding > 0 {
-        enc_data.extend(vec![0u8; 16 - padding]);
+    let length = if data.len().is_multiple_of(Aes128Enc::block_size()) {
+        data.len() + Aes128Enc::block_size()
     } else {
-        enc_data.extend(vec![0u8; 16]);
-    }
+        data.len() + (Aes128Enc::block_size() - (data.len() % Aes128Enc::block_size()))
+    };
+
+    let mut enc_data = vec![0u8; length];
+    enc_data[..data.len()].copy_from_slice(data);
 
     enc.encrypt_padded_mut::<Pkcs7>(&mut enc_data, data.len())
         .map_err(|err| anyhow::anyhow!(err))?;

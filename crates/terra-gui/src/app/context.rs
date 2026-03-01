@@ -258,14 +258,16 @@ impl AppContext {
 
                 self.do_task(move || {
                     let mut player = player.write();
+                    let data = std::fs::read(&path)?;
+
                     if path
                         .extension()
                         .is_some_and(|e| e.to_string_lossy() == "dplr")
                     {
-                        player.load_decrypted(&item_meta.read(), &path)?;
+                        player.load_decrypted(&item_meta.read(), &data)?;
                     } else {
-                        player.load(&item_meta.read(), &path)?;
-                    }
+                        player.load(&item_meta.read(), &data)?;
+                    };
                     Ok(Message::Noop)
                 });
             }
@@ -311,14 +313,15 @@ impl AppContext {
 
                 self.do_task(move || {
                     let player = player.read();
-                    if path
+                    let data = if path
                         .extension()
                         .is_some_and(|e| e.to_string_lossy() == "dplr")
                     {
-                        player.save_decrypted(&item_meta.read(), &path)?;
+                        player.save_decrypted(&item_meta.read())?
                     } else {
-                        player.save(&item_meta.read(), &path)?;
-                    }
+                        player.save(&item_meta.read())?
+                    };
+                    std::fs::write(&path, data)?;
                     Ok(Message::Noop)
                 });
             }

@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{Cursor, ErrorKind, Read, Write},
+    io::{Cursor, Read, Write},
     path::Path,
 };
 
@@ -265,22 +265,6 @@ impl Default for Player {
             one_time_dialogues_seen: Vec::new(),
         }
     }
-}
-
-fn map_io_error(e: std::io::Error) -> PlayerError {
-    match e.kind() {
-        ErrorKind::NotFound => PlayerError::FileNotFound,
-        ErrorKind::PermissionDenied => PlayerError::AccessDenied,
-        _ => PlayerError::Failure,
-    }
-}
-
-fn open_file(filepath: &Path) -> Result<File, PlayerError> {
-    File::open(filepath).map_err(map_io_error)
-}
-
-fn create_file(filepath: &Path) -> Result<File, PlayerError> {
-    File::create(filepath).map_err(map_io_error)
 }
 
 impl Player {
@@ -710,25 +694,19 @@ impl Player {
         Ok(())
     }
 
-    pub fn load(&mut self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
-        let mut file = open_file(filepath)?;
-        let mut data = Vec::with_capacity(file.metadata().map(|m| m.len() as usize).unwrap_or(0));
-        file.read_to_end(&mut data)?;
-        self.is_mobile = try_truncate_mobile_data(&mut data);
+    pub fn load(&mut self, item_meta: &[ItemMeta], data: &[u8]) -> anyhow::Result<()> {
+        let (trunc_len, is_mobile) = try_truncate_mobile_data(data);
+        self.is_mobile = is_mobile;
 
-        let mut reader = Cursor::new(data);
+        let mut reader = Cursor::new(&data[..trunc_len]);
         let buf = decrypt_from_reader(&mut reader)?;
         let mut reader = Cursor::new(buf);
         self.load_from_reader(item_meta, &mut reader)
     }
 
-    pub fn load_decrypted(
-        &mut self,
-        item_meta: &[ItemMeta],
-        filepath: &Path,
-    ) -> anyhow::Result<()> {
-        let mut file = open_file(filepath)?;
-        self.load_from_reader(item_meta, &mut file)
+    pub fn load_decrypted(&mut self, item_meta: &[ItemMeta], data: &[u8]) -> anyhow::Result<()> {
+        let mut reader = Cursor::new(data);
+        self.load_from_reader(item_meta, &mut reader)
     }
 
     fn save_to_writer(&self, item_meta: &[ItemMeta], writer: &mut dyn Write) -> anyhow::Result<()> {
@@ -1098,28 +1076,26 @@ impl Player {
         Ok(())
     }
 
-    pub fn save(&self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
-        let mut file = create_file(filepath)?;
-        let mut buf = Vec::new();
-        self.save_to_writer(item_meta, &mut buf)?;
+    pub fn save(&self, item_meta: &[ItemMeta]) -> anyhow::Result<Vec<u8>> {
+        let writer = Vec::new();
+        let mut writer = Cursor::new(writer);
+        self.save_to_writer(item_meta, &mut writer)?;
+        let mut out = Vec::with_capacity(writer.get_ref().len());
+        encrypt_to_writer(&mut out, writer.get_ref())?;
         if self.is_mobile {
-            let mut out = Vec::with_capacity(buf.len());
-            encrypt_to_writer(&mut out, &buf)?;
-            if self.is_mobile {
-                align_mobile_data(&mut out);
-            }
-            file.write_all(&out)?;
-        } else {
-            encrypt_to_writer(&mut file, &buf)?;
+            align_mobile_data(&mut out);
         }
-        Ok(())
+        Ok(out)
     }
 
-    pub fn save_decrypted(&self, item_meta: &[ItemMeta], filepath: &Path) -> anyhow::Result<()> {
-        let mut file = create_file(filepath)?;
-        self.save_to_writer(item_meta, &mut file)
+    pub fn save_decrypted(&self, item_meta: &[ItemMeta]) -> anyhow::Result<Vec<u8>> {
+        let writer = Vec::new();
+        let mut writer = Cursor::new(writer);
+        self.save_to_writer(item_meta, &mut writer)?;
+        Ok(writer.into_inner())
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn decrypt_file(original_filepath: &Path, decrypted_filepath: &Path) -> anyhow::Result<()> {
         let mut original_file = File::open(original_filepath)?;
         let mut decrypted_file = File::create(decrypted_filepath)?;
@@ -1130,14 +1106,15 @@ impl Player {
                 .unwrap_or(0),
         );
         original_file.read_to_end(&mut data)?;
-        let _ = try_truncate_mobile_data(&mut data);
+        let (trunc_len, _) = try_truncate_mobile_data(&data);
 
-        let mut reader = Cursor::new(data);
+        let mut reader = Cursor::new(&data[..trunc_len]);
         let buf = decrypt_from_reader(&mut reader)?;
         decrypted_file.write_all(&buf)?;
         Ok(())
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn encrypt_file(
         decrypted_filepath: &Path,
         encrypted_filepath: &Path,
@@ -1181,9 +1158,9 @@ fn is_probably_mobile_player(data: &[u8]) -> bool {
     data.len().is_multiple_of(MOBILE_FILE_ALIGNMENT) && data[data.len() - 1] == 0
 }
 
-fn try_truncate_mobile_data(data: &mut Vec<u8>) -> bool {
+fn try_truncate_mobile_data(data: &[u8]) -> (usize, bool) {
     if !is_probably_mobile_player(data) {
-        return false;
+        return (data.len(), false);
     }
 
     let mut count = 0;
@@ -1198,10 +1175,9 @@ fn try_truncate_mobile_data(data: &mut Vec<u8>) -> bool {
     if (data.len() - count).is_multiple_of(16) {
         // Since the alignment is AFTER encryption, we should always have a multiple of 16 bytes left.
         // If not, it's probably not actually a mobile player.
-        false
+        (data.len(), false)
     } else {
-        data.truncate(data.len() - count);
-        true
+        (data.len() - count, true)
     }
 }
 
