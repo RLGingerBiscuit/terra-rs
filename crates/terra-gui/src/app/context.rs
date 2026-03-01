@@ -1,4 +1,4 @@
-use std::{path::PathBuf, rc::Rc, sync::Arc, thread, time::Duration};
+use std::{path::PathBuf, rc::Rc, sync::Arc, thread};
 
 use egui::{mutex::RwLock, Key, Modifiers, TextureHandle};
 use flume::{Receiver, Sender};
@@ -7,6 +7,7 @@ use terra_core::{
     utils::{self, AsTicks},
     BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem,
 };
+use time::Duration;
 
 use super::{
     inventory::{
@@ -405,7 +406,7 @@ impl AppContext {
                 selected_buff.id = id;
 
                 if selected_buff.time == 0 {
-                    selected_buff.time = Duration::from_secs(60 * 15).as_ticks() as i32;
+                    selected_buff.time = Duration::new(60 * 15, 0).as_ticks() as i32;
                 }
 
                 if self.show_buff_browser {

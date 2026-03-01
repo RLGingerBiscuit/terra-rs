@@ -356,12 +356,6 @@ pub trait AsTicks {
     fn as_ticks(&self) -> i64;
 }
 
-impl AsTicks for std::time::Duration {
-    fn as_ticks(&self) -> i64 {
-        (self.as_nanos() / NANOSECONDS_PER_TICK as u128) as i64
-    }
-}
-
 impl AsTicks for time::Duration {
     fn as_ticks(&self) -> i64 {
         (self.whole_nanoseconds() / NANOSECONDS_PER_TICK) as i64
