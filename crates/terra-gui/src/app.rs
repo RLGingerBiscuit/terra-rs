@@ -47,7 +47,7 @@ pub enum AppMessage {
 }
 
 pub struct App {
-    ctx: Sender<Message>,
+    app_tx: Sender<Message>,
     app_chan: (Sender<AppMessage>, Receiver<AppMessage>),
     context: AppContext,
 
@@ -56,8 +56,8 @@ pub struct App {
 
 impl App {
     pub fn new(cc: &CreationContext) -> Self {
-        let (atx, arx) = flume::unbounded();
-        let (ctx, crx) = flume::unbounded();
+        let (app_tx, app_rx) = flume::unbounded();
+        let (context_tx, context_rx) = flume::unbounded();
 
         let (theme, dock_state) = match cc.storage {
             Some(s) => (
@@ -69,43 +69,42 @@ impl App {
         theme.set_theme(&cc.egui_ctx);
 
         let context = AppContext::new(
-            ctx.clone(),
-            crx.clone(),
-            atx.clone(),
+            (context_tx.clone(), context_rx.clone()),
+            app_tx.clone(),
             theme,
             platform_meta_loader(),
         );
 
         Self {
-            app_chan: (atx, arx),
-            ctx,
+            app_chan: (app_tx, app_rx),
+            app_tx: context_tx,
             context,
             dock_state,
         }
     }
 
-    fn ctx(&self) -> &Sender<Message> {
-        &self.ctx
+    fn context_tx(&self) -> &Sender<Message> {
+        &self.app_tx
     }
 
-    fn atx(&self) -> &Sender<AppMessage> {
+    fn app_tx(&self) -> &Sender<AppMessage> {
         &self.app_chan.0
     }
 
-    fn arx(&self) -> &Receiver<AppMessage> {
+    fn app_rx(&self) -> &Receiver<AppMessage> {
         &self.app_chan.1
     }
 
     fn send_app_msg(&self, msg: AppMessage) {
-        self.atx().send(msg).unwrap();
+        self.app_tx().send(msg).unwrap();
     }
 
     fn send_context_msg(&self, msg: Message) {
-        self.ctx().send(msg).unwrap();
+        self.context_tx().send(msg).unwrap();
     }
 
     fn handle_update(&mut self, ctx: &egui::Context) {
-        while let Ok(msg) = self.arx().try_recv() {
+        while let Ok(msg) = self.app_rx().try_recv() {
             self.handle_message(ctx, msg);
         }
     }

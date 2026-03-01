@@ -53,7 +53,7 @@ pub enum Message {
 
 pub struct AppContext {
     chan: (Sender<Message>, Receiver<Message>),
-    atx: Sender<AppMessage>,
+    app_tx: Sender<AppMessage>,
 
     pub player: Arc<RwLock<Player>>,
     pub player_path: Option<PathBuf>,
@@ -86,9 +86,8 @@ pub struct AppContext {
 
 impl AppContext {
     pub fn new(
-        ctx: Sender<Message>,
-        crx: Receiver<Message>,
-        atx: Sender<AppMessage>,
+        chan: (Sender<Message>, Receiver<Message>),
+        app_tx: Sender<AppMessage>,
         theme: visuals::Theme,
         meta_loader: Rc<dyn MetaLoader>,
     ) -> Self {
@@ -99,8 +98,8 @@ impl AppContext {
         let buff_meta = meta_loader.load_buffs().expect("Could not load buffs");
 
         Self {
-            chan: (ctx, crx),
-            atx,
+            chan,
+            app_tx,
 
             player: Arc::new(RwLock::new(Player::default())),
             player_path: None,
@@ -132,16 +131,16 @@ impl AppContext {
         }
     }
 
-    fn ctx(&self) -> &Sender<Message> {
+    fn context_tx(&self) -> &Sender<Message> {
         &self.chan.0
     }
 
-    fn crx(&self) -> &Receiver<Message> {
+    fn context_rx(&self) -> &Receiver<Message> {
         &self.chan.1
     }
 
-    fn atx(&self) -> &Sender<AppMessage> {
-        &self.atx
+    fn app_tx(&self) -> &Sender<AppMessage> {
+        &self.app_tx
     }
 
     pub fn theme(&self) -> visuals::Theme {
@@ -166,7 +165,7 @@ impl AppContext {
         &mut self,
         task: impl 'static + Send + Sync + FnOnce() -> anyhow::Result<Message>,
     ) {
-        let tx = self.ctx().clone();
+        let tx = self.context_tx().clone();
         let task = Box::new(task);
         let busy = self.busy.clone();
         *busy.write() = true;
@@ -182,15 +181,15 @@ impl AppContext {
     }
 
     pub fn send_context_msg(&self, msg: Message) {
-        self.ctx().send(msg).unwrap();
+        self.context_tx().send(msg).unwrap();
     }
 
     pub fn send_app_msg(&self, msg: AppMessage) {
-        self.atx().send(msg).unwrap();
+        self.app_tx().send(msg).unwrap();
     }
 
     fn handle_update(&mut self, ctx: &egui::Context) {
-        while let Ok(msg) = self.crx().try_recv() {
+        while let Ok(msg) = self.context_rx().try_recv() {
             self.handle_message(ctx, msg);
         }
     }
