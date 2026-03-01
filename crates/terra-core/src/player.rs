@@ -1178,7 +1178,7 @@ impl Player {
 
 fn is_probably_mobile_player(data: &[u8]) -> bool {
     // This is probably good enough, right?
-    data.len() % MOBILE_FILE_ALIGNMENT == 0 && data[data.len() as usize - 1] == 0
+    data.len().is_multiple_of(MOBILE_FILE_ALIGNMENT) && data[data.len() - 1] == 0
 }
 
 fn try_truncate_mobile_data(data: &mut Vec<u8>) -> bool {
@@ -1195,7 +1195,7 @@ fn try_truncate_mobile_data(data: &mut Vec<u8>) -> bool {
         }
     }
 
-    if (data.len() - count) % 16 != 0 {
+    if (data.len() - count).is_multiple_of(16) {
         // Since the alignment is AFTER encryption, we should always have a multiple of 16 bytes left.
         // If not, it's probably not actually a mobile player.
         false
@@ -1210,6 +1210,6 @@ fn align_mobile_data(data: &mut Vec<u8>) {
         (MOBILE_FILE_ALIGNMENT - (data.len() % MOBILE_FILE_ALIGNMENT)) % MOBILE_FILE_ALIGNMENT;
 
     if padding_needed > 0 {
-        data.extend(vec![0; padding_needed as usize]);
+        data.extend(vec![0; padding_needed]);
     }
 }
