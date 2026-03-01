@@ -1,13 +1,14 @@
 use std::{fs::File, io::BufReader, path::PathBuf};
 
+use serde::de::DeserializeOwned;
 use terra_core::{meta::Meta, BuffMeta, ItemMeta, PrefixMeta};
 
-pub(crate) struct NativeMetaLoader {
+pub(super) struct NativeLoader {
     resources_path: PathBuf,
 }
 
-impl NativeMetaLoader {
-    pub(crate) fn new() -> Self {
+impl NativeLoader {
+    pub(super) fn new() -> Self {
         let resources_path = std::env::current_exe()
             .expect("No current exe?")
             .parent()
@@ -17,7 +18,7 @@ impl NativeMetaLoader {
         Self { resources_path }
     }
 
-    fn load<T: Meta + serde::de::DeserializeOwned>(&self, name: &str) -> anyhow::Result<Vec<T>> {
+    async fn load_meta<T: Meta + DeserializeOwned>(&self, name: &str) -> anyhow::Result<Vec<T>> {
         let file = File::open(self.resources_path.join(name))?;
 
         let reader = BufReader::new(file);
@@ -29,16 +30,16 @@ impl NativeMetaLoader {
     }
 }
 
-impl super::MetaLoader for NativeMetaLoader {
-    fn load_prefixes(&self) -> anyhow::Result<Vec<PrefixMeta>> {
-        self.load("prefixes.json")
+impl super::Loader for NativeLoader {
+    async fn load_prefixes(&self) -> anyhow::Result<Vec<PrefixMeta>> {
+        self.load_meta("prefixes.json").await
     }
 
-    fn load_items(&self) -> anyhow::Result<Vec<ItemMeta>> {
-        self.load("items.json")
+    async fn load_items(&self) -> anyhow::Result<Vec<ItemMeta>> {
+        self.load_meta("items.json").await
     }
 
-    fn load_buffs(&self) -> anyhow::Result<Vec<BuffMeta>> {
-        self.load("buffs.json")
+    async fn load_buffs(&self) -> anyhow::Result<Vec<BuffMeta>> {
+        self.load_meta("buffs.json").await
     }
 }

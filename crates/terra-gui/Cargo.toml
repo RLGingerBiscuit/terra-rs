@@ -25,7 +25,7 @@ catppuccin-egui = { version = "5.7", default-features = false, features = [
 ] }
 egui_dock = { version = "0.18", features = ["serde"] }
 rfd = "0.17.2"
-cfg-if = "1.0.4"
+parking_lot = "0.12.5"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 open = "5.3.3" # TODO: find a Wasm-compatible replacement

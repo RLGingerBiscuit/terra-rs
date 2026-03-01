@@ -347,7 +347,7 @@ impl AppContext {
         &self,
         ui: &mut Ui,
         options: ItemTabOptions,
-        prefix_meta: &[PrefixMeta],
+        prefix_meta: Option<&[PrefixMeta]>,
         items: &[Item],
         extra_cols: F,
     ) where
@@ -383,7 +383,10 @@ impl AppContext {
                                 (
                                     index,
                                     ItemSlotOptions::from_item(item, options.group)
-                                        .prefix_meta(PrefixMeta::get(prefix_meta, item.prefix.id))
+                                        .prefix_meta(
+                                            prefix_meta
+                                                .and_then(|m| PrefixMeta::get(m, item.prefix.id)),
+                                        )
                                         .tooltip_on_hover(true),
                                 )
                             });
@@ -400,7 +403,7 @@ impl AppContext {
 
     fn render_inventory_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
-        let prefix_meta = self.prefix_meta.read();
+        let prefix_meta = self.prefix_meta.get().map(|m| m.as_ref());
 
         const EXTRA_STRIDE: usize = 2;
 
@@ -413,7 +416,7 @@ impl AppContext {
                 5,
                 INVENTORY_STRIDE,
             ),
-            &prefix_meta,
+            prefix_meta,
             &player.inventory,
             |ui, row| {
                 if row < 4 {
@@ -423,13 +426,15 @@ impl AppContext {
                     let options = [
                         (
                             row,
-                            ItemSlotOptions::from_item(coins, ItemGroup::Coins)
-                                .prefix_meta(PrefixMeta::get(&prefix_meta, coins.prefix.id)),
+                            ItemSlotOptions::from_item(coins, ItemGroup::Coins).prefix_meta(
+                                prefix_meta.and_then(|m| PrefixMeta::get(m, coins.prefix.id)),
+                            ),
                         ),
                         (
                             row,
-                            ItemSlotOptions::from_item(ammo, ItemGroup::Ammo)
-                                .prefix_meta(PrefixMeta::get(&prefix_meta, ammo.prefix.id)),
+                            ItemSlotOptions::from_item(ammo, ItemGroup::Ammo).prefix_meta(
+                                prefix_meta.and_then(|m| PrefixMeta::get(m, ammo.prefix.id)),
+                            ),
                         ),
                     ]
                     .into_iter()
@@ -443,12 +448,12 @@ impl AppContext {
 
     fn render_bank_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
-        let prefix_meta = self.prefix_meta.read();
+        let prefix_meta = self.prefix_meta.get().map(|m| m.as_ref());
 
         self.render_item_tab(
             ui,
             ItemTabOptions::new("player_bank", ItemGroup::Bank, BANK_STRIDE, 4, BANK_STRIDE),
-            &prefix_meta,
+            prefix_meta,
             &player.piggy_bank,
             |_, _| {},
         );
@@ -456,12 +461,12 @@ impl AppContext {
 
     fn render_safe_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
-        let prefix_meta = self.prefix_meta.read();
+        let prefix_meta = self.prefix_meta.get().map(|m| m.as_ref());
 
         self.render_item_tab(
             ui,
             ItemTabOptions::new("player_safe", ItemGroup::Safe, BANK_STRIDE, 4, BANK_STRIDE),
-            &prefix_meta,
+            prefix_meta,
             &player.safe,
             |_, _| {},
         );
@@ -469,7 +474,7 @@ impl AppContext {
 
     fn render_forge_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
-        let prefix_meta = self.prefix_meta.read();
+        let prefix_meta = self.prefix_meta.get().map(|m| m.as_ref());
 
         self.render_item_tab(
             ui,
@@ -480,7 +485,7 @@ impl AppContext {
                 4,
                 BANK_STRIDE,
             ),
-            &prefix_meta,
+            prefix_meta,
             &player.defenders_forge,
             |_, _| {},
         );
@@ -488,12 +493,12 @@ impl AppContext {
 
     fn render_void_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
-        let prefix_meta = self.prefix_meta.read();
+        let prefix_meta = self.prefix_meta.get().map(|m| m.as_ref());
 
         self.render_item_tab(
             ui,
             ItemTabOptions::new("player_void", ItemGroup::Void, BANK_STRIDE, 4, BANK_STRIDE),
-            &prefix_meta,
+            prefix_meta,
             &player.void_vault,
             |_, _| {},
         );
@@ -546,7 +551,7 @@ impl AppContext {
 
     fn render_equipment_tab(&mut self, ui: &mut Ui) {
         let player = self.player.read();
-        let prefix_meta = self.prefix_meta.read();
+        let prefix_meta = self.prefix_meta.get().map(|m| m.as_ref());
 
         const EQUIPMENT_ICONS: [ItemSlotIcon; 5] = [
             ItemSlotIcon::Pet,
@@ -604,19 +609,20 @@ impl AppContext {
                                 i,
                                 ItemSlotOptions::from_item(equipment_dye, ItemGroup::EquipmentDyes)
                                     .icon(Some(ItemSlotIcon::Dye))
-                                    .prefix_meta(PrefixMeta::get(
-                                        &prefix_meta,
-                                        equipment_dye.prefix.id,
-                                    )),
+                                    .prefix_meta(
+                                        prefix_meta.and_then(|m| {
+                                            PrefixMeta::get(m, equipment_dye.prefix.id)
+                                        }),
+                                    ),
                             ),
                             (
                                 i,
                                 ItemSlotOptions::from_item(equipment, ItemGroup::Equipment)
                                     .icon(Some(EQUIPMENT_ICONS[i]))
-                                    .prefix_meta(PrefixMeta::get(
-                                        &prefix_meta,
-                                        equipment.prefix.id,
-                                    )),
+                                    .prefix_meta(
+                                        prefix_meta
+                                            .and_then(|m| PrefixMeta::get(m, equipment.prefix.id)),
+                                    ),
                             ),
                             (
                                 i,
@@ -625,10 +631,10 @@ impl AppContext {
                                     ItemGroup::AccessoryDyes(self.selected_loadout),
                                 )
                                 .icon(Some(ItemSlotIcon::Dye))
-                                .prefix_meta(PrefixMeta::get(
-                                    &prefix_meta,
-                                    accessory_dye.prefix.id,
-                                )),
+                                .prefix_meta(
+                                    prefix_meta
+                                        .and_then(|m| PrefixMeta::get(m, accessory_dye.prefix.id)),
+                                ),
                             ),
                             (
                                 i,
@@ -637,10 +643,11 @@ impl AppContext {
                                     ItemGroup::VanityAccessories(self.selected_loadout),
                                 )
                                 .icon(Some(ItemSlotIcon::VanityAccessory))
-                                .prefix_meta(PrefixMeta::get(
-                                    &prefix_meta,
-                                    vanity_accessory.prefix.id,
-                                )),
+                                .prefix_meta(
+                                    prefix_meta.and_then(|m| {
+                                        PrefixMeta::get(m, vanity_accessory.prefix.id)
+                                    }),
+                                ),
                             ),
                             (
                                 i,
@@ -649,7 +656,10 @@ impl AppContext {
                                     ItemGroup::Accessories(self.selected_loadout),
                                 )
                                 .icon(Some(ItemSlotIcon::Accessory))
-                                .prefix_meta(PrefixMeta::get(&prefix_meta, accessory.prefix.id)),
+                                .prefix_meta(
+                                    prefix_meta
+                                        .and_then(|m| PrefixMeta::get(m, accessory.prefix.id)),
+                                ),
                             ),
                         ]
                         .into_iter()
@@ -671,7 +681,8 @@ impl AppContext {
                                     )
                                     .icon(Some(ItemSlotIcon::Dye))
                                     .prefix_meta(
-                                        PrefixMeta::get(&prefix_meta, armor_dye.prefix.id),
+                                        prefix_meta
+                                            .and_then(|m| PrefixMeta::get(m, armor_dye.prefix.id)),
                                     ),
                                 ),
                                 (
@@ -682,7 +693,9 @@ impl AppContext {
                                     )
                                     .icon(Some(VANITY_ARMOR_ICONS[i]))
                                     .prefix_meta(
-                                        PrefixMeta::get(&prefix_meta, vanity_armor.prefix.id),
+                                        prefix_meta.and_then(|m| {
+                                            PrefixMeta::get(m, vanity_armor.prefix.id)
+                                        }),
                                     ),
                                 ),
                                 (
@@ -692,7 +705,10 @@ impl AppContext {
                                         ItemGroup::Armor(self.selected_loadout),
                                     )
                                     .icon(Some(ARMOR_ICONS[i]))
-                                    .prefix_meta(PrefixMeta::get(&prefix_meta, armor.prefix.id)),
+                                    .prefix_meta(
+                                        prefix_meta
+                                            .and_then(|m| PrefixMeta::get(m, armor.prefix.id)),
+                                    ),
                                 ),
                             ]
                             .into_iter()
@@ -715,7 +731,9 @@ impl AppContext {
                                     )
                                     .icon(Some(ItemSlotIcon::Dye))
                                     .prefix_meta(
-                                        PrefixMeta::get(&prefix_meta, accessory_dye.prefix.id),
+                                        prefix_meta.and_then(|m| {
+                                            PrefixMeta::get(m, accessory_dye.prefix.id)
+                                        }),
                                     ),
                                 ),
                                 (
@@ -726,7 +744,9 @@ impl AppContext {
                                     )
                                     .icon(Some(ItemSlotIcon::VanityAccessory))
                                     .prefix_meta(
-                                        PrefixMeta::get(&prefix_meta, vanity_accessory.prefix.id),
+                                        prefix_meta.and_then(|m| {
+                                            PrefixMeta::get(m, vanity_accessory.prefix.id)
+                                        }),
                                     ),
                                 ),
                                 (
@@ -737,7 +757,8 @@ impl AppContext {
                                     )
                                     .icon(Some(ItemSlotIcon::Accessory))
                                     .prefix_meta(
-                                        PrefixMeta::get(&prefix_meta, accessory.prefix.id),
+                                        prefix_meta
+                                            .and_then(|m| PrefixMeta::get(m, accessory.prefix.id)),
                                     ),
                                 ),
                             ]

@@ -1,16 +1,20 @@
-use std::{future::Future, path::PathBuf, rc::Rc, sync::Arc};
+use std::{future::Future, path::PathBuf, sync::Arc};
 
-use egui::{mutex::RwLock, Key, Modifiers, TextureHandle};
+use egui::{Key, Modifiers, TextureHandle};
 use flume::{Receiver, Sender};
 
+use once_cell::sync::OnceCell;
+use parking_lot::RwLock;
 use terra_core::{utils::AsTicks, BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem};
 use time::Duration;
+
+use crate::app::tasks;
 
 use super::{
     inventory::{
         selected_buff, selected_item, ItemGroup, SelectedBuff, SelectedItem, SelectedLoadout,
     },
-    meta::MetaLoader,
+    loader::Loader,
     visuals, AppMessage, DEFAULT_PLAYER, DEFAULT_PLAYER_DIR, SHORTCUT_EXIT, SHORTCUT_LOAD,
     SHORTCUT_SAVE,
 };
@@ -59,13 +63,13 @@ pub struct AppContext {
     pub selected_buff: SelectedBuff,
     pub selected_loadout: SelectedLoadout,
 
-    pub prefix_meta: Arc<RwLock<Vec<PrefixMeta>>>,
-    pub item_meta: Arc<RwLock<Vec<ItemMeta>>>,
-    pub buff_meta: Arc<RwLock<Vec<BuffMeta>>>,
+    pub prefix_meta: Arc<OnceCell<Vec<PrefixMeta>>>,
+    pub item_meta: Arc<OnceCell<Vec<ItemMeta>>>,
+    pub buff_meta: Arc<OnceCell<Vec<BuffMeta>>>,
 
-    pub item_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
-    pub buff_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
-    pub icon_spritesheet: Arc<RwLock<Option<TextureHandle>>>,
+    pub item_spritesheet: Arc<OnceCell<TextureHandle>>,
+    pub buff_spritesheet: Arc<OnceCell<TextureHandle>>,
+    pub icon_spritesheet: Arc<OnceCell<TextureHandle>>,
 
     pub search_term: String,
 
@@ -86,13 +90,48 @@ impl AppContext {
         chan: (Sender<Message>, Receiver<Message>),
         app_tx: Sender<AppMessage>,
         theme: visuals::Theme,
-        meta_loader: Rc<dyn MetaLoader>,
+        loader: Arc<impl Loader + 'static>,
     ) -> Self {
-        let prefix_meta = meta_loader
-            .load_prefixes()
-            .expect("Could not load prefixes");
-        let item_meta = meta_loader.load_items().expect("Could not load items");
-        let buff_meta = meta_loader.load_buffs().expect("Could not load buffs");
+        let busy = Arc::new(RwLock::new(false));
+
+        let prefix_meta = Arc::new(OnceCell::new());
+        let item_meta = Arc::new(OnceCell::new());
+        let buff_meta = Arc::new(OnceCell::new());
+        let item_spritesheet = Arc::new(OnceCell::new());
+        let buff_spritesheet = Arc::new(OnceCell::new());
+        let icon_spritesheet = Arc::new(OnceCell::new());
+
+        let tx_clone = chan.0.clone();
+        let prefix_meta_clone = prefix_meta.clone();
+        let item_meta_clone = item_meta.clone();
+        let buff_meta_clone = buff_meta.clone();
+
+        tasks::do_task(tx_clone, &busy, async move {
+            let prefix_meta = prefix_meta_clone;
+            let item_meta = item_meta_clone;
+            let buff_meta = buff_meta_clone;
+
+            prefix_meta
+                .set(
+                    loader
+                        .load_prefixes()
+                        .await
+                        .expect("Could not load prefixes"),
+                )
+                .ok();
+            item_meta
+                .set(loader.load_items().await.expect("Could not load items"))
+                .ok();
+            buff_meta
+                .set(loader.load_buffs().await.expect("Could not load buffs"))
+                .ok();
+
+            Ok(Message::Noop)
+        });
+
+        // let prefix_meta = loader.load_prefixes().expect("Could not load prefixes");
+        // let item_meta = loader.load_items().expect("Could not load items");
+        // let buff_meta = loader.load_buffs().expect("Could not load buffs");
 
         Self {
             chan,
@@ -105,20 +144,20 @@ impl AppContext {
             selected_buff: SelectedBuff(0),
             selected_loadout: SelectedLoadout(0),
 
-            prefix_meta: Arc::new(RwLock::new(prefix_meta)),
-            item_meta: Arc::new(RwLock::new(item_meta)),
-            buff_meta: Arc::new(RwLock::new(buff_meta)),
+            prefix_meta,
+            item_meta,
+            buff_meta,
 
-            item_spritesheet: Arc::new(RwLock::new(None)),
-            buff_spritesheet: Arc::new(RwLock::new(None)),
-            icon_spritesheet: Arc::new(RwLock::new(None)),
+            item_spritesheet,
+            buff_spritesheet,
+            icon_spritesheet,
 
             theme,
 
             search_term: Default::default(),
 
             error: None,
-            busy: Arc::new(RwLock::new(false)),
+            busy,
 
             show_about: false,
             show_item_browser: false,
@@ -162,18 +201,7 @@ impl AppContext {
         &mut self,
         task: impl 'static + Send + Future<Output = anyhow::Result<Message>>,
     ) {
-        let tx = self.context_tx().clone();
-        let busy = self.busy.clone();
-        *busy.write() = true;
-
-        #[cfg(not(target_arch = "wasm32"))]
-        tokio::spawn(async move {
-            match task.await {
-                Ok(msg) => tx.send(msg).unwrap(),
-                Err(err) => tx.send(Message::ShowError(err)).unwrap(),
-            }
-            *busy.write() = false;
-        });
+        tasks::do_task(self.context_tx().clone(), &self.busy, task);
     }
 
     pub fn send_context_msg(&self, msg: Message) {
@@ -194,21 +222,21 @@ impl AppContext {
         match msg {
             Message::Noop => {}
             Message::LoadItemSpritesheet => {
-                if self.item_spritesheet.read().is_some() {
+                if self.item_spritesheet.get().is_some() {
                     return;
                 }
                 let spritesheet = self.item_spritesheet.clone();
                 self.load_spritesheet(ctx, "items.png", spritesheet);
             }
             Message::LoadBuffSpritesheet => {
-                if self.buff_spritesheet.read().is_some() {
+                if self.buff_spritesheet.get().is_some() {
                     return;
                 }
                 let spritesheet = self.buff_spritesheet.clone();
                 self.load_spritesheet(ctx, "buffs.png", spritesheet);
             }
             Message::LoadIconSpritesheet => {
-                if self.icon_spritesheet.read().is_some() {
+                if self.icon_spritesheet.get().is_some() {
                     return;
                 }
                 let spritesheet = self.icon_spritesheet.clone();
@@ -228,10 +256,14 @@ impl AppContext {
             Message::ResetPlayer => self.player.write().clone_from(&DEFAULT_PLAYER),
             Message::LoadPlayer => {
                 let player = self.player.clone();
-                let item_meta = self.item_meta.clone();
                 let player_path = self.player_path.clone();
+                let item_meta = self.item_meta.clone();
 
                 self.do_task(async move {
+                    let Some(item_meta) = item_meta.get() else {
+                        return Ok(Message::Noop);
+                    };
+
                     let player_dir = player_path
                         .read()
                         .clone()
@@ -271,9 +303,9 @@ impl AppContext {
                         .extension()
                         .is_some_and(|e| e.to_string_lossy() == "dplr")
                     {
-                        player.write().load_decrypted(&item_meta.read(), &data)?;
+                        player.write().load_decrypted(item_meta, &data)?;
                     } else {
-                        player.write().load(&item_meta.read(), &data)?;
+                        player.write().load(item_meta, &data)?;
                     };
 
                     *player_path.write() = Some(path);
@@ -284,10 +316,14 @@ impl AppContext {
 
             Message::SavePlayer => {
                 let player = self.player.clone();
-                let item_meta = self.item_meta.clone();
                 let player_path = self.player_path.clone();
+                let item_meta = self.item_meta.clone();
 
                 self.do_task(async move {
+                    let Some(item_meta) = item_meta.get() else {
+                        return Ok(Message::Noop);
+                    };
+
                     let player_dir = player_path
                         .read()
                         .clone()
@@ -326,9 +362,9 @@ impl AppContext {
                         .extension()
                         .is_some_and(|e| e.to_string_lossy() == "dplr")
                     {
-                        player.read().save_decrypted(&item_meta.read())?
+                        player.read().save_decrypted(item_meta)?
                     } else {
-                        player.read().save(&item_meta.read())?
+                        player.read().save(item_meta)?
                     };
 
                     file.write(&data).await?;
@@ -342,12 +378,14 @@ impl AppContext {
             Message::SelectItem(selection) => self.selected_item = selection,
             Message::SelectBuff(selection) => self.selected_buff = selection,
             Message::AddAllResearch => {
+                let Some(item_meta) = self.item_meta.get() else {
+                    return;
+                };
                 let mut player = self.player.write();
-                let item_meta = self.item_meta.read();
 
                 // TODO: Maybe remove this at some point?
                 player.research.clear();
-                for item in &*item_meta {
+                for item in item_meta {
                     if item.forbidden.is_none() {
                         player.research.push(ResearchItem {
                             internal_name: item.internal_name.clone(),
@@ -361,10 +399,13 @@ impl AppContext {
                 player.research.clear();
             }
             Message::ToggleResearchItem(id) => {
+                let Some(item_meta) = self.item_meta.get() else {
+                    return;
+                };
                 let mut player = self.player.write();
 
                 // TODO: Maybe add `id` onto ResearchItem?
-                if let Some(meta) = self.item_meta.read().iter().find(|i| i.id == id) {
+                if let Some(meta) = item_meta.iter().find(|i| i.id == id) {
                     if let Some(index) = player
                         .research
                         .iter()

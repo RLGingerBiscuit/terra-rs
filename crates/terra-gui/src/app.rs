@@ -1,7 +1,7 @@
 mod context;
 mod inventory;
+mod loader;
 mod menus;
-mod meta;
 mod modals;
 mod tabs;
 mod tasks;
@@ -19,7 +19,7 @@ use terra_core::{utils, Player};
 
 use self::{
     context::{AppContext, Message},
-    meta::platform_meta_loader,
+    loader::platform_loader,
     tabs::{default_ui, Tab},
 };
 
@@ -72,7 +72,7 @@ impl App {
             (context_tx.clone(), context_rx.clone()),
             app_tx.clone(),
             theme,
-            platform_meta_loader(),
+            platform_loader(),
         );
 
         Self {

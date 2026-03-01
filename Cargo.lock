@@ -4329,7 +4329,6 @@ version = "1.2.1"
 dependencies = [
  "anyhow",
  "catppuccin-egui",
- "cfg-if",
  "eframe",
  "egui",
  "egui_dock",
@@ -4337,6 +4336,7 @@ dependencies = [
  "image",
  "once_cell",
  "open",
+ "parking_lot",
  "rfd",
  "serde",
  "serde_json",

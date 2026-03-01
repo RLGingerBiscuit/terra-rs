@@ -235,8 +235,12 @@ impl Widget for ItemSlot<'_> {
             let mut ui = ui.new_child(egui::UiBuilder::new().max_rect(rect).layout(*ui.layout()));
 
             if let (true, Some(sheet)) = (self.meta.id != 0, self.item_sheet) {
-                let (uv, size, padding) =
-                    calc_uv_size_padding(sheet, self.sprite_rect(), self.scale(), self.slot_size());
+                let (uv, size, padding) = calc_uv_size_padding(
+                    sheet,
+                    self.sprite_rect(),
+                    Self::scale(),
+                    Self::slot_size(),
+                );
 
                 render_padded_sprite(&mut ui, sheet, uv, size, padding, None);
             } else if let (Some(icon), Some(sheet)) = (self.options.icon, self.icon_sheet) {
@@ -260,22 +264,22 @@ impl Widget for ItemSlot<'_> {
 }
 
 impl Slot for ItemSlot<'_> {
-    fn slot_size(&self) -> Vec2 {
+    fn slot_size() -> Vec2 {
         SLOT_SIZE
+    }
+
+    fn scale() -> Vec2 {
+        SPRITE_SCALE
+    }
+
+    fn margin() -> Margin {
+        MARGIN
     }
 
     fn sprite_rect(&self) -> Rect {
         let min = pos2(self.meta.x as f32, self.meta.y as f32);
         let size = vec2(self.meta.width as f32, self.meta.height as f32);
         Rect::from_min_size(min, size)
-    }
-
-    fn scale(&self) -> Vec2 {
-        SPRITE_SCALE
-    }
-
-    fn margin(&self) -> Margin {
-        MARGIN
     }
 
     fn selected(&self) -> bool {

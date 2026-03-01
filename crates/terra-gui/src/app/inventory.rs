@@ -5,7 +5,7 @@ pub mod item_tooltip;
 pub mod prefix_tooltip;
 pub mod slot;
 
-use egui::{Response, Ui, Vec2, Widget};
+use egui::{Response, Sense, Ui, Vec2, Widget};
 use terra_core::{meta::Meta, utils, Buff, BuffMeta, Item, ItemMeta, Player, PrefixMeta};
 
 use self::{
@@ -109,6 +109,20 @@ pub fn buff_name(name: &str, time: Option<i32>) -> String {
 }
 
 impl AppContext {
+    fn render_empty_slot<S>(&self, ui: &mut Ui) -> Response
+    where
+        S: Slot + Widget,
+    {
+        let group = ClickableFrame::group(ui.style()).inner_margin(S::margin());
+        ui.style_mut().spacing.item_spacing = Vec2::ZERO;
+        group
+            .show(ui, |ui| {
+                let (_, response) = ui.allocate_exact_size(S::slot_size(), Sense::empty());
+                response
+            })
+            .response
+    }
+
     fn render_slot<S>(&self, ui: &mut Ui, slot: S) -> Response
     where
         S: Slot + Widget,
@@ -120,7 +134,7 @@ impl AppContext {
         } else {
             ClickableFrame::group(ui.style())
         }
-        .inner_margin(slot.margin());
+        .inner_margin(S::margin());
 
         ui.style_mut().spacing.item_spacing = Vec2::ZERO;
 
@@ -128,9 +142,11 @@ impl AppContext {
     }
 
     pub fn render_item_slot(&self, ui: &mut Ui, options: ItemSlotOptions) -> Response {
-        let icon_spritesheet = self.icon_spritesheet.read();
-        let item_spritesheet = self.item_spritesheet.read();
-        let item_meta = self.item_meta.read();
+        let Some(item_meta) = self.item_meta.get() else {
+            return self.render_empty_slot::<ItemSlot>(ui);
+        };
+        let icon_spritesheet = self.icon_spritesheet.get();
+        let item_spritesheet = self.item_spritesheet.get();
 
         if icon_spritesheet.is_none() && !self.is_busy() {
             self.send_context_msg(Message::LoadIconSpritesheet);
@@ -143,13 +159,8 @@ impl AppContext {
         let tooltip_options = ItemTooltipOptions::from_slot_options(options.clone());
         let tooltip_on_hover = options.tooltip_on_hover;
 
-        let meta = ItemMeta::get_or_default(&item_meta, options.id);
-        let slot = ItemSlot::new(
-            options,
-            meta,
-            item_spritesheet.as_ref(),
-            icon_spritesheet.as_ref(),
-        );
+        let meta = ItemMeta::get_or_default(item_meta, options.id);
+        let slot = ItemSlot::new(options, meta, item_spritesheet, icon_spritesheet);
         let response = self.render_slot(ui, slot);
 
         if meta.id != 0 && tooltip_on_hover {
@@ -174,11 +185,14 @@ impl AppContext {
     }
 
     pub fn render_selected_item(&mut self, ui: &mut Ui) {
+        let Some(item_meta) = self.item_meta.get() else {
+            return;
+        };
+        let Some(prefix_meta) = self.prefix_meta.get() else {
+            return;
+        };
         let player = &mut *self.player.write();
         let item = selected_item(self.selected_item, player);
-
-        let item_meta = self.item_meta.read();
-        let prefix_meta = self.prefix_meta.read();
 
         let largest_item_id = item_meta
             .last()
@@ -189,8 +203,8 @@ impl AppContext {
             .expect("There should be at least one prefix")
             .id;
 
-        let item_meta = ItemMeta::get_or_default(&item_meta, item.id);
-        let prefix_meta = PrefixMeta::get(&prefix_meta, item.prefix.id);
+        let item_meta = ItemMeta::get_or_default(item_meta, item.id);
+        let prefix_meta = PrefixMeta::get(prefix_meta, item.prefix.id);
 
         if item.id > 0 {
             ui.label(item_name(&item_meta.name, prefix_meta));
@@ -225,14 +239,18 @@ impl AppContext {
     }
 
     pub fn render_item_tooltip(&self, ui: &mut Ui, options: ItemTooltipOptions) {
-        let item_meta = self.item_meta.read();
-        let meta = ItemMeta::get_or_default(&item_meta, options.id);
+        let Some(item_meta) = self.item_meta.get() else {
+            return;
+        };
+        let meta = ItemMeta::get_or_default(item_meta, options.id);
         ItemTooltip::new(options, meta).ui(ui);
     }
 
     pub fn render_buff_slot(&self, ui: &mut Ui, options: BuffSlotOptions) -> Response {
-        let buff_spritesheet = self.buff_spritesheet.read();
-        let buff_meta = self.buff_meta.read();
+        let Some(buff_meta) = self.buff_meta.get() else {
+            return self.render_empty_slot::<BuffSlot>(ui);
+        };
+        let buff_spritesheet = self.buff_spritesheet.get();
 
         if buff_spritesheet.is_none() && !self.is_busy() {
             self.send_context_msg(Message::LoadBuffSpritesheet);
@@ -241,8 +259,8 @@ impl AppContext {
         let tooltip_options = BuffTooltipOptions::from_slot_options(&options);
         let tooltip_on_hover = options.tooltip_on_hover;
 
-        let meta = BuffMeta::get_or_default(&buff_meta, options.id);
-        let slot = BuffSlot::new(options, meta, buff_spritesheet.as_ref());
+        let meta = BuffMeta::get_or_default(buff_meta, options.id);
+        let slot = BuffSlot::new(options, meta, buff_spritesheet);
         let response = self.render_slot(ui, slot);
 
         if meta.id != 0 && tooltip_on_hover {
@@ -268,17 +286,18 @@ impl AppContext {
     }
 
     pub fn render_selected_buff(&mut self, ui: &mut Ui) {
+        let Some(buff_meta) = self.buff_meta.get() else {
+            return;
+        };
         let player = &mut *self.player.write();
         let buff = selected_buff(self.selected_buff, player);
-
-        let buff_meta = self.buff_meta.read();
 
         let largest_buff_id = buff_meta
             .last()
             .expect("We really should have at least one buff")
             .id;
 
-        let buff_meta = BuffMeta::get_or_default(&buff_meta, buff.id);
+        let buff_meta = BuffMeta::get_or_default(buff_meta, buff.id);
 
         if buff.id > 0 {
             ui.label(buff_name(&buff_meta.name, Some(buff.time)));
@@ -306,14 +325,18 @@ impl AppContext {
     }
 
     pub fn render_buff_tooltip(&self, ui: &mut Ui, options: BuffTooltipOptions) {
-        let buff_meta = self.buff_meta.read();
-        let meta = BuffMeta::get_or_default(&buff_meta, options.id);
+        let Some(buff_meta) = self.buff_meta.get() else {
+            return;
+        };
+        let meta = BuffMeta::get_or_default(buff_meta, options.id);
         BuffTooltip::new(options, meta).ui(ui)
     }
 
     pub fn render_prefix_tooltip(&self, ui: &mut Ui, options: PrefixTooltipOptions) {
-        let prefix_meta = self.prefix_meta.read();
-        let meta = PrefixMeta::get_or_default(&prefix_meta, options.id);
+        let Some(prefix_meta) = self.prefix_meta.get() else {
+            return;
+        };
+        let meta = PrefixMeta::get_or_default(prefix_meta, options.id);
         PrefixTooltip::new(options, meta).ui(ui);
     }
 }

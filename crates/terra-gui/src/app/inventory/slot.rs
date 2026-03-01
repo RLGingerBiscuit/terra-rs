@@ -23,10 +23,10 @@ impl SlotText {
 }
 
 pub(super) trait Slot<W: Widget = Self> {
-    fn slot_size(&self) -> Vec2;
+    fn slot_size() -> Vec2;
+    fn scale() -> Vec2;
+    fn margin() -> Margin;
     fn sprite_rect(&self) -> Rect;
-    fn scale(&self) -> Vec2;
-    fn margin(&self) -> Margin;
     fn selected(&self) -> bool;
     fn highlighted(&self) -> bool;
 }

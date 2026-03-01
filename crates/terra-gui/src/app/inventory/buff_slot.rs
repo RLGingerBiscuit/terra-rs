@@ -119,8 +119,12 @@ impl Widget for BuffSlot<'_> {
             let mut ui = ui.new_child(egui::UiBuilder::new().max_rect(rect).layout(*ui.layout()));
 
             if let Some(sheet) = self.buff_sheet {
-                let (uv, size, padding) =
-                    calc_uv_size_padding(sheet, self.sprite_rect(), self.scale(), self.slot_size());
+                let (uv, size, padding) = calc_uv_size_padding(
+                    sheet,
+                    self.sprite_rect(),
+                    Self::scale(),
+                    Self::slot_size(),
+                );
 
                 render_padded_sprite(&mut ui, sheet, uv, size, padding, None);
             }
@@ -131,21 +135,21 @@ impl Widget for BuffSlot<'_> {
 }
 
 impl Slot for BuffSlot<'_> {
-    fn slot_size(&self) -> Vec2 {
+    fn slot_size() -> Vec2 {
         SLOT_SIZE
+    }
+
+    fn scale() -> Vec2 {
+        SPRITE_SCALE
+    }
+
+    fn margin() -> Margin {
+        MARGIN
     }
 
     fn sprite_rect(&self) -> Rect {
         let min = pos2(self.meta.x as f32, self.meta.y as f32);
         Rect::from_min_size(min, SPRITE_SIZE)
-    }
-
-    fn scale(&self) -> Vec2 {
-        SPRITE_SCALE
-    }
-
-    fn margin(&self) -> Margin {
-        MARGIN
     }
 
     fn selected(&self) -> bool {

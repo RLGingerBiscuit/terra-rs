@@ -167,9 +167,12 @@ impl AppContext {
                     term_changed = ui.text_edit_singleline(&mut search_term).changed();
                 });
 
+                let Some(meta) = self.item_meta.get() else {
+                    return;
+                };
+
                 if !search_term.is_empty() {
                     let search_term_lower = search_term.to_lowercase();
-                    let meta = &self.item_meta.read();
                     let filtered = meta
                         .iter()
                         .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower))
@@ -243,9 +246,12 @@ impl AppContext {
                     term_changed = ui.text_edit_singleline(&mut search_term).changed();
                 });
 
+                let Some(meta) = self.buff_meta.get() else {
+                    return;
+                };
+
                 if !search_term.is_empty() {
                     let search_term_lower = search_term.to_lowercase();
-                    let meta = &self.buff_meta.read();
                     let filtered = meta
                         .iter()
                         .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower));
@@ -320,9 +326,12 @@ impl AppContext {
                         term_changed = ui.text_edit_singleline(&mut search_term).changed();
                     });
 
+                    let Some(meta) = self.prefix_meta.get() else {
+                        return;
+                    };
+
                     if !search_term.is_empty() {
                         let search_term_lower = search_term.to_lowercase();
-                        let meta = &self.prefix_meta.read();
                         let filtered = meta
                             .iter()
                             .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower));
@@ -407,8 +416,11 @@ impl AppContext {
                         term_changed = ui.text_edit_singleline(&mut search_term).changed();
                     });
 
+                    let Some(meta) = self.item_meta.get() else {
+                        return;
+                    };
+
                     let search_term_lower = search_term.to_lowercase();
-                    let meta = &self.item_meta.read();
                     let filtered = meta
                         .iter()
                         .filter(|meta| {
