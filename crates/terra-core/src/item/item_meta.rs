@@ -1,3 +1,5 @@
+use once_cell::sync::Lazy;
+
 use crate::{meta::Meta, ItemRarity, SharedString};
 
 #[repr(u8)]
@@ -79,5 +81,51 @@ impl Meta for ItemMeta {
 
     fn internal_name(&self) -> SharedString {
         self.internal_name.clone()
+    }
+
+    fn default_ref() -> &'static Self {
+        static DEFAULT: Lazy<ItemMeta> = Lazy::new(ItemMeta::default);
+        &DEFAULT
+    }
+}
+
+impl Default for ItemMeta {
+    fn default() -> Self {
+        Self {
+            id: 0,
+            name: SharedString::new("None"),
+            internal_name: SharedString::new("None"),
+            width: 1,
+            height: 1,
+            x: 0,
+            y: 0,
+            max_stack: 9999,
+            sacrifices: 0,
+            value: 0,
+            rarity: ItemRarity::default(),
+            use_time: Some(100),
+            damage: Some(-1),
+            forbidden: Some(true),
+            consumes_tile: Some(-1),
+            item_type: Some(ItemType::Ammo),
+            crit_chance: None,
+            knockback: None,
+            defense: None,
+            use_ammo: None,
+            mana_cost: None,
+            heal_life: None,
+            heal_mana: None,
+            pickaxe_power: None,
+            axe_power: None,
+            hammer_power: None,
+            fishing_power: None,
+            fishing_bait: None,
+            range_boost: None,
+            tooltip: None,
+            is_material: None,
+            is_consumable: None,
+            is_quest_item: None,
+            is_expert: None,
+        }
     }
 }

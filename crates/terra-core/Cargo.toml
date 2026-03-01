@@ -13,6 +13,7 @@ cbc = "0.1.2"
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 time = { workspace = true }
+once_cell = { workspace = true }
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 serde_repr = { version = "0.1.19", optional = true }

@@ -1,3 +1,5 @@
+use once_cell::sync::Lazy;
+
 use crate::{meta::Meta, BuffType, SharedString};
 
 #[derive(Debug, Clone)]
@@ -30,5 +32,24 @@ impl Meta for BuffMeta {
 
     fn internal_name(&self) -> SharedString {
         self.internal_name.clone()
+    }
+
+    fn default_ref() -> &'static Self {
+        static DEFAULT: Lazy<BuffMeta> = Lazy::new(BuffMeta::default);
+        &DEFAULT
+    }
+}
+
+impl Default for BuffMeta {
+    fn default() -> Self {
+        Self {
+            id: 0,
+            name: SharedString::new(""),
+            internal_name: SharedString::new("None"),
+            x: 1,
+            y: 1,
+            buff_type: BuffType::Buff,
+            tooltip: None,
+        }
     }
 }

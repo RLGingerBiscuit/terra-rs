@@ -1,3 +1,5 @@
+use once_cell::sync::Lazy;
+
 use crate::{meta::Meta, SharedString};
 
 #[derive(Debug, Clone)]
@@ -22,5 +24,20 @@ impl Meta for PrefixMeta {
 
     fn internal_name(&self) -> SharedString {
         self.internal_name.clone()
+    }
+
+    fn default_ref() -> &'static Self {
+        static DEFAULT: Lazy<PrefixMeta> = Lazy::new(PrefixMeta::default);
+        &DEFAULT
+    }
+}
+
+impl Default for PrefixMeta {
+    fn default() -> Self {
+        Self {
+            id: 0,
+            name: SharedString::new(""),
+            internal_name: SharedString::new("None"),
+        }
     }
 }
