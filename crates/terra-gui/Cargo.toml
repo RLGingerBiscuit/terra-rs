@@ -16,6 +16,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 time = { workspace = true }
 once_cell = { workspace = true }
+image = { workspace = true }
 flume = "0.12.0"
 eframe = { version = "0.33", features = ["persistence"] }
 egui = { version = "0.33", features = ["color-hex"] }
@@ -23,10 +24,12 @@ catppuccin-egui = { version = "5.7", default-features = false, features = [
     "egui33",
 ] }
 egui_dock = { version = "0.18", features = ["serde"] }
-image = { workspace = true }
 rfd = "0.17.2"
 cfg-if = "1.0.4"
-open = "5.3.3"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+open = "5.3.3" # TODO: find a Wasm-compatible replacement
+tokio = { version = "1.49", features = ["rt-multi-thread", "macros", "fs"] }
 
 [[bin]]
 name = "terra-rs"

@@ -1,12 +1,9 @@
-use std::{path::PathBuf, rc::Rc, sync::Arc, thread};
+use std::{future::Future, path::PathBuf, rc::Rc, sync::Arc};
 
 use egui::{mutex::RwLock, Key, Modifiers, TextureHandle};
 use flume::{Receiver, Sender};
 
-use terra_core::{
-    utils::{self, AsTicks},
-    BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem,
-};
+use terra_core::{utils::AsTicks, BuffMeta, ItemMeta, Player, PrefixMeta, ResearchItem};
 use time::Duration;
 
 use super::{
@@ -56,7 +53,7 @@ pub struct AppContext {
     app_tx: Sender<AppMessage>,
 
     pub player: Arc<RwLock<Player>>,
-    pub player_path: Option<PathBuf>,
+    pub player_path: Arc<RwLock<Option<PathBuf>>>,
 
     pub selected_item: SelectedItem,
     pub selected_buff: SelectedBuff,
@@ -102,7 +99,7 @@ impl AppContext {
             app_tx,
 
             player: Arc::new(RwLock::new(Player::default())),
-            player_path: None,
+            player_path: Arc::new(RwLock::new(None)),
 
             selected_item: SelectedItem(ItemGroup::Inventory, 0),
             selected_buff: SelectedBuff(0),
@@ -163,19 +160,18 @@ impl AppContext {
 
     pub fn do_task(
         &mut self,
-        task: impl 'static + Send + Sync + FnOnce() -> anyhow::Result<Message>,
+        task: impl 'static + Send + Future<Output = anyhow::Result<Message>>,
     ) {
         let tx = self.context_tx().clone();
-        let task = Box::new(task);
         let busy = self.busy.clone();
         *busy.write() = true;
 
-        thread::spawn(move || {
-            match task() {
+        #[cfg(not(target_arch = "wasm32"))]
+        tokio::spawn(async move {
+            match task.await {
                 Ok(msg) => tx.send(msg).unwrap(),
                 Err(err) => tx.send(Message::ShowError(err)).unwrap(),
             }
-
             *busy.write() = false;
         });
     }
@@ -231,97 +227,114 @@ impl AppContext {
             }
             Message::ResetPlayer => self.player.write().clone_from(&DEFAULT_PLAYER),
             Message::LoadPlayer => {
-                let player_path = self
-                    .player_path
-                    .get_or_insert_with(|| DEFAULT_PLAYER_DIR.clone());
-
-                let player_path = if player_path.is_dir() {
-                    player_path.clone()
-                } else {
-                    utils::get_player_dir_or_default(player_path)
-                };
-
-                let Some(path) = rfd::FileDialog::new()
-                    .set_directory(player_path)
-                    .add_filter("Terraria Player File", &["plr"])
-                    .add_filter("Decrypted Player File", &["dplr"])
-                    .add_filter("All Files", &["*"])
-                    .pick_file()
-                else {
-                    return;
-                };
-
-                self.player_path = Some(path.clone());
-
                 let player = self.player.clone();
                 let item_meta = self.item_meta.clone();
+                let player_path = self.player_path.clone();
 
-                self.do_task(move || {
-                    let mut player = player.write();
-                    let data = std::fs::read(&path)?;
+                self.do_task(async move {
+                    let player_dir = player_path
+                        .read()
+                        .clone()
+                        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+                        .unwrap_or_else(|| DEFAULT_PLAYER_DIR.clone());
+
+                    let (directory, file_name) = if player_dir.is_file() {
+                        let directory = player_dir
+                            .parent()
+                            .map(|p| p.to_path_buf())
+                            .unwrap_or_else(|| DEFAULT_PLAYER_DIR.clone());
+                        let file_name = player_dir
+                            .file_name()
+                            .map(|f| f.to_string_lossy().to_string())
+                            .unwrap_or_else(|| player.read().name.replace(' ', "_"));
+                        (directory, file_name)
+                    } else {
+                        (player_dir, player.read().name.replace(' ', "_"))
+                    };
+
+                    let Some(file) = rfd::AsyncFileDialog::new()
+                        .set_directory(directory)
+                        .set_file_name(file_name)
+                        .add_filter("Terraria Player File", &["plr"])
+                        .add_filter("Decrypted Player File", &["dplr"])
+                        .add_filter("All Files", &["*"])
+                        .pick_file()
+                        .await
+                    else {
+                        return Ok(Message::Noop);
+                    };
+
+                    let path = file.path().to_path_buf();
+                    let data = file.read().await;
 
                     if path
                         .extension()
                         .is_some_and(|e| e.to_string_lossy() == "dplr")
                     {
-                        player.load_decrypted(&item_meta.read(), &data)?;
+                        player.write().load_decrypted(&item_meta.read(), &data)?;
                     } else {
-                        player.load(&item_meta.read(), &data)?;
+                        player.write().load(&item_meta.read(), &data)?;
                     };
+
+                    *player_path.write() = Some(path);
+
                     Ok(Message::Noop)
                 });
             }
+
             Message::SavePlayer => {
-                let player_path = self
-                    .player_path
-                    .get_or_insert_with(|| DEFAULT_PLAYER_DIR.clone());
-
-                let fallback_name = || self.player.read().name.replace(' ', "_");
-
-                let (directory, file_name) = if player_path.exists() && player_path.is_dir() {
-                    (player_path.clone(), fallback_name())
-                } else {
-                    let directory = utils::get_player_dir_or_default(player_path);
-
-                    let file_name = if player_path.exists() {
-                        match player_path.file_name() {
-                            Some(file_name) => file_name.to_string_lossy().to_string(),
-                            None => fallback_name(),
-                        }
-                    } else {
-                        fallback_name()
-                    };
-
-                    (directory, file_name)
-                };
-
-                let Some(path) = rfd::FileDialog::new()
-                    .set_directory(directory)
-                    .set_file_name(file_name)
-                    .add_filter("Terraria Player File", &["plr"])
-                    .add_filter("Decrypted Player File", &["dplr"])
-                    .add_filter("All Files", &["*"])
-                    .save_file()
-                else {
-                    return;
-                };
-
-                self.player_path = Some(path.clone());
-
                 let player = self.player.clone();
                 let item_meta = self.item_meta.clone();
+                let player_path = self.player_path.clone();
 
-                self.do_task(move || {
-                    let player = player.read();
+                self.do_task(async move {
+                    let player_dir = player_path
+                        .read()
+                        .clone()
+                        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+                        .unwrap_or_else(|| DEFAULT_PLAYER_DIR.clone());
+
+                    let (directory, file_name) = if player_dir.is_file() {
+                        let directory = player_dir
+                            .parent()
+                            .unwrap_or_else(|| DEFAULT_PLAYER_DIR.as_path())
+                            .to_path_buf();
+                        let file_name = player_dir
+                            .file_name()
+                            .map(|f| f.to_string_lossy().to_string())
+                            .unwrap_or_else(|| player.read().name.replace(' ', "_"));
+                        (directory, file_name)
+                    } else {
+                        (player_dir, player.read().name.replace(' ', "_"))
+                    };
+
+                    let Some(file) = rfd::AsyncFileDialog::new()
+                        .set_directory(directory)
+                        .set_file_name(file_name)
+                        .add_filter("Terraria Player File", &["plr"])
+                        .add_filter("Decrypted Player File", &["dplr"])
+                        .add_filter("All Files", &["*"])
+                        .save_file()
+                        .await
+                    else {
+                        return Ok(Message::Noop);
+                    };
+
+                    let path = file.path().to_path_buf();
+
                     let data = if path
                         .extension()
                         .is_some_and(|e| e.to_string_lossy() == "dplr")
                     {
-                        player.save_decrypted(&item_meta.read())?
+                        player.read().save_decrypted(&item_meta.read())?
                     } else {
-                        player.save(&item_meta.read())?
+                        player.read().save(&item_meta.read())?
                     };
-                    std::fs::write(&path, data)?;
+
+                    file.write(&data).await?;
+
+                    *player_path.write() = Some(path);
+
                     Ok(Message::Noop)
                 });
             }

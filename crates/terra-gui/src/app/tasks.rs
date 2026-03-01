@@ -26,7 +26,7 @@ impl AppContext {
             .join("resources")
             .join(file_name);
 
-        self.do_task(move || {
+        self.do_task(async move {
             let image = image::open(&path)?;
             let rgba = image.as_rgba8().unwrap();
 

@@ -6,7 +6,9 @@ use crate::app::App;
 pub mod app;
 pub mod ui;
 
-fn main() {
+#[cfg(not(target_arch = "wasm32"))]
+#[tokio::main]
+async fn main() {
     let viewport = egui::ViewportBuilder::default().with_inner_size(vec2(1000., 750.));
 
     let options = eframe::NativeOptions {
