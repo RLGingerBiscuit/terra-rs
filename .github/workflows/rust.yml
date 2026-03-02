@@ -2,15 +2,15 @@ name: Rust
 
 on:
   push:
-    branches: ['master']
+    branches: ["main"]
     paths:
-      - 'data/resources/**'
-      - '.github/workflows/**'
-      - 'terra-*/**/*.rs'
-      - '**/Cargo.*'
-      - '!terra-res/'
+      - "data/resources/**"
+      - ".github/workflows/**"
+      - "terra-*/**/*.rs"
+      - "**/Cargo.*"
+      - "!terra-res/"
   pull_request:
-    branches: ['master']
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -47,7 +47,7 @@ jobs:
         platform:
           - name: linux
             os: ubuntu-latest
-            ext: ''
+            ext: ""
           - name: windows
             os: windows-latest
             ext: .exe
