@@ -377,10 +377,15 @@ impl AppContext {
                             let file_name = dir
                                 .file_name()
                                 .map(|f| f.to_string_lossy().to_string())
-                                .unwrap_or_else(|| player.read().name.replace(' ', "_"));
+                                .unwrap_or_else(|| {
+                                    format!("{}.plr", player.read().name.replace(' ', "_"))
+                                });
                             (directory, file_name)
                         }
-                        _ => (None, player.read().name.replace(' ', "_")),
+                        _ => (
+                            None,
+                            format!("{}.plr", player.read().name.replace(' ', "_")),
+                        ),
                     };
 
                     let mut dialog = rfd::AsyncFileDialog::new()

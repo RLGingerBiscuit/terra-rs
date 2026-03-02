@@ -28,6 +28,11 @@ impl App {
             ui.close_kind(UiKind::Menu);
             self.send_context_msg(Message::SavePlayer);
         }
+        #[cfg(target_arch = "wasm32")]
+        {
+            _ = SHORTCUT_EXIT; // Avoid unused variable warning
+        }
+        #[cfg(not(target_arch = "wasm32"))]
         if ui.shortcut_button("Exit", &SHORTCUT_EXIT).clicked() {
             ui.close_kind(UiKind::Menu);
             self.send_app_msg(AppMessage::Exit);

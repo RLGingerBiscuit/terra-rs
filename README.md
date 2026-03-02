@@ -1,5 +1,8 @@
 # terra-rs
 
+> [!IMPORTANT]
+> Psst... There's now a [web version](https://rlgingerbiscuit.github.io/terra-rs/) of this project! Check it out if you don't want to download an executable or build from source.
+
 Just a Terraria character editor written in Rust to learn Rust.
 
 ## Screenshot
