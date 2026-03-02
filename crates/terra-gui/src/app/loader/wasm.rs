@@ -25,7 +25,7 @@ impl WasmLoader {
         &self,
         name: &str,
     ) -> anyhow::Result<Vec<T>> {
-        let url = format!("/resources/{}", name);
+        let url = format!("resources/{}", name);
         let opts = RequestInit::new();
         opts.set_method("GET");
 
@@ -45,7 +45,7 @@ impl WasmLoader {
     }
 
     async fn load_spritesheet(&self, name: &str) -> anyhow::Result<image::RgbaImage> {
-        let url = format!("/resources/{}", name);
+        let url = format!("resources/{}", name);
         let opts = RequestInit::new();
         opts.set_method("GET");
 
