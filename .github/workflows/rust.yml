@@ -4,11 +4,11 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "data/resources/**"
       - ".github/workflows/**"
-      - "terra-*/**/*.rs"
+      - "data/resources/**"
+      - "crates/**"
       - "**/Cargo.*"
-      - "!terra-res/"
+      - "!crates/terra-res/"
   pull_request:
     branches: ["main"]
 
@@ -37,9 +37,9 @@ jobs:
             files:
               - '.github/workflows/**'
               - 'data/resources/**'
-              - 'terra-*/**'
+              - 'crates/**'
               - '**/Cargo.*'
-              - '!terra-res/'
+              - '!crates/terra-res/'
 
   build:
     strategy:
