@@ -24,6 +24,7 @@ use self::{
 
 pub const GITHUB_REPO_NAME: &str = "RLGingerBiscuit/terra-rs";
 pub const GITHUB_REPO_URL: &str = "https://github.com/RLGingerBiscuit/terra-rs";
+pub const PAGES_REPO_URL: &str = "https://rlgingerbiscuit.github.io/terra-rs";
 pub const EGUI_GITHUB_REPO_NAME: &str = "emilk/egui";
 pub const EGUI_GITHUB_REPO_URL: &str = "https://github.com/emilk/egui";
 

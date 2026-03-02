@@ -12,7 +12,7 @@ use super::{
     },
     Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,
 };
-use crate::ui::UiExt;
+use crate::{app::PAGES_REPO_URL, ui::UiExt};
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
@@ -111,6 +111,12 @@ impl AppContext {
                         ui.label("GUI Library:");
                         if ui.link(EGUI_GITHUB_REPO_NAME).clicked() {
                             webbrowser::open(EGUI_GITHUB_REPO_URL).ok();
+                        }
+                        ui.end_row();
+
+                        ui.label("Web Version:");
+                        if ui.link("Try it out!").clicked() {
+                            webbrowser::open(PAGES_REPO_URL).ok();
                         }
                         ui.end_row();
                     });
