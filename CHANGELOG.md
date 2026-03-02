@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- Added web support (<https://rlgingerbiscuit.github.io/terra-rs/>)
+
 ## [1.2.1] - 2026-02-11
 
 - Added mobile toggle
