@@ -33,8 +33,9 @@ fn run_test(
     }
 
     let mut plr = Player::default();
+    let data = std::fs::read(&filepath).map_err(|e| TestError::Load(e.into()))?;
 
-    if let Err(err) = plr.load(item_meta, &filepath) {
+    if let Err(err) = plr.load(item_meta, &data) {
         return Err(TestError::Load(err));
     }
 
@@ -44,13 +45,19 @@ fn run_test(
     let out_filepath = directory.join(format!("{}.saved.plr", &chara_name));
     let out_decrypted_filepath = directory.join(format!("{}.saved.dplr", &chara_name));
 
-    if let Err(err) = plr.save(item_meta, &out_filepath) {
-        return Err(TestError::Save(err));
-    }
+    match plr.save(item_meta) {
+        Ok(data) => {
+            std::fs::write(&out_filepath, data).map_err(|e| TestError::Save(e.into()))?;
+        }
+        Err(err) => return Err(TestError::Save(err)),
+    };
 
-    if let Err(err) = plr.save_decrypted(item_meta, &out_decrypted_filepath) {
-        return Err(TestError::Save(err));
-    }
+    match plr.save_decrypted(item_meta) {
+        Ok(data) => {
+            std::fs::write(&out_decrypted_filepath, data).map_err(|e| TestError::Save(e.into()))?;
+        }
+        Err(err) => return Err(TestError::Save(err)),
+    };
 
     let mut old_file = File::open(&filepath).expect("Could not open old file");
     let mut new_file = File::open(&out_filepath).expect("Could not open new file");
