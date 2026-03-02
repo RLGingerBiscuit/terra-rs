@@ -104,13 +104,13 @@ impl AppContext {
                     Grid::new("about_grid").num_columns(2).show(ui, |ui| {
                         ui.label("Github:");
                         if ui.link(GITHUB_REPO_NAME).clicked() {
-                            open::that(GITHUB_REPO_URL).ok();
+                            webbrowser::open(GITHUB_REPO_URL).ok();
                         }
                         ui.end_row();
 
                         ui.label("GUI Library:");
                         if ui.link(EGUI_GITHUB_REPO_NAME).clicked() {
-                            open::that(EGUI_GITHUB_REPO_URL).ok();
+                            webbrowser::open(EGUI_GITHUB_REPO_URL).ok();
                         }
                         ui.end_row();
                     });

@@ -1,8 +1,7 @@
-use std::{
-    fs::File,
-    io::{Cursor, Read, Write},
-    path::Path,
-};
+#[cfg(not(target_arch = "wasm32"))]
+use std::{fs::File, path::Path};
+
+use std::io::{Cursor, Read, Write};
 
 use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 use serde_big_array::BigArray;

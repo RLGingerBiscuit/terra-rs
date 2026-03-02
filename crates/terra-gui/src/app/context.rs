@@ -217,6 +217,12 @@ impl AppContext {
             || self.show_research_browser
     }
 
+    #[cfg(target_arch = "wasm32")]
+    pub fn do_task(&mut self, task: impl 'static + Future<Output = anyhow::Result<Message>>) {
+        do_task(self.context_tx().clone(), &self.busy, task);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn do_task(
         &mut self,
         task: impl 'static + Send + Future<Output = anyhow::Result<Message>>,
@@ -291,35 +297,41 @@ impl AppContext {
                         .read()
                         .clone()
                         .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-                        .unwrap_or_else(|| DEFAULT_PLAYER_DIR.clone());
+                        .or(DEFAULT_PLAYER_DIR.clone());
 
-                    let (directory, file_name) = if player_dir.is_file() {
-                        let directory = player_dir
-                            .parent()
-                            .map(|p| p.to_path_buf())
-                            .unwrap_or_else(|| DEFAULT_PLAYER_DIR.clone());
-                        let file_name = player_dir
-                            .file_name()
-                            .map(|f| f.to_string_lossy().to_string())
-                            .unwrap_or_else(|| player.read().name.replace(' ', "_"));
-                        (directory, file_name)
-                    } else {
-                        (player_dir, player.read().name.replace(' ', "_"))
+                    let (directory, file_name) = match player_dir {
+                        Some(ref dir) if dir.is_file() => {
+                            let directory = dir
+                                .parent()
+                                .map(|p| p.to_path_buf())
+                                .or(DEFAULT_PLAYER_DIR.clone());
+                            let file_name = dir
+                                .file_name()
+                                .map(|f| f.to_string_lossy().to_string())
+                                .unwrap_or_else(|| player.read().name.replace(' ', "_"));
+                            (directory, file_name)
+                        }
+                        _ => (None, player.read().name.replace(' ', "_")),
                     };
 
-                    let Some(file) = rfd::AsyncFileDialog::new()
-                        .set_directory(directory)
+                    let mut dialog = rfd::AsyncFileDialog::new()
                         .set_file_name(file_name)
                         .add_filter("Terraria Player File", &["plr"])
                         .add_filter("Decrypted Player File", &["dplr"])
-                        .add_filter("All Files", &["*"])
-                        .pick_file()
-                        .await
-                    else {
+                        .add_filter("All Files", &["*"]);
+                    if let Some(dir) = directory {
+                        dialog = dialog.set_directory(dir);
+                    }
+
+                    let Some(file) = dialog.pick_file().await else {
                         return Ok(Message::Noop);
                     };
 
+                    #[cfg(target_arch = "wasm32")]
+                    let path = PathBuf::from(file.file_name());
+                    #[cfg(not(target_arch = "wasm32"))]
                     let path = file.path().to_path_buf();
+
                     let data = file.read().await;
 
                     if path
@@ -331,7 +343,10 @@ impl AppContext {
                         player.write().load(item_meta, &data)?;
                     };
 
-                    *player_path.write() = Some(path);
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        *player_path.write() = Some(path);
+                    }
 
                     Ok(Message::Noop)
                 });
@@ -351,34 +366,39 @@ impl AppContext {
                         .read()
                         .clone()
                         .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-                        .unwrap_or_else(|| DEFAULT_PLAYER_DIR.clone());
+                        .or(DEFAULT_PLAYER_DIR.clone());
 
-                    let (directory, file_name) = if player_dir.is_file() {
-                        let directory = player_dir
-                            .parent()
-                            .unwrap_or_else(|| DEFAULT_PLAYER_DIR.as_path())
-                            .to_path_buf();
-                        let file_name = player_dir
-                            .file_name()
-                            .map(|f| f.to_string_lossy().to_string())
-                            .unwrap_or_else(|| player.read().name.replace(' ', "_"));
-                        (directory, file_name)
-                    } else {
-                        (player_dir, player.read().name.replace(' ', "_"))
+                    let (directory, file_name) = match player_dir {
+                        Some(ref dir) if dir.is_file() => {
+                            let directory = dir
+                                .parent()
+                                .map(|p| p.to_path_buf())
+                                .or(DEFAULT_PLAYER_DIR.clone());
+                            let file_name = dir
+                                .file_name()
+                                .map(|f| f.to_string_lossy().to_string())
+                                .unwrap_or_else(|| player.read().name.replace(' ', "_"));
+                            (directory, file_name)
+                        }
+                        _ => (None, player.read().name.replace(' ', "_")),
                     };
 
-                    let Some(file) = rfd::AsyncFileDialog::new()
-                        .set_directory(directory)
+                    let mut dialog = rfd::AsyncFileDialog::new()
                         .set_file_name(file_name)
                         .add_filter("Terraria Player File", &["plr"])
                         .add_filter("Decrypted Player File", &["dplr"])
-                        .add_filter("All Files", &["*"])
-                        .save_file()
-                        .await
-                    else {
+                        .add_filter("All Files", &["*"]);
+                    if let Some(dir) = directory {
+                        dialog = dialog.set_directory(dir);
+                    }
+
+                    let Some(file) = dialog.save_file().await else {
                         return Ok(Message::Noop);
                     };
 
+                    #[cfg(target_arch = "wasm32")]
+                    let path = PathBuf::from(file.file_name());
+                    #[cfg(not(target_arch = "wasm32"))]
                     let path = file.path().to_path_buf();
 
                     let data = if path
@@ -392,7 +412,10 @@ impl AppContext {
 
                     file.write(&data).await?;
 
-                    *player_path.write() = Some(path);
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        *player_path.write() = Some(path);
+                    }
 
                     Ok(Message::Noop)
                 });
@@ -547,6 +570,7 @@ impl AppContext {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn do_task(
     tx: flume::Sender<Message>,
     busy: &Arc<RwLock<bool>>,
@@ -555,8 +579,25 @@ fn do_task(
     let busy = busy.clone();
     *busy.write() = true;
 
-    #[cfg(not(target_arch = "wasm32"))]
     tokio::spawn(async move {
+        match task.await {
+            Ok(msg) => tx.send(msg).unwrap(),
+            Err(err) => tx.send(Message::ShowError(err)).unwrap(),
+        }
+        *busy.write() = false;
+    });
+}
+
+#[cfg(target_arch = "wasm32")]
+fn do_task(
+    tx: flume::Sender<Message>,
+    busy: &Arc<RwLock<bool>>,
+    task: impl 'static + Future<Output = anyhow::Result<Message>>,
+) {
+    let busy = busy.clone();
+    *busy.write() = true;
+
+    wasm_bindgen_futures::spawn_local(async move {
         match task.await {
             Ok(msg) => tx.send(msg).unwrap(),
             Err(err) => tx.send(Message::ShowError(err)).unwrap(),

@@ -14,7 +14,6 @@ terra-core = { workspace = true }
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-time = { workspace = true }
 once_cell = { workspace = true }
 image = { workspace = true }
 flume = "0.12.0"
@@ -26,10 +25,19 @@ catppuccin-egui = { version = "5.7", default-features = false, features = [
 egui_dock = { version = "0.18", features = ["serde"] }
 rfd = "0.17.2"
 parking_lot = "0.12.5"
+webbrowser = "1.1.0"
+log = "0.4.29"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-open = "5.3.3" # TODO: find a Wasm-compatible replacement
+env_logger = "0.11.9"
 tokio = { version = "1.49", features = ["rt-multi-thread", "macros", "fs"] }
+time = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen-futures = "0.4.64"
+serde-wasm-bindgen = "0.6.5"
+web-sys = { version = "0.3.91", features = ["Window", "Navigator", "Request", "RequestInit", "Response"] }
+time = { workspace = true, features = ["wasm-bindgen"] }
 
 [[bin]]
 name = "terra-rs"

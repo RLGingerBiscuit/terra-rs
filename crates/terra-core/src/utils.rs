@@ -1,49 +1,62 @@
-use std::{
-    num::ParseIntError,
-    path::{Path, PathBuf},
-    sync::LazyLock,
-};
+use std::path::{Path, PathBuf};
 
+use std::{num::ParseIntError, sync::LazyLock};
+
+#[cfg(not(target_arch = "wasm32"))]
 use dirs_next::{data_local_dir, document_dir};
 
 use crate::{Color, Item, NANOSECONDS_PER_TICK};
 
-pub fn get_data_dir() -> PathBuf {
-    match std::env::consts::OS {
-        "windows" => document_dir().unwrap(),
-        _ => data_local_dir().unwrap(),
+#[cfg(not(target_arch = "wasm32"))]
+pub fn get_data_dir() -> Option<PathBuf> {
+    match std::env::consts::FAMILY {
+        "windows" => document_dir(),
+        _ => data_local_dir(),
     }
 }
+#[cfg(target_arch = "wasm32")]
+pub fn get_data_dir() -> Option<PathBuf> {
+    None
+}
 
-pub fn get_terraria_dir() -> PathBuf {
-    match std::env::consts::OS {
-        "windows" => get_data_dir().join("My Games"),
+#[cfg(not(target_arch = "wasm32"))]
+pub fn get_terraria_dir() -> Option<PathBuf> {
+    match std::env::consts::FAMILY {
+        "windows" => get_data_dir().map(|p| p.join("My Games")),
         _ => get_data_dir(),
     }
-    .join("Terraria")
+    .map(|p| p.join("Terraria"))
+}
+#[cfg(target_arch = "wasm32")]
+pub fn get_terraria_dir() -> Option<PathBuf> {
+    None
 }
 
-pub fn get_player_dir() -> PathBuf {
-    get_terraria_dir().join("Players")
+#[cfg(not(target_arch = "wasm32"))]
+pub fn get_player_dir() -> Option<PathBuf> {
+    get_terraria_dir().map(|p| p.join("Players"))
+}
+#[cfg(target_arch = "wasm32")]
+pub fn get_player_dir() -> Option<PathBuf> {
+    None
 }
 
-pub fn get_player_dir_or_default(player_path: &Path) -> PathBuf {
+pub fn get_player_dir_or_default(player_path: &Path) -> Option<PathBuf> {
     let parent = player_path.parent();
 
     let fallback = || {
         let player_dir = get_player_dir();
 
-        if player_dir.exists() {
-            player_dir
-        } else {
-            get_data_dir()
+        match (player_dir.clone(), player_dir.is_some_and(|d| d.exists())) {
+            (Some(dir), true) => Some(dir),
+            _ => get_data_dir(),
         }
     };
 
     match parent {
         Some(directory) => {
             if directory.exists() {
-                directory.to_path_buf()
+                Some(directory.to_path_buf())
             } else {
                 fallback()
             }

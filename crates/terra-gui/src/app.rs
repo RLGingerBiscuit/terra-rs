@@ -14,7 +14,7 @@ use egui_dock::{DockArea, DockState};
 use flume::{Receiver, Sender};
 use once_cell::sync::Lazy;
 
-use terra_core::{utils, Player};
+use terra_core::Player;
 
 use self::{
     context::{AppContext, Message},
@@ -34,7 +34,18 @@ static SHORTCUT_LOAD: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAN
 static SHORTCUT_SAVE: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::S);
 static SHORTCUT_EXIT: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::Q);
 
-static DEFAULT_PLAYER_DIR: Lazy<PathBuf> = Lazy::new(utils::get_player_dir);
+#[cfg(target_arch = "wasm32")]
+fn get_player_dir() -> Option<PathBuf> {
+    // TODO: see if we can't find out a way to get the dir here
+    None
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn get_player_dir() -> Option<PathBuf> {
+    terra_core::utils::get_player_dir()
+}
+
+static DEFAULT_PLAYER_DIR: Lazy<Option<PathBuf>> = Lazy::new(get_player_dir);
 
 static DEFAULT_PLAYER: Lazy<Player> = Lazy::new(Player::default);
 

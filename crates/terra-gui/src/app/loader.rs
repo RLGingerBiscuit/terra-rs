@@ -18,6 +18,21 @@ pub fn platform_loader() -> Arc<impl Loader> {
     Arc::new(native::NativeLoader::new())
 }
 
+#[cfg(target_arch = "wasm32")]
+pub trait Loader
+where
+    Self: Send + Sync,
+{
+    fn load_prefixes(&self) -> impl Future<Output = anyhow::Result<Vec<PrefixMeta>>>;
+    fn load_items(&self) -> impl Future<Output = anyhow::Result<Vec<ItemMeta>>>;
+    fn load_buffs(&self) -> impl Future<Output = anyhow::Result<Vec<BuffMeta>>>;
+    fn load_spritesheet(
+        &self,
+        name: &str,
+    ) -> impl Future<Output = anyhow::Result<image::RgbaImage>>;
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub trait Loader
 where
     Self: Send + Sync,
