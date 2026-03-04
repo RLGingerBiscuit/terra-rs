@@ -4,12 +4,12 @@ var filesToCache = [
   "./index.html",
   "./terra-rs.js",
   "./terra-rs_bg.wasm",
-  "./buffs.json",
-  "./buffs.png",
-  "./icons.png",
-  "./items.json",
-  "./items.png",
-  "./prefixes.json",
+  "./resources/buffs.json",
+  "./resources/buffs.png",
+  "./resources/icons.png",
+  "./resources/items.json",
+  "./resources/items.png",
+  "./resources/prefixes.json",
 ];
 
 /* Start the service worker and cache all of the app's content */
