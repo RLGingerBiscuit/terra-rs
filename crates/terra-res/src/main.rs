@@ -7,7 +7,7 @@ use std::{
 };
 
 use fs_extra::dir::{
-    copy as copy_dir, create_all as create_dir_all, CopyOptions as DirCopyOptions,
+    CopyOptions as DirCopyOptions, copy as copy_dir, create_all as create_dir_all,
 };
 
 use anyhow::Result;
@@ -23,7 +23,7 @@ mod truthy;
 use truthy::TruthyOption;
 
 const ITEM_DATA_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Module:Iteminfo/luadata";
-const BUFF_INFO_URL:&str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Template:GetBuffInfo";
+const BUFF_INFO_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Template:GetBuffInfo";
 const PREFIX_IDS_URL: &str = "https://terraria.wiki.gg/api.php?action=query&prop=revisions&format=json&rvlimit=1&rvslots=*&rvprop=content&titles=Prefix_IDs";
 const TRAPPED_CHEST_DOT: &str = "trapped_chest_dot.png";
 
@@ -318,10 +318,10 @@ fn get_item_type(lua_item: &mlua::Table) -> Option<ItemType> {
         ("vanity", ItemType::Vanity),
         ("vanity", ItemType::Vanity),
     ] {
-        if let Ok(b) = lua_item.get(name) {
-            if b {
-                return Some(item_type);
-            }
+        if let Ok(b) = lua_item.get(name)
+            && b
+        {
+            return Some(item_type);
         }
     }
 
@@ -332,10 +332,10 @@ fn get_item_type(lua_item: &mlua::Table) -> Option<ItemType> {
         ("bodySlot", ItemType::BodyArmor),
         ("legsSlot", ItemType::LegArmor),
     ] {
-        if let Ok(n) = lua_item.get::<i32>(name) {
-            if n >= 0 {
-                return Some(item_type);
-            }
+        if let Ok(n) = lua_item.get::<i32>(name)
+            && n >= 0
+        {
+            return Some(item_type);
         }
     }
 

@@ -1,5 +1,5 @@
 use egui::{RichText, Ui};
-use terra_core::{utils, ItemMeta, ItemType, PrefixMeta, STRANGE_BREW_ID, STRANGE_BREW_MAX_HEAL};
+use terra_core::{ItemMeta, ItemType, PrefixMeta, STRANGE_BREW_ID, STRANGE_BREW_MAX_HEAL, utils};
 
 use super::{item_name, item_slot::ItemSlotOptions};
 
@@ -73,10 +73,10 @@ impl<'a> ItemTooltip<'a> {
         }
 
         ui.small(format!("Id: {}", item.id));
-        if let Some(prefix) = prefix {
-            if prefix.id != 0 {
-                ui.small(format!("Prefix Id: {}", prefix.id));
-            }
+        if let Some(prefix) = prefix
+            && prefix.id != 0
+        {
+            ui.small(format!("Prefix Id: {}", prefix.id));
         }
 
         if self.options.favourited {
@@ -152,28 +152,28 @@ impl<'a> ItemTooltip<'a> {
             ui.label("Vanity Item");
         }
 
-        if let Some(defense) = item.defense {
-            if defense > 0 {
-                ui.label(format!("{} defense", defense));
-            }
+        if let Some(defense) = item.defense
+            && defense > 0
+        {
+            ui.label(format!("{} defense", defense));
         }
 
-        if let Some(pickaxe_power) = item.pickaxe_power {
-            if pickaxe_power > 0 {
-                ui.label(format!("{}% pickaxe power", pickaxe_power));
-            }
+        if let Some(pickaxe_power) = item.pickaxe_power
+            && pickaxe_power > 0
+        {
+            ui.label(format!("{}% pickaxe power", pickaxe_power));
         }
 
-        if let Some(axe_power) = item.axe_power {
-            if axe_power > 0 {
-                ui.label(format!("{}% axe power", axe_power * 5));
-            }
+        if let Some(axe_power) = item.axe_power
+            && axe_power > 0
+        {
+            ui.label(format!("{}% axe power", axe_power * 5));
         }
 
-        if let Some(hammer_power) = item.hammer_power {
-            if hammer_power > 0 {
-                ui.label(format!("{}% hammer power", hammer_power));
-            }
+        if let Some(hammer_power) = item.hammer_power
+            && hammer_power > 0
+        {
+            ui.label(format!("{}% hammer power", hammer_power));
         }
 
         if let Some(range_boost) = item.range_boost {

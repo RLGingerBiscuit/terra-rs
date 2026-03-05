@@ -4,8 +4,8 @@ members = ["crates/terra-core", "crates/terra-gui", "crates/terra-res", "crates/
 
 [workspace.package]
 repository = "https://github.com/RLGingerBiscuit/terra-rs"
-edition = "2021"
-rust-version = "1.89"
+edition = "2024"
+rust-version = "1.94"
 version = "1.2.1"
 authors = ["Ginger Biscuit <rlgingerbiscuit@proton.me>"]
 license = "MIT"

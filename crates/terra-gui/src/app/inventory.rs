@@ -6,7 +6,7 @@ pub mod prefix_tooltip;
 pub mod slot;
 
 use egui::{Response, Sense, Ui, Vec2, Widget};
-use terra_core::{meta::Meta, utils, Buff, BuffMeta, Item, ItemMeta, Player, PrefixMeta};
+use terra_core::{Buff, BuffMeta, Item, ItemMeta, Player, PrefixMeta, meta::Meta, utils};
 
 use self::{
     buff_slot::{BuffSlot, BuffSlotOptions},
@@ -16,7 +16,7 @@ use self::{
     prefix_tooltip::{PrefixTooltip, PrefixTooltipOptions},
     slot::Slot,
 };
-use super::{context::AppContext, Message};
+use super::{Message, context::AppContext};
 use crate::ui::{ClickableFrame, UiExt};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -91,20 +91,19 @@ pub fn selected_buff(buff: SelectedBuff, player: &mut Player) -> &mut Buff {
 }
 
 pub fn item_name(name: &str, prefix_meta: Option<&PrefixMeta>) -> String {
-    if let Some(prefix_meta) = prefix_meta {
-        if prefix_meta.id() != 0 {
-            return format!("{} {}", prefix_meta.name(), name);
-        }
+    if let Some(prefix_meta) = prefix_meta
+        && prefix_meta.id() != 0
+    {
+        return format!("{} {}", prefix_meta.name(), name);
     }
 
     name.to_owned()
 }
 
 pub fn buff_name(name: &str, time: Option<i32>) -> String {
-    if let Some(time) = time {
-        format!("{} ({})", name, utils::ticks_to_string(time))
-    } else {
-        name.to_owned()
+    match time {
+        Some(time) => format!("{} ({})", name, utils::ticks_to_string(time)),
+        None => name.to_owned(),
     }
 }
 
