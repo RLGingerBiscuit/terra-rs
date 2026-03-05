@@ -1,4 +1,8 @@
-use std::{fs::File, io::Read, path::PathBuf};
+use std::{
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 use terra_core::{BuffMeta, ItemMeta, Player, PrefixMeta};
 
@@ -18,8 +22,8 @@ const VERSIONS: [usize; 19] = [
 
 fn run_test(
     chara_name: &String,
-    directory: &PathBuf,
-    item_meta: &Vec<ItemMeta>,
+    directory: &Path,
+    item_meta: &[ItemMeta],
 ) -> anyhow::Result<(), TestError> {
     let filepath = directory.join(format!("{}.plr", chara_name));
 
@@ -65,19 +69,13 @@ fn run_test(
     let mut old_buf = [0; 10000];
     let mut new_buf = [0; 10000];
 
-    loop {
-        if let Ok(r1) = old_file.read(&mut old_buf) {
-            if r1 > 0 {
-                if let Ok(r2) = new_file.read(&mut new_buf) {
-                    if r1 == r2 {
-                        if old_buf == new_buf {
-                            continue;
-                        }
-                    }
-                    return Err(TestError::Comparison);
-                } else {
-                    break;
+    while let Ok(r1) = old_file.read(&mut old_buf) {
+        if r1 > 0 {
+            if let Ok(r2) = new_file.read(&mut new_buf) {
+                if r1 == r2 && old_buf == new_buf {
+                    continue;
                 }
+                return Err(TestError::Comparison);
             } else {
                 break;
             }

@@ -253,44 +253,11 @@ fn trapped_chests() -> HashMap<i32, i32> {
 }
 
 fn forbidden_items() -> Vec<i32> {
-    let mut forbidden_items = Vec::new();
-    forbidden_items.push(0);
-    forbidden_items.push(2772);
-    forbidden_items.push(2773);
-    forbidden_items.push(2775);
-    forbidden_items.push(2777);
-    forbidden_items.push(2778);
-    forbidden_items.push(2780);
-    forbidden_items.push(2782);
-    forbidden_items.push(2783);
-    forbidden_items.push(2785);
-    forbidden_items.push(2881);
-    forbidden_items.push(2903);
-    forbidden_items.push(2989);
-    forbidden_items.push(2990);
-    forbidden_items.push(2991);
-    forbidden_items.push(3331);
-    forbidden_items.push(3398);
-    forbidden_items.push(3404);
-    forbidden_items.push(3462);
-    forbidden_items.push(3463);
-    forbidden_items.push(3465);
-    forbidden_items.push(3705);
-    forbidden_items.push(3706);
-    forbidden_items.push(3847);
-    forbidden_items.push(3848);
-    forbidden_items.push(3849);
-    forbidden_items.push(3850);
-    forbidden_items.push(3851);
-    forbidden_items.push(3853);
-    forbidden_items.push(3861);
-    forbidden_items.push(3862);
-    forbidden_items.push(3978);
-    forbidden_items.push(4058);
-    forbidden_items.push(4143);
-    forbidden_items.push(4722);
-    forbidden_items.push(5013);
-    forbidden_items
+    vec![
+        0, 2772, 2773, 2775, 2777, 2778, 2780, 2782, 2783, 2785, 2881, 2903, 2989, 2990, 2991,
+        3331, 3398, 3404, 3462, 3463, 3465, 3705, 3706, 3847, 3848, 3849, 3850, 3851, 3853, 3861,
+        3862, 3978, 4058, 4143, 4722, 5013,
+    ]
 }
 
 fn expand_templates(
@@ -305,7 +272,7 @@ fn expand_templates(
     }
 
     let expanded = template
-        .replace_all(&s, |cap: &Captures| {
+        .replace_all(s, |cap: &Captures| {
             if cap[1].starts_with("NPC") {
                 if cap[2].to_owned() == "None" {
                     "".to_owned()
@@ -351,7 +318,7 @@ fn get_item_type(lua_item: &mlua::Table) -> Option<ItemType> {
         ("vanity", ItemType::Vanity),
         ("vanity", ItemType::Vanity),
     ] {
-        if let Some(b) = lua_item.get(name).ok() {
+        if let Ok(b) = lua_item.get(name) {
             if b {
                 return Some(item_type);
             }
@@ -365,7 +332,7 @@ fn get_item_type(lua_item: &mlua::Table) -> Option<ItemType> {
         ("bodySlot", ItemType::BodyArmor),
         ("legsSlot", ItemType::LegArmor),
     ] {
-        if let Some(n) = lua_item.get::<i32>(name).ok() {
+        if let Ok(n) = lua_item.get::<i32>(name) {
             if n >= 0 {
                 return Some(item_type);
             }
@@ -462,7 +429,7 @@ fn get_item_meta(
                     .as_str()
                     .unwrap()
                     .lines()
-                    .map(|s| expand_templates(&s, &template, &game, &items, &npcs))
+                    .map(|s| expand_templates(s, template, game, items, npcs))
                     .collect::<Vec<_>>(),
             )
         };
@@ -577,7 +544,7 @@ fn get_buff_meta(
 
     let count = {
         let count_regex = Regex::new(r"-->\|__buff:count\|(\d+)<!--")?;
-        let Some(count_match) = count_regex.captures(text).map(|x| x.get(1)).flatten() else {
+        let Some(count_match) = count_regex.captures(text).and_then(|x| x.get(1)) else {
             panic!("Couldn't find buff count!");
         };
         count_match.as_str().parse::<usize>()?
@@ -632,7 +599,7 @@ fn get_buff_meta(
                             .as_str()
                             .unwrap()
                             .lines()
-                            .map(|s| expand_templates(&s, template, game, items, npcs))
+                            .map(|s| expand_templates(s, template, game, items, npcs))
                             .collect::<Vec<_>>()
                             .into_iter()
                             .map(|l| l.into())
@@ -985,21 +952,21 @@ fn main() -> Result<()> {
     let mut item_file = OpenOptions::new()
         .create(true)
         .write(true)
-        .append(false)
+        .truncate(true)
         .open(gen_fol.join("items.json"))?;
     let item_writer = BufWriter::new(&mut item_file);
 
     let mut buff_file = OpenOptions::new()
         .create(true)
         .write(true)
-        .append(false)
+        .truncate(true)
         .open(gen_fol.join("buffs.json"))?;
     let buff_writer = BufWriter::new(&mut buff_file);
 
     let mut prefix_file = OpenOptions::new()
         .create(true)
         .write(true)
-        .append(false)
+        .truncate(true)
         .open(gen_fol.join("prefixes.json"))?;
     let prefix_writer = BufWriter::new(&mut prefix_file);
 
