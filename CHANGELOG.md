@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.0] - 2026-03-14
 
 - Added web support (<https://rlgingerbiscuit.github.io/terra-rs/>)
 - Added support for Terraria 1.4.5.6
