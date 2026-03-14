@@ -1,16 +1,16 @@
 use egui::{
-    vec2, Align2, CollapsingHeader, Grid, RichText, ScrollArea, TextStyle, Ui, Vec2, WidgetText,
+    Align2, CollapsingHeader, Grid, RichText, ScrollArea, TextStyle, Ui, Vec2, WidgetText, vec2,
 };
 
 use super::{
+    EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL, Message,
     context::AppContext,
     inventory::{
+        ItemGroup,
         buff_slot::{self, BuffSlotOptions},
         item_slot::{self, ItemSlotOptions},
         prefix_tooltip::PrefixTooltipOptions,
-        ItemGroup,
     },
-    Message, EGUI_GITHUB_REPO_NAME, EGUI_GITHUB_REPO_URL, GITHUB_REPO_NAME, GITHUB_REPO_URL,
 };
 use crate::{app::PAGES_REPO_URL, ui::UiExt};
 
@@ -177,55 +177,48 @@ impl AppContext {
                     return;
                 };
 
-                if !search_term.is_empty() {
-                    let search_term_lower = search_term.to_lowercase();
-                    let filtered = meta
-                        .iter()
-                        .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower))
-                        .filter(|meta| {
-                            meta.forbidden.is_none() || meta.forbidden.is_some_and(|f| !f)
-                        });
+                let search_term_lower = search_term.to_lowercase();
+                let filtered = meta
+                    .iter()
+                    .filter(|meta| {
+                        search_term.is_empty()
+                            || meta.name.to_lowercase().contains(&search_term_lower)
+                    })
+                    .filter(|meta| meta.forbidden.is_none_or(|x| !x));
 
-                    let total_rows = ((filtered.clone().count() as f32)
-                        / (ITEM_BROWSER_COLS as f32))
-                        .ceil() as usize;
+                let total_rows =
+                    ((filtered.clone().count() / ITEM_BROWSER_COLS) as f32).ceil() as usize;
 
-                    ScrollArea::new([false, true])
-                        .id_salt("item_browser_scrollarea")
-                        .show_rows(ui, item_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
-                            Grid::new("item_browser_grid")
-                                .num_columns(ITEM_BROWSER_COLS)
-                                .show(ui, |ui| {
-                                    let mut filtered =
-                                        filtered.skip(row_range.start * ITEM_BROWSER_COLS);
+                ScrollArea::new([false, true])
+                    .id_salt("item_browser_scrollarea")
+                    .show_rows(ui, item_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
+                        Grid::new("item_browser_grid")
+                            .num_columns(ITEM_BROWSER_COLS)
+                            .show(ui, |ui| {
+                                let mut iter = filtered.skip(row_range.start * ITEM_BROWSER_COLS);
 
-                                    for i in (row_range.start * ITEM_BROWSER_COLS)
-                                        ..(row_range.end * ITEM_BROWSER_COLS)
-                                    {
-                                        let Some(meta) = filtered.next() else {
-                                            continue;
-                                        };
+                                for i in (row_range.start * ITEM_BROWSER_COLS)
+                                    ..(row_range.end * ITEM_BROWSER_COLS)
+                                {
+                                    let Some(meta) = iter.next() else {
+                                        continue;
+                                    };
 
-                                        let options = ItemSlotOptions::from_meta(
-                                            meta,
-                                            ItemGroup::ItemBrowser,
-                                        )
-                                        .tooltip_on_hover(true);
+                                    let options =
+                                        ItemSlotOptions::from_meta(meta, ItemGroup::ItemBrowser)
+                                            .tooltip_on_hover(true);
 
-                                        let response = self.render_item_slot(ui, options);
-                                        if response.clicked() {
-                                            self.send_context_msg(Message::SetCurrentItemId(
-                                                meta.id,
-                                            ));
-                                        }
-
-                                        if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
-                                            ui.end_row();
-                                        }
+                                    let response = self.render_item_slot(ui, options);
+                                    if response.clicked() {
+                                        self.send_context_msg(Message::SetCurrentItemId(meta.id));
                                     }
-                                });
-                        });
-                }
+
+                                    if i % ITEM_BROWSER_COLS == ITEM_BROWSER_COLS - 1 {
+                                        ui.end_row();
+                                    }
+                                }
+                            });
+                    });
 
                 ui.vertical_right_justified(|ui| {
                     if ui.button("Close").clicked() {
@@ -256,49 +249,44 @@ impl AppContext {
                     return;
                 };
 
-                if !search_term.is_empty() {
-                    let search_term_lower = search_term.to_lowercase();
-                    let filtered = meta
-                        .iter()
-                        .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower));
+                let search_term_lower = search_term.to_lowercase();
+                let filtered = meta.iter().filter(|meta| {
+                    search_term.is_empty() || meta.name.to_lowercase().contains(&search_term_lower)
+                });
 
-                    let total_rows = ((filtered.clone().count() as f32)
-                        / (BUFF_BROWSER_COLS as f32))
-                        .ceil() as usize;
+                let total_rows =
+                    ((filtered.clone().count() / BUFF_BROWSER_COLS) as f32).ceil() as usize;
 
-                    ScrollArea::new([false, true])
-                        .id_salt("buff_browser_scrollarea")
-                        .show_rows(ui, buff_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
-                            Grid::new("buff_browser_grid")
-                                .num_columns(BUFF_BROWSER_COLS)
-                                .show(ui, |ui| {
-                                    let mut filtered =
-                                        filtered.skip(row_range.start * BUFF_BROWSER_COLS);
+                ScrollArea::new([false, true])
+                    .id_salt("buff_browser_scrollarea")
+                    .show_rows(ui, buff_slot::SLOT_SIZE.y, total_rows, |ui, row_range| {
+                        Grid::new("buff_browser_grid")
+                            .num_columns(BUFF_BROWSER_COLS)
+                            .show(ui, |ui| {
+                                let mut filtered =
+                                    filtered.skip(row_range.start * BUFF_BROWSER_COLS);
 
-                                    for i in (row_range.start * BUFF_BROWSER_COLS)
-                                        ..(row_range.end * BUFF_BROWSER_COLS)
-                                    {
-                                        let Some(meta) = filtered.next() else {
-                                            continue;
-                                        };
+                                for i in (row_range.start * BUFF_BROWSER_COLS)
+                                    ..(row_range.end * BUFF_BROWSER_COLS)
+                                {
+                                    let Some(meta) = filtered.next() else {
+                                        continue;
+                                    };
 
-                                        let options =
-                                            BuffSlotOptions::from_meta(meta).tooltip_on_hover(true);
+                                    let options =
+                                        BuffSlotOptions::from_meta(meta).tooltip_on_hover(true);
 
-                                        let response = self.render_buff_slot(ui, options);
-                                        if response.clicked() {
-                                            self.send_context_msg(Message::SetCurrentBuffId(
-                                                meta.id,
-                                            ));
-                                        }
-
-                                        if i % BUFF_BROWSER_COLS == BUFF_BROWSER_COLS - 1 {
-                                            ui.end_row();
-                                        }
+                                    let response = self.render_buff_slot(ui, options);
+                                    if response.clicked() {
+                                        self.send_context_msg(Message::SetCurrentBuffId(meta.id));
                                     }
-                                });
-                        });
-                }
+
+                                    if i % BUFF_BROWSER_COLS == BUFF_BROWSER_COLS - 1 {
+                                        ui.end_row();
+                                    }
+                                }
+                            });
+                    });
 
                 ui.vertical_right_justified(|ui| {
                     if ui.button("Close").clicked() {
@@ -336,60 +324,56 @@ impl AppContext {
                         return;
                     };
 
-                    if !search_term.is_empty() {
-                        let search_term_lower = search_term.to_lowercase();
-                        let filtered = meta
-                            .iter()
-                            .filter(|meta| meta.name.to_lowercase().contains(&search_term_lower));
+                    let search_term_lower = search_term.to_lowercase();
+                    let filtered = meta.iter().filter(|meta| {
+                        search_term.is_empty()
+                            || meta.name.to_lowercase().contains(&search_term_lower)
+                    });
 
-                        let total_rows = ((filtered.clone().count() as f32)
-                            / (PREFIX_BROWSER_COLS as f32))
-                            .ceil() as usize;
+                    let total_rows =
+                        ((filtered.clone().count() / PREFIX_BROWSER_COLS) as f32).ceil() as usize;
 
-                        ScrollArea::new([false, true])
-                            .id_salt("prefix_browser_scrollarea")
-                            .show_rows(
-                                ui,
-                                ui.text_style_height(&TextStyle::Body),
-                                total_rows,
-                                |ui, row_range| {
-                                    Grid::new("prefix_browser_grid")
-                                        .num_columns(PREFIX_BROWSER_COLS)
-                                        .show(ui, |ui| {
-                                            let mut filtered = filtered
-                                                .skip(row_range.start * PREFIX_BROWSER_COLS);
+                    ScrollArea::new([false, true])
+                        .id_salt("prefix_browser_scrollarea")
+                        .show_rows(
+                            ui,
+                            ui.text_style_height(&TextStyle::Body),
+                            total_rows,
+                            |ui, row_range| {
+                                Grid::new("prefix_browser_grid")
+                                    .num_columns(PREFIX_BROWSER_COLS)
+                                    .show(ui, |ui| {
+                                        let mut filtered =
+                                            filtered.skip(row_range.start * PREFIX_BROWSER_COLS);
 
-                                            for i in (row_range.start * PREFIX_BROWSER_COLS)
-                                                ..(row_range.end * PREFIX_BROWSER_COLS)
-                                            {
-                                                let Some(meta) = filtered.next() else {
-                                                    continue;
-                                                };
+                                        for i in (row_range.start * PREFIX_BROWSER_COLS)
+                                            ..(row_range.end * PREFIX_BROWSER_COLS)
+                                        {
+                                            let Some(meta) = filtered.next() else {
+                                                continue;
+                                            };
 
-                                                let response = ui.button(meta.name.as_ref());
+                                            let response = ui.button(meta.name.as_ref());
 
-                                                if response.clicked() {
-                                                    self.send_context_msg(
-                                                        Message::SetCurrentPrefixId(meta.id),
-                                                    );
-                                                }
-
-                                                response.on_hover_ui(|ui| {
-                                                    let options =
-                                                        PrefixTooltipOptions::new().id(meta.id);
-                                                    self.render_prefix_tooltip(ui, options);
-                                                });
-
-                                                if i % PREFIX_BROWSER_COLS
-                                                    == PREFIX_BROWSER_COLS - 1
-                                                {
-                                                    ui.end_row();
-                                                }
+                                            if response.clicked() {
+                                                self.send_context_msg(Message::SetCurrentPrefixId(
+                                                    meta.id,
+                                                ));
                                             }
-                                        });
-                                },
-                            );
-                    }
+
+                                            response.on_hover_ui(|ui| {
+                                                let options =
+                                                    PrefixTooltipOptions::new().id(meta.id);
+                                                self.render_prefix_tooltip(ui, options);
+                                            });
+
+                                            if i % PREFIX_BROWSER_COLS == PREFIX_BROWSER_COLS - 1 {
+                                                ui.end_row();
+                                            }
+                                        }
+                                    });
+                            },
+                        );
 
                     ui.vertical_right_justified(|ui| {
                         if ui.button("Close").clicked() {

@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- Show all items/buffs/prefixes in browsers when nothing's searched
+
 ## [1.3.1] - 2026-03-14
 
 - Hotfix

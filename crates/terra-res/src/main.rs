@@ -636,7 +636,7 @@ fn get_buff_meta(
         let [x, y, _, _] = offsets.get(&0).unwrap_or(&[-1, -1, 0, 0]);
         buff_meta.push(BuffMeta {
             id: 0,
-            name: SharedString::default(),
+            name: SharedString::new("None"),
             internal_name: SharedString::new("None"),
             x: *x,
             y: *y,
@@ -715,7 +715,7 @@ fn get_prefix_meta(
 
     prefix_meta.push(PrefixMeta {
         id: 0,
-        name: SharedString::default(),
+        name: SharedString::new("None"),
         internal_name: SharedString::new("None"),
     });
 
