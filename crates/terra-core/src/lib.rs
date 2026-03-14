@@ -24,7 +24,7 @@ pub const ENCRYPTION_BYTES: &[u8; 16] = b"h\x003\x00y\x00_\x00g\x00U\x00y\x00Z\x
 // The mobile (and possibly console) version of the game aligns the file to 4KB.
 pub const MOBILE_FILE_ALIGNMENT: usize = 4000;
 
-pub const CURRENT_VERSION: i32 = 318;
+pub const CURRENT_VERSION: i32 = 319;
 
 /// C#'s DateTime uses Ticks, so here is the conversion factor
 pub const NANOSECONDS_PER_TICK: i128 = 100;
@@ -65,7 +65,7 @@ pub const MALE_SKIN_VARIANTS: [i32; 6] = [0, 1, 2, 3, 8, 10];
 // TODO: skin variant 7 should be saved as skin variant 9 (I think)
 pub const SKIN_VARIANT_COUNT: u8 = 11;
 
-pub const HAIR_STYLE_COUNT: i32 = 165;
+pub const HAIR_STYLE_COUNT: i32 = 228;
 pub const HAIR_DYE_COUNT: u8 = 13;
 
 pub const BUFF_SPRITE_SIZE: usize = 16;

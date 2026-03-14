@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Added web support (<https://rlgingerbiscuit.github.io/terra-rs/>)
+- Added support for Terraria 1.4.5.6
 
 ## [1.2.1] - 2026-02-11
 
