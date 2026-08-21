@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-22
+
 - Show all items/buffs/prefixes in browsers when nothing's searched
 - Added support for Terraria 1.4.5.7
 - Fix prefix names and tooltip generation
