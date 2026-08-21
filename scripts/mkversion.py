@@ -60,7 +60,7 @@ def main():
         name = current[0]
         version = current[1]
 
-        map += f"""    m.insert("{name}", {version});
+        map += f"""    v.push(("{name}", {version}));
 """
 
         if version == next_version:
