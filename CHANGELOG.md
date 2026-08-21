@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Show all items/buffs/prefixes in browsers when nothing's searched
+- Added support for Terraria 1.4.5.7
+- Fix prefix names and tooltip generation
 
 ## [1.3.1] - 2026-03-14
 
