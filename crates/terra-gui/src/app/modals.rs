@@ -186,8 +186,9 @@ impl AppContext {
                     })
                     .filter(|meta| meta.forbidden.is_none_or(|x| !x));
 
-                let total_rows =
-                    ((filtered.clone().count() / ITEM_BROWSER_COLS) as f32).ceil() as usize;
+                let total_rows = (((filtered.clone().count() + ITEM_BROWSER_COLS - 1)
+                    / ITEM_BROWSER_COLS) as f32)
+                    .ceil() as usize;
 
                 ScrollArea::new([false, true])
                     .id_salt("item_browser_scrollarea")
@@ -254,8 +255,9 @@ impl AppContext {
                     search_term.is_empty() || meta.name.to_lowercase().contains(&search_term_lower)
                 });
 
-                let total_rows =
-                    ((filtered.clone().count() / BUFF_BROWSER_COLS) as f32).ceil() as usize;
+                let total_rows = (((filtered.clone().count() + BUFF_BROWSER_COLS - 1)
+                    / BUFF_BROWSER_COLS) as f32)
+                    .ceil() as usize;
 
                 ScrollArea::new([false, true])
                     .id_salt("buff_browser_scrollarea")
@@ -330,8 +332,9 @@ impl AppContext {
                             || meta.name.to_lowercase().contains(&search_term_lower)
                     });
 
-                    let total_rows =
-                        ((filtered.clone().count() / PREFIX_BROWSER_COLS) as f32).ceil() as usize;
+                    let total_rows = (((filtered.clone().count() + PREFIX_BROWSER_COLS - 1)
+                        / PREFIX_BROWSER_COLS) as f32)
+                        .ceil() as usize;
 
                     ScrollArea::new([false, true])
                         .id_salt("prefix_browser_scrollarea")
