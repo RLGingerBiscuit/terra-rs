@@ -267,44 +267,53 @@ fn expand_templates(
     items: &serde_json::Value,
     npcs: &serde_json::Value,
 ) -> String {
+    const MAX_PASSES: usize = 4;
+
     if s == "NOTHING" {
         return "".to_owned();
     }
 
-    let expanded = template
-        .replace_all(s, |cap: &Captures| {
-            if cap[1].starts_with("NPC") {
-                if cap[2].to_owned() == "None" {
-                    "".to_owned()
-                } else {
-                    npcs[&cap[1]][&cap[2]].as_str().unwrap().to_owned()
-                }
-            } else if cap[1].starts_with("Buff") {
-                game[&cap[1]][&cap[2]]
-                    .as_str()
-                    .unwrap_or_else(|| {
-                        println!("Warning: {} not found!", &cap[0]);
-                        &cap[0][2..{ cap.len() - 1 }]
-                    })
-                    .to_owned()
-            } else if cap[1].contains("Item") || cap[1].starts_with("PaintingArtist") {
-                items[&cap[1]][&cap[2]].as_str().unwrap().to_owned()
-            } else {
-                println!("Warning: {} not found!", &cap[0]);
-                "".to_owned()
-            }
-        })
-        .to_string();
+    let mut out = s.to_owned();
+    let mut passes = 0;
+    while template.is_match(&out) {
+        passes += 1;
+        if passes > MAX_PASSES {
+            eprintln!("Warning: template expansion never settled: {out}");
+            break;
+        }
 
-    if expanded.contains(r"{$}") {
-        expand_templates(&expanded, template, game, items, npcs)
-    } else {
-        expanded
-            .replace("{InputTrigger_UseOrAttack}", "Left Click")
-            .replace("{InputTrigger_InteractWithTile}", "Right Click")
-            .replace("{InputTrigger_Grapple}", "E")
-            .replace("{InputTrigger_ToggleOrOpen}", "Right Click")
+        let expanded = template.replace_all(&out, |cap: &Captures| {
+            let (scope, key) = (&cap[1], &cap[2]);
+
+            let source = if scope.starts_with("NPC") {
+                if key == "None" {
+                    return "".to_owned();
+                }
+                npcs
+            } else if scope.starts_with("Buff") {
+                game
+            } else if scope.contains("Item") || scope.starts_with("PaintingArtist") {
+                items
+            } else {
+                eprintln!("Warning: unknown scope in {}", &cap[0]);
+                return format!("{scope}.{key}");
+            };
+
+            source[scope][key]
+                .as_str()
+                .map(str::to_owned)
+                .unwrap_or_else(|| {
+                    eprintln!("Warning: {} not found!", &cap[0]);
+                    format!("{scope}.{key}")
+                })
+        });
+        out = expanded.into_owned();
     }
+
+    out.replace("{InputTrigger_UseOrAttack}", "Left Click")
+        .replace("{InputTrigger_InteractWithTile}", "Right Click")
+        .replace("{InputTrigger_Grapple}", "E")
+        .replace("{InputTrigger_ToggleOrOpen}", "Right Click")
 }
 
 fn get_item_type(lua_item: &mlua::Table) -> Option<ItemType> {
@@ -421,18 +430,14 @@ fn get_item_meta(
         let range_boost = lua_item.get("tileBoost").truthy_option();
         let sacrifices = lua_item.get("sacrifices").unwrap_or(1);
 
-        let tooltip = if items["ItemTooltip"][&internal_name].is_null() {
-            None
-        } else {
-            Some(
-                items["ItemTooltip"][&internal_name]
-                    .as_str()
-                    .unwrap()
+        let tooltip = items["ItemTooltip"][&internal_name]
+            .as_str()
+            .map(|tooltip| {
+                expand_templates(tooltip, template, game, items, npcs)
                     .lines()
-                    .map(|s| expand_templates(s, template, game, items, npcs))
-                    .collect::<Vec<_>>(),
-            )
-        };
+                    .map(|s| s.to_string().into())
+                    .collect::<Vec<_>>()
+            });
 
         let forbidden = if forbidden_items.contains(&id) {
             Some(true)
@@ -490,7 +495,7 @@ fn get_item_meta(
             fishing_bait,
             range_boost,
             sacrifices,
-            tooltip: tooltip.map(|t| t.into_iter().map(|l| l.into()).collect_vec()),
+            tooltip,
             forbidden,
             consumes_tile,
             is_material,
@@ -586,26 +591,13 @@ fn get_buff_meta(
         match field {
             "iname" => {
                 buff.internal_name = SharedString::new(value);
-                buff.name = if game["BuffName"][value].is_null() {
-                    SharedString::new(value)
-                } else {
-                    SharedString::new(game["BuffName"][value].as_str().unwrap())
-                };
-                buff.tooltip = if game["BuffDescription"][value].is_null() {
-                    None
-                } else {
-                    Some(
-                        game["BuffDescription"][value]
-                            .as_str()
-                            .unwrap()
-                            .lines()
-                            .map(|s| expand_templates(s, template, game, items, npcs))
-                            .collect::<Vec<_>>()
-                            .into_iter()
-                            .map(|l| l.into())
-                            .collect(),
-                    )
-                };
+                buff.name = SharedString::new(game["BuffName"][value].as_str().unwrap_or(value));
+                buff.tooltip = game["BuffDescription"][value].as_str().map(|desc| {
+                    expand_templates(desc, template, game, items, npcs)
+                        .lines()
+                        .map(|s| s.to_string().into())
+                        .collect::<Vec<_>>()
+                });
             }
             "type" => {
                 buff.buff_type = match value {
@@ -695,14 +687,10 @@ fn get_prefix_meta(
         let id = cap.get(1).expect("No id capture").as_str().parse::<u8>()?;
         let internal_name = cap.get(2).expect("No internal name capture").as_str();
 
-        let name = if items["PrefixName"][internal_name].is_null() {
-            internal_name.to_owned()
-        } else {
-            items["PrefixName"][internal_name]
-                .as_str()
-                .unwrap()
-                .to_owned()
-        };
+        let name = items["Prefix"][internal_name]
+            .as_str()
+            .unwrap_or(&internal_name)
+            .to_owned();
 
         prefix_meta.push(PrefixMeta {
             id,
@@ -941,6 +929,7 @@ fn main() -> Result<()> {
     let terra_res_fol = PathBuf::from_str("crates/terra-res")?;
 
     File::open(terra_res_fol.join("build_type.txt"))?.read_to_string(&mut build_type)?;
+    build_type = build_type.trim().to_string();
 
     let res_fol = terra_res_fol.join("resources");
     let items_fol = res_fol.join("items");
