@@ -3,8 +3,9 @@ use std::io::{Read, Write};
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
 use crate::{
+    ACCESSORY_COUNT, ARMOR_COUNT, BoolByte, HIDDEN_VISUAL_COUNT, Item, ItemMeta,
     ext::{TerraReadExt, TerraWriteExt},
-    utils, BoolByte, Item, ItemMeta, ACCESSORY_COUNT, ARMOR_COUNT, HIDDEN_VISUAL_COUNT,
+    utils,
 };
 
 #[derive(Debug, Clone)]
@@ -48,10 +49,11 @@ impl Loadout {
         prefix: bool,
     ) -> anyhow::Result<()> {
         let accessory_count = if version >= 124 { 7 } else { 5 };
+        let favourited = version >= 322;
 
         for armor in self.armor.iter_mut() {
             if version >= 38 {
-                armor.load(reader, item_meta, true, false, stack, prefix, false)?;
+                armor.load(reader, item_meta, true, false, stack, prefix, favourited)?;
             } else {
                 armor.load_from_legacy_name(reader, item_meta, version, stack)?;
             }
@@ -59,7 +61,8 @@ impl Loadout {
 
         for i in 0..accessory_count {
             if version >= 38 {
-                self.accessories[i].load(reader, item_meta, true, false, stack, prefix, false)?;
+                self.accessories[i]
+                    .load(reader, item_meta, true, false, stack, prefix, favourited)?;
             } else {
                 self.accessories[i].load_from_legacy_name(reader, item_meta, version, stack)?;
             }
@@ -68,7 +71,7 @@ impl Loadout {
         if version >= 6 {
             for vanity in self.vanity_armor.iter_mut() {
                 if version >= 38 {
-                    vanity.load(reader, item_meta, true, false, stack, prefix, false)?;
+                    vanity.load(reader, item_meta, true, false, stack, prefix, favourited)?;
                 } else {
                     vanity.load_from_legacy_name(reader, item_meta, version, stack)?;
                 }
@@ -78,20 +81,20 @@ impl Loadout {
         if version >= 81 {
             for i in 0..accessory_count {
                 self.vanity_accessories[i]
-                    .load(reader, item_meta, true, false, stack, prefix, false)?;
+                    .load(reader, item_meta, true, false, stack, prefix, favourited)?;
             }
         }
 
         if version >= 47 {
             for dye in self.armor_dyes.iter_mut() {
-                dye.load(reader, item_meta, true, false, stack, prefix, false)?;
+                dye.load(reader, item_meta, true, false, stack, prefix, favourited)?;
             }
         }
 
         if version >= 81 {
             for i in 0..accessory_count {
                 self.accessory_dyes[i]
-                    .load(reader, item_meta, true, false, stack, prefix, false)?;
+                    .load(reader, item_meta, true, false, stack, prefix, favourited)?;
             }
         }
 
@@ -135,10 +138,11 @@ impl Loadout {
         prefix: bool,
     ) -> anyhow::Result<()> {
         let accessory_count = if version >= 124 { 7 } else { 5 };
+        let favourited = version >= 322;
 
         for _ in 0..ARMOR_COUNT {
             if version >= 38 {
-                Item::skip(reader, true, false, stack, prefix, false)?;
+                Item::skip(reader, true, false, stack, prefix, favourited)?;
             } else {
                 // This should technically be never used, but oh well
                 Item::skip_legacy_name(reader, stack)?;
@@ -147,7 +151,7 @@ impl Loadout {
 
         for _ in 0..accessory_count {
             if version >= 38 {
-                Item::skip(reader, true, false, stack, prefix, false)?;
+                Item::skip(reader, true, false, stack, prefix, favourited)?;
             } else {
                 Item::skip_legacy_name(reader, stack)?;
             }
@@ -156,7 +160,7 @@ impl Loadout {
         if version >= 6 {
             for _ in 0..ARMOR_COUNT {
                 if version >= 38 {
-                    Item::skip(reader, true, false, stack, prefix, false)?;
+                    Item::skip(reader, true, false, stack, prefix, favourited)?;
                 } else {
                     Item::skip_legacy_name(reader, stack)?;
                 }
@@ -165,19 +169,19 @@ impl Loadout {
 
         if version >= 81 {
             for _ in 0..accessory_count {
-                Item::skip(reader, true, false, stack, prefix, false)?;
+                Item::skip(reader, true, false, stack, prefix, favourited)?;
             }
         }
 
         if version >= 47 {
             for _ in 0..ARMOR_COUNT {
-                Item::skip(reader, true, false, stack, prefix, false)?;
+                Item::skip(reader, true, false, stack, prefix, favourited)?;
             }
         }
 
         if version >= 81 {
             for _ in 0..accessory_count {
-                Item::skip(reader, true, false, stack, prefix, false)?;
+                Item::skip(reader, true, false, stack, prefix, favourited)?;
             }
         }
 
@@ -213,10 +217,11 @@ impl Loadout {
         prefix: bool,
     ) -> anyhow::Result<()> {
         let accessory_count = if version >= 124 { 7 } else { 5 };
+        let favourited = version >= 322;
 
         for armor in self.armor.iter() {
             if version >= 38 {
-                armor.save(writer, item_meta, true, false, stack, prefix, false)?;
+                armor.save(writer, item_meta, true, false, stack, prefix, favourited)?;
             } else {
                 armor.save_legacy_name(writer, item_meta, version, stack)?;
             }
@@ -224,7 +229,8 @@ impl Loadout {
 
         for i in 0..accessory_count {
             if version >= 38 {
-                self.accessories[i].save(writer, item_meta, true, false, stack, prefix, false)?;
+                self.accessories[i]
+                    .save(writer, item_meta, true, false, stack, prefix, favourited)?;
             } else {
                 self.accessories[i].save_legacy_name(writer, item_meta, version, stack)?;
             }
@@ -233,7 +239,7 @@ impl Loadout {
         if version >= 6 {
             for vanity in self.vanity_armor.iter() {
                 if version >= 38 {
-                    vanity.save(writer, item_meta, true, false, stack, prefix, false)?;
+                    vanity.save(writer, item_meta, true, false, stack, prefix, favourited)?;
                 } else {
                     vanity.save_legacy_name(writer, item_meta, version, stack)?;
                 }
@@ -243,20 +249,20 @@ impl Loadout {
         if version >= 81 {
             for i in 0..accessory_count {
                 self.vanity_accessories[i]
-                    .save(writer, item_meta, true, false, stack, prefix, false)?;
+                    .save(writer, item_meta, true, false, stack, prefix, favourited)?;
             }
         }
 
         if version >= 47 {
             for dye in self.armor_dyes.iter() {
-                dye.save(writer, item_meta, true, false, stack, prefix, false)?;
+                dye.save(writer, item_meta, true, false, stack, prefix, favourited)?;
             }
         }
 
         if version >= 81 {
             for i in 0..accessory_count {
                 self.accessory_dyes[i]
-                    .save(writer, item_meta, true, false, stack, prefix, false)?;
+                    .save(writer, item_meta, true, false, stack, prefix, favourited)?;
             }
         }
 

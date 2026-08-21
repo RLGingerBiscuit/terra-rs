@@ -3,18 +3,19 @@ use std::{fs::File, path::Path};
 
 use std::io::{Cursor, Read, Write};
 
-use byteorder::{ReadBytesExt, WriteBytesExt, LE};
+use byteorder::{LE, ReadBytesExt, WriteBytesExt};
 use serde_big_array::BigArray;
 
 use crate::{
+    AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT, BoolByte, Buff,
+    CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, Color, DPAD_BINDINGS_COUNT, Difficulty,
+    EQUIPMENT_COUNT, FEMALE_SKIN_VARIANTS, FileType, INVENTORY_COUNT, Item, ItemMeta,
+    JourneyPowers, LOADOUT_COUNT, Loadout, MAGIC_MASK, MAGIC_NUMBER, MALE_SKIN_VARIANTS,
+    MAX_RESPAWN_TIME, MOBILE_FILE_ALIGNMENT, ResearchItem, SPAWNPOINT_LIMIT, Spawnpoint,
+    TEMPORARY_SLOT_COUNT, Team,
     aes::{decrypt_from_reader, encrypt_to_writer},
     ext::{TerraReadExt, TerraWriteExt},
-    utils, BoolByte, Buff, Color, Difficulty, FileType, Item, ItemMeta, JourneyPowers, Loadout,
-    ResearchItem, Spawnpoint, Team, AMMO_COUNT, BANK_COUNT, BUFF_COUNT, BUILDER_ACCESSORY_COUNT,
-    CELLPHONE_INFO_COUNT, COINS_COUNT, CURRENT_VERSION, DPAD_BINDINGS_COUNT, EQUIPMENT_COUNT,
-    FEMALE_SKIN_VARIANTS, INVENTORY_COUNT, LOADOUT_COUNT, MAGIC_MASK, MAGIC_NUMBER,
-    MALE_SKIN_VARIANTS, MAX_RESPAWN_TIME, MOBILE_FILE_ALIGNMENT, SPAWNPOINT_LIMIT,
-    TEMPORARY_SLOT_COUNT,
+    utils,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -25,7 +26,9 @@ pub enum PlayerError {
     AccessDenied,
     #[error("The file was not found.")]
     FileNotFound,
-    #[error("The file is for a newer version of Terraria ({0}) than terra-rs supports (<= {CURRENT_VERSION}).")]
+    #[error(
+        "The file is for a newer version of Terraria ({0}) than terra-rs supports (<= {CURRENT_VERSION})."
+    )]
     PostDated(i32),
     #[error("The file is corrupted.")]
     Corrupted,
@@ -369,6 +372,9 @@ impl Player {
 
                 if self.version >= 256 {
                     self.artisan_loaf = reader.read_bool()?;
+                    if self.version >= 324 {
+                        _ = reader.read_bool()?;
+                    }
 
                     if self.version >= 260 {
                         self.vital_crystal = reader.read_bool()?;
@@ -404,11 +410,11 @@ impl Player {
         self.shoe_color = reader.read_rgb()?;
 
         let has_prefix = self.version >= 36;
-        let has_favourited = self.version >= 114;
 
         self.loadouts[0].load(reader, item_meta, self.version, false, has_prefix)?;
 
         let inventory_count = if self.version >= 58 { 50 } else { 40 };
+        let has_favourited = self.version >= 114;
 
         for i in 0..inventory_count {
             self.inventory[i].load(
@@ -780,6 +786,9 @@ impl Player {
 
                 if self.version >= 256 {
                     writer.write_bool(self.artisan_loaf)?;
+                    if self.version >= 324 {
+                        writer.write_bool(false)?;
+                    }
 
                     if self.version >= 260 {
                         writer.write_bool(self.vital_crystal)?;

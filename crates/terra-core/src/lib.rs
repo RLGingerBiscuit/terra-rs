@@ -24,7 +24,7 @@ pub const ENCRYPTION_BYTES: &[u8; 16] = b"h\x003\x00y\x00_\x00g\x00U\x00y\x00Z\x
 // The mobile (and possibly console) version of the game aligns the file to 4KB.
 pub const MOBILE_FILE_ALIGNMENT: usize = 4000;
 
-pub const CURRENT_VERSION: i32 = 319;
+pub const CURRENT_VERSION: i32 = 325;
 
 /// C#'s DateTime uses Ticks, so here is the conversion factor
 pub const NANOSECONDS_PER_TICK: i128 = 100;
