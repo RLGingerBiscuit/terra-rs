@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-08-22
+
+- Hotfix (I forgor how to do releases)
+
 ## [1.4.0] - 2026-08-22
 
 - Show all items/buffs/prefixes in browsers when nothing's searched
