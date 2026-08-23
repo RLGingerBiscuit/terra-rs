@@ -34,8 +34,9 @@ def main():
     let mut v = Vec::with_capacity({len(versions)});
 """
 
-    func = """    match version {
-            i32::MIN..=-1 => "Unknown","""
+    func = """pub fn version_lookup(version: i32) -> &'static str {
+    match version {
+        i32::MIN..=-1 => "Unknown","""
 
     i = 0
 
@@ -87,8 +88,9 @@ def main():
             {version + 1}..={next_version - 1} => "{name} (or newer)","""
 
     func += f"""
-            _ => "{versions[-1][0]} (or newer)"
-        }}"""
+        _ => "{versions[-1][0]} (or newer)"
+    }}
+}}"""
 
     map += """    v.sort_by(|a, b| b.1.cmp(&a.1));
     v
