@@ -4501,7 +4501,7 @@ dependencies = [
 
 [[package]]
 name = "terra-core"
-version = "1.4.1"
+version = "1.4.2"
 dependencies = [
  "aes",
  "anyhow",
@@ -4521,7 +4521,7 @@ dependencies = [
 
 [[package]]
 name = "terra-res"
-version = "1.4.1"
+version = "1.4.2"
 dependencies = [
  "anyhow",
  "fs_extra",
@@ -4537,7 +4537,7 @@ dependencies = [
 
 [[package]]
 name = "terra-rs"
-version = "1.4.1"
+version = "1.4.2"
 dependencies = [
  "anyhow",
  "catppuccin-egui",
@@ -4564,7 +4564,7 @@ dependencies = [
 
 [[package]]
 name = "terra-tests"
-version = "1.4.1"
+version = "1.4.2"
 dependencies = [
  "anyhow",
  "serde_json",

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-08-23
+
 - Added support for Terraria 1.4.5.8
 
 ## [1.4.1] - 2026-08-22

@@ -6,7 +6,7 @@ members = ["crates/terra-core", "crates/terra-gui", "crates/terra-res", "crates/
 repository = "https://github.com/RLGingerBiscuit/terra-rs"
 edition = "2024"
 rust-version = "1.94"
-version = "1.4.1"
+version = "1.4.2"
 authors = ["Ginger Biscuit <rlgingerbiscuit@proton.me>"]
 license = "MIT"
 
